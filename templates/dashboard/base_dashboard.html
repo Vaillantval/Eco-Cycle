@@ -3,6 +3,13 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+<style>
+  /* Force navbar white on dashboard pages (no hero to scroll past) */
+  .navbar { background: rgba(255,255,255,0.97); box-shadow: 0 2px 20px rgba(0,0,0,0.08); padding: 12px 0; }
+  .navbar .nav-logo-text, .navbar .nav-links a, .navbar .nav-login, .navbar .nav-user-name { color: var(--charcoal); }
+  .navbar .nav-dropdown-trigger { color: var(--charcoal); }
+  .navbar .hamburger span { background: var(--black); }
+</style>
 {% endblock %}
 
 {% block content %}
