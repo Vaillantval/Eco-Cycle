@@ -304,4 +304,4 @@ Photo mobile / web
 
 ## Licence
 
-Projet propriétaire — EcoCycle Haiti © 2026. Créé par Eliézer Léonce.
+Projet propriétaire — EcoCycle Haiti © 2026. Créé par Eliézer Léonce, Valcin Vaillant et Lafleur.
