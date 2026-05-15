@@ -19,10 +19,6 @@ redis==5.1.1
 django-celery-beat==2.7.0
 django-celery-results==2.5.1
 
-# Stockage media
-cloudinary==1.41.0
-django-cloudinary-storage==0.3.0
-
 # Email
 resend==2.4.0
 

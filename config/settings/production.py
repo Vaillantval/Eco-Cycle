@@ -52,3 +52,7 @@ X_FRAME_OPTIONS = 'DENY'
 SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
+
+# --- MEDIA (volume Railway monté sur /app/media) ---
+MEDIA_URL = '/media/'
+MEDIA_ROOT = '/app/media'
