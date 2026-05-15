@@ -6,7 +6,7 @@ import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-SECRET_KEY = config('SECRET_KEY')
+SECRET_KEY = config('SECRET_KEY', default='django-insecure-changeme-not-for-production')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -76,13 +76,22 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 AUTH_USER_MODEL = 'accounts.User'
 
-DATABASES = {
-    'default': dj_database_url.config(
-        default=config('DATABASE_URL'),
-        conn_max_age=600,
-        conn_health_checks=True,
-    )
-}
+_DATABASE_URL = config('DATABASE_URL', default='')
+if _DATABASE_URL:
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=_DATABASE_URL,
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
@@ -106,9 +115,9 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': config('CLOUDINARY_CLOUD_NAME'),
-    'API_KEY': config('CLOUDINARY_API_KEY'),
-    'API_SECRET': config('CLOUDINARY_API_SECRET'),
+    'CLOUD_NAME': config('CLOUDINARY_CLOUD_NAME', default=''),
+    'API_KEY': config('CLOUDINARY_API_KEY', default=''),
+    'API_SECRET': config('CLOUDINARY_API_SECRET', default=''),
 }
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -174,10 +183,10 @@ CACHES = {
     }
 }
 
-RESEND_API_KEY = config('RESEND_API_KEY')
+RESEND_API_KEY = config('RESEND_API_KEY', default='')
 RESEND_FROM_EMAIL = config('RESEND_FROM_EMAIL', default='noreply@ecocycle.ht')
 RESEND_FROM_NAME = config('RESEND_FROM_NAME', default='EcoCycle Haiti')
-ANTHROPIC_API_KEY = config('ANTHROPIC_API_KEY')
+ANTHROPIC_API_KEY = config('ANTHROPIC_API_KEY', default='')
 FIREBASE_CREDENTIALS_PATH = config('FIREBASE_CREDENTIALS_PATH', default='firebase-credentials.json')
 FIREBASE_CREDENTIALS_B64 = config('FIREBASE_CREDENTIALS_B64', default='')
 FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:8000')

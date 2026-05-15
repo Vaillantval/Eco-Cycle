@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.http import JsonResponse
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
@@ -7,7 +8,15 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, Sp
 handler404 = 'web.error_views.page_not_found'
 handler500 = 'web.error_views.server_error'
 
+
+def health_check(request):
+    return JsonResponse({'status': 'ok'})
+
+
 urlpatterns = [
+    # Healthcheck Railway
+    path('health/', health_check),
+
     # Web frontend (DOIT être en premier)
     path('', include('web.urls')),
 
