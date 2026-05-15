@@ -235,8 +235,8 @@ body { font-family: var(--font-body); background: var(--white); color: var(--bla
 .pf-btn-outline { background: transparent; border: 2px solid var(--green); color: var(--green); }
 
 .hero-card { position: absolute; background: var(--white); border-radius: 14px; box-shadow: 0 16px 40px rgba(0,0,0,0.2); padding: 14px 18px; z-index: 3; }
-.hero-card-top { top: 20px; right: -30px; }
-.hero-card-bot { bottom: 30px; left: -30px; }
+.hero-card-top { top: 40px; right: -70px; }
+.hero-card-bot { bottom: 50px; left: -70px; }
 .hero-card-label { font-size: 0.7rem; color: var(--gray); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 1px; }
 .hero-card-value { font-family: var(--font-display); font-weight: 800; font-size: 1.1rem; color: var(--green); display: flex; align-items: center; gap: 6px; }
 .hero-card-value .dot { width: 8px; height: 8px; background: #22c55e; border-radius: 50%; }
