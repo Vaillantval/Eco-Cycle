@@ -1,0 +1,20 @@
+{% extends "emails/base_email.html" %}
+{% block subject %}Confirmez votre abonnement — EcoCycle{% endblock %}
+{% block content %}
+<h2>Confirmez votre abonnement</h2>
+<p>Vous avez demande a vous abonner a la newsletter <strong>EcoCycle Haiti</strong>.</p>
+<p>Cliquez sur le bouton ci-dessous pour confirmer votre abonnement et recevoir nos actualites sur le recyclage en Haiti :</p>
+
+<p style="text-align:center;">
+  <a href="{{ confirm_url }}" class="btn">Confirmer mon abonnement</a>
+</p>
+
+<div class="info-box">
+  <p>En vous abonnant, vous recevrez :<br>
+  &#127807; Actualites sur le recyclage en Haiti<br>
+  &#128200; Rapports d'impact de la communaute<br>
+  &#128722; Nouvelles offres et listings sur la marketplace</p>
+</div>
+
+<p style="color:#999; font-size:13px;">Si vous n'avez pas effectue cette demande, ignorez cet email. Vous ne recevrez rien d'autre.</p>
+{% endblock %}

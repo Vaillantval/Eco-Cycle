@@ -1,0 +1,23 @@
+{% extends "emails/base_email.html" %}
+{% block subject %}Votre ramassage est confirme — EcoCycle{% endblock %}
+{% block content %}
+<h2>Ramassage confirme !</h2>
+<p>Bonjour {{ user.first_name }},</p>
+<p>Un collecteur a ete assigne a votre demande de ramassage. Voici les details :</p>
+
+<div class="info-box">
+  <p><strong>Collecteur :</strong> {{ pickup.collector.full_name|default:"En cours d'assignation" }}<br>
+  <strong>Date prevue :</strong> {{ pickup.preferred_date }}<br>
+  <strong>Creneau :</strong> {{ pickup.get_preferred_slot_display }}<br>
+  <strong>Adresse :</strong> {{ pickup.address }}, {{ pickup.city }}</p>
+</div>
+
+<p>Vous recevrez des notifications en temps reel sur le statut de votre ramassage via l'application.</p>
+
+{% if pickup.special_instructions %}
+<p><strong>Vos instructions :</strong> {{ pickup.special_instructions }}</p>
+{% endif %}
+
+<hr class="divider">
+<p style="color:#999; font-size:13px;">Assurez-vous d'etre disponible au creneau indique. En cas d'imprevus, contactez-nous via l'application.</p>
+{% endblock %}

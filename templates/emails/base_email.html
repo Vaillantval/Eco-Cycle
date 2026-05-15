@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block subject %}EcoCycle Haiti{% endblock %}</title>
+  <style>
+    body { margin: 0; padding: 0; background-color: #f4f7f4; font-family: 'Helvetica Neue', Arial, sans-serif; color: #2d2d2d; }
+    .wrapper { max-width: 600px; margin: 40px auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+    .header { background: linear-gradient(135deg, #2e7d32, #66bb6a); padding: 32px 40px; text-align: center; }
+    .header h1 { margin: 0; color: #ffffff; font-size: 26px; font-weight: 700; letter-spacing: 0.5px; }
+    .header p { margin: 6px 0 0; color: rgba(255,255,255,0.85); font-size: 14px; }
+    .body { padding: 40px; }
+    .body h2 { color: #2e7d32; font-size: 22px; margin-top: 0; }
+    .body p { line-height: 1.7; color: #444; font-size: 15px; margin: 12px 0; }
+    .btn { display: inline-block; margin: 24px 0; padding: 14px 32px; background-color: #2e7d32; color: #ffffff !important; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px; }
+    .btn:hover { background-color: #1b5e20; }
+    .info-box { background: #f1f8e9; border-left: 4px solid #66bb6a; border-radius: 6px; padding: 16px 20px; margin: 20px 0; }
+    .info-box p { margin: 0; color: #33691e; font-size: 14px; }
+    .divider { border: none; border-top: 1px solid #e8f5e9; margin: 28px 0; }
+    .footer { background: #f9f9f9; padding: 24px 40px; text-align: center; border-top: 1px solid #eee; }
+    .footer p { margin: 4px 0; color: #999; font-size: 12px; }
+    .footer a { color: #2e7d32; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="header">
+      <h1>&#9850; EcoCycle Haiti</h1>
+      <p>Recyclez. Gagnez. Impactez.</p>
+    </div>
+    <div class="body">
+      {% block content %}{% endblock %}
+    </div>
+    <div class="footer">
+      <p>EcoCycle Haiti &mdash; Plateforme de recyclage intelligent</p>
+      <p><a href="{{ frontend_url|default:'https://ecocycle.ht' }}">ecocycle.ht</a> &nbsp;|&nbsp; <a href="mailto:support@ecocycle.ht">support@ecocycle.ht</a></p>
+      <p style="margin-top:12px; color:#bbb;">Vous recevez cet email car vous etes inscrit sur EcoCycle Haiti.</p>
+    </div>
+  </div>
+</body>
+</html>

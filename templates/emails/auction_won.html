@@ -1,0 +1,24 @@
+{% extends "emails/base_email.html" %}
+{% block subject %}Vous avez remporte l'enchere ! — EcoCycle{% endblock %}
+{% block content %}
+<h2>Felicitations, vous avez gagne !</h2>
+<p>Bonjour {{ user.first_name }},</p>
+<p>Vous avez remporte l'enchere pour <strong>{{ listing.title }}</strong>. Voici le recapitulatif de votre commande :</p>
+
+<div class="info-box">
+  <p><strong>Article :</strong> {{ listing.title }}<br>
+  <strong>Vendeur :</strong> {{ order.seller.full_name }}<br>
+  <strong>Montant paye :</strong> {{ order.amount }} HTG<br>
+  <strong>Frais plateforme :</strong> {{ order.platform_fee }} HTG<br>
+  <strong>Reference commande :</strong> #{{ order.id }}</p>
+</div>
+
+<p>L'equipe EcoCycle va coordonner la collecte ou la livraison avec le vendeur. Vous serez notifie des prochaines etapes.</p>
+
+<p style="text-align:center;">
+  <a href="{{ frontend_url }}/orders/{{ order.id }}" class="btn">Voir ma commande</a>
+</p>
+
+<hr class="divider">
+<p style="color:#999; font-size:13px;">Merci de faire confiance a EcoCycle Haiti pour vos achats de materiaux recycles.</p>
+{% endblock %}

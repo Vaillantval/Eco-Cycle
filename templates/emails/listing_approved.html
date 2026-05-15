@@ -1,0 +1,47 @@
+{% extends "emails/base_email.html" %}
+{% block subject %}
+  {% if admin_notification %}[Admin] Nouveau listing a reviser{% elif rejected %}Listing non approuve{% else %}Votre listing a ete approuve{% endif %} — EcoCycle
+{% endblock %}
+{% block content %}
+
+{% if admin_notification %}
+  <h2>Nouveau listing a reviser</h2>
+  <p>Bonjour {{ admin.first_name }},</p>
+  <p>Un nouveau listing vient d'etre soumis et necessite votre validation.</p>
+  <div class="info-box">
+    <p><strong>Titre :</strong> {{ listing.title }}<br>
+    <strong>Soumis par :</strong> {{ listing.user.full_name }} ({{ listing.user.email }})<br>
+    <strong>Categorie :</strong> {{ listing.category.name|default:"Non definie" }}<br>
+    <strong>Poids :</strong> {{ listing.quantity_kg }} kg<br>
+    {% if listing.ai_estimated_value %}<strong>Valeur estimee :</strong> {{ listing.ai_estimated_value }} HTG{% endif %}
+    </p>
+  </div>
+  <p style="text-align:center;">
+    <a href="{{ review_url }}" class="btn">Examiner le listing</a>
+  </p>
+
+{% elif rejected %}
+  <h2>Listing non approuve</h2>
+  <p>Bonjour {{ user.first_name }},</p>
+  <p>Apres examen, votre listing <strong>{{ listing.title }}</strong> n'a pas pu etre approuve.</p>
+  <div class="info-box">
+    <p><strong>Raison :</strong> {{ reason }}</p>
+  </div>
+  <p>Vous pouvez corriger votre soumission et la soumettre a nouveau depuis l'application.</p>
+
+{% else %}
+  <h2>Votre listing est en ligne !</h2>
+  <p>Bonjour {{ user.first_name }},</p>
+  <p>Excellente nouvelle ! Votre listing <strong>{{ listing.title }}</strong> a ete approuve et est maintenant visible sur la marketplace EcoCycle Haiti.</p>
+  <div class="info-box">
+    <p><strong>Categorie :</strong> {{ listing.category.name|default:"Non definie" }}<br>
+    <strong>Poids :</strong> {{ listing.quantity_kg }} kg<br>
+    {% if listing.ai_estimated_value %}<strong>Valeur estimee :</strong> {{ listing.ai_estimated_value }} HTG{% endif %}
+    </p>
+  </div>
+  <p style="text-align:center;">
+    <a href="{{ marketplace_url }}" class="btn">Voir la marketplace</a>
+  </p>
+{% endif %}
+
+{% endblock %}

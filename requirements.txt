@@ -1,0 +1,46 @@
+# Framework
+Django==5.1.4
+djangorestframework==3.15.2
+django-cors-headers==4.4.0
+django-filter==24.3
+
+# Auth
+djangorestframework-simplejwt==5.3.1
+dj-rest-auth==6.0.0
+
+# Base de données
+psycopg2-binary==2.9.9
+dj-database-url==2.2.0
+
+# Tâches asynchrones
+celery==5.4.0
+redis==5.1.1
+django-celery-beat==2.7.0
+django-celery-results==2.5.1
+
+# Stockage media
+cloudinary==1.41.0
+django-cloudinary-storage==0.3.0
+
+# Email
+resend==2.4.0
+
+# Firebase FCM
+firebase-admin==6.5.0
+
+# Claude AI
+anthropic==0.34.2
+
+# Utilitaires
+Pillow==10.4.0
+python-decouple==3.8
+whitenoise==6.7.0
+gunicorn==22.0.0
+django-extensions==3.2.3
+django-storages==1.14.4
+
+# Slugs
+python-slugify==8.0.4
+
+# Sécurité
+django-ratelimit==4.1.0

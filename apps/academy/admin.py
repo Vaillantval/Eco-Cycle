@@ -1,0 +1,42 @@
+from django.contrib import admin
+from .models import Course, Lesson, Enrollment, Certificate
+
+
+class LessonInline(admin.TabularInline):
+    model = Lesson
+    extra = 0
+    fields = ['title', 'order', 'duration_minutes', 'video_url']
+    ordering = ['order']
+
+
+@admin.register(Course)
+class CourseAdmin(admin.ModelAdmin):
+    list_display = ['title', 'level', 'duration_minutes', 'is_published', 'is_free', 'created_at']
+    list_filter = ['level', 'is_published', 'is_free']
+    search_fields = ['title', 'description']
+    prepopulated_fields = {'slug': ('title',)}
+    readonly_fields = ['id', 'created_at']
+    inlines = [LessonInline]
+
+
+@admin.register(Lesson)
+class LessonAdmin(admin.ModelAdmin):
+    list_display = ['title', 'course', 'order', 'duration_minutes']
+    list_filter = ['course']
+    search_fields = ['title', 'course__title']
+    ordering = ['course', 'order']
+
+
+@admin.register(Enrollment)
+class EnrollmentAdmin(admin.ModelAdmin):
+    list_display = ['user', 'course', 'progress_percent', 'is_completed', 'enrolled_at']
+    list_filter = ['is_completed', 'course']
+    search_fields = ['user__email', 'course__title']
+    readonly_fields = ['enrolled_at', 'completed_at']
+
+
+@admin.register(Certificate)
+class CertificateAdmin(admin.ModelAdmin):
+    list_display = ['user', 'course', 'issued_at']
+    search_fields = ['user__email', 'course__title']
+    readonly_fields = ['id', 'issued_at']

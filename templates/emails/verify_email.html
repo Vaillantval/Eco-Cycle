@@ -1,0 +1,16 @@
+{% extends "emails/base_email.html" %}
+{% block subject %}Verifiez votre adresse email — EcoCycle{% endblock %}
+{% block content %}
+<h2>Verification de votre email</h2>
+<p>Bonjour {{ user.first_name }},</p>
+<p>Cliquez sur le bouton ci-dessous pour verifier votre adresse email et activer pleinement votre compte EcoCycle Haiti.</p>
+
+<p style="text-align:center;">
+  <a href="{{ verify_url }}" class="btn">Verifier mon adresse email</a>
+</p>
+
+<div class="info-box">
+  <p>Ce lien est valable pendant <strong>24 heures</strong>.<br>
+  Si vous n'avez pas effectue cette demande, ignorez cet email.</p>
+</div>
+{% endblock %}

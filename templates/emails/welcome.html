@@ -1,0 +1,24 @@
+{% extends "emails/base_email.html" %}
+{% block subject %}Bienvenue sur EcoCycle Haiti !{% endblock %}
+{% block content %}
+<h2>Bienvenue, {{ user.first_name }} !</h2>
+<p>Nous sommes ravis de vous accueillir sur <strong>EcoCycle Haiti</strong>, la plateforme qui transforme vos dechets en valeur economique et en impact environnemental positif.</p>
+
+<div class="info-box">
+  <p>&#10004; Votre compte a ete cree avec succes.<br>
+  Confirmez votre adresse email pour acceder a toutes les fonctionnalites.</p>
+</div>
+
+<p style="text-align:center;">
+  <a href="{{ verify_url }}" class="btn">Verifier mon email</a>
+</p>
+
+<hr class="divider">
+
+<p><strong>Avec EcoCycle vous pouvez :</strong></p>
+<p>&#9851; Photographier vos dechets et les faire analyser par l'IA<br>
+&#128722; Vendre ou mettre aux encheres vos materiaux recyclables<br>
+&#127807; Suivre votre impact environnemental en temps reel</p>
+
+<p style="color:#999; font-size:13px;">Ce lien expire dans 24 heures. Si vous n'avez pas cree ce compte, ignorez cet email.</p>
+{% endblock %}
