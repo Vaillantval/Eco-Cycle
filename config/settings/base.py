@@ -9,6 +9,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-changeme-not-for-production')
 
 INSTALLED_APPS = [
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -191,3 +192,116 @@ LOGOUT_REDIRECT_URL = '/'
 
 SESSION_COOKIE_AGE = 86400 * 7
 SESSION_COOKIE_HTTPONLY = True
+
+# ═══════════════════════════════════
+#   JAZZMIN — Admin UI
+# ═══════════════════════════════════
+JAZZMIN_SETTINGS = {
+    # Titre affiché dans l'onglet et la barre latérale
+    "site_title": "EcoCycle Admin",
+    "site_header": "EcoCycle Haiti",
+    "site_brand": "♻️ EcoCycle",
+    "welcome_sign": "Bienvenue sur le panel EcoCycle Haiti",
+    "copyright": "EcoCycle Haiti © 2026",
+
+    # Liens de recherche rapide en haut
+    "search_model": ["accounts.User", "waste.WasteListing", "marketplace.Auction"],
+
+    # Icônes par app
+    "icons": {
+        "accounts": "fas fa-users",
+        "accounts.User": "fas fa-user",
+        "waste": "fas fa-recycle",
+        "waste.WasteListing": "fas fa-box-open",
+        "waste.WasteCategory": "fas fa-tags",
+        "marketplace": "fas fa-store",
+        "marketplace.Auction": "fas fa-gavel",
+        "marketplace.Bid": "fas fa-hand-paper",
+        "marketplace.Order": "fas fa-shopping-cart",
+        "collections": "fas fa-truck",
+        "collections.PickupRequest": "fas fa-map-marker-alt",
+        "impact": "fas fa-leaf",
+        "impact.ImpactRecord": "fas fa-chart-line",
+        "academy": "fas fa-graduation-cap",
+        "academy.Course": "fas fa-book",
+        "blog": "fas fa-newspaper",
+        "blog.Article": "fas fa-pen",
+        "core": "fas fa-envelope",
+        "notifications": "fas fa-bell",
+        "auth": "fas fa-shield-alt",
+        "auth.Group": "fas fa-users-cog",
+    },
+    "default_icon_parents": "fas fa-folder",
+    "default_icon_children": "fas fa-circle",
+
+    # Liens utiles en haut à droite
+    "topmenu_links": [
+        {"name": "Site Web", "url": "/", "new_window": True, "icon": "fas fa-globe"},
+        {"name": "API Docs", "url": "/api/docs/", "new_window": True, "icon": "fas fa-code"},
+        {"model": "accounts.User"},
+    ],
+
+    # Liens dans le menu utilisateur (avatar en haut à droite)
+    "usermenu_links": [
+        {"name": "Site Web", "url": "/", "new_window": True},
+        {"model": "accounts.User"},
+    ],
+
+    # Sidebar
+    "show_sidebar": True,
+    "navigation_expanded": True,
+    "hide_apps": [],
+    "hide_models": [],
+
+    # Ordre des apps dans la sidebar
+    "order_with_respect_to": [
+        "accounts",
+        "waste",
+        "marketplace",
+        "collections",
+        "impact",
+        "academy",
+        "blog",
+        "core",
+        "notifications",
+    ],
+
+    # Interface
+    "related_modal_active": True,
+    "custom_css": None,
+    "custom_js": None,
+    "use_google_fonts_cdn": True,
+    "show_ui_builder": False,
+}
+
+JAZZMIN_UI_TWEAKS = {
+    "navbar_small_text": False,
+    "footer_small_text": True,
+    "body_small_text": False,
+    "brand_small_text": False,
+    "brand_colour": "navbar-success",   # vert EcoCycle
+    "accent": "accent-success",
+    "navbar": "navbar-dark",
+    "no_navbar_border": True,
+    "navbar_fixed": True,
+    "layout_boxed": False,
+    "footer_fixed": False,
+    "sidebar_fixed": True,
+    "sidebar": "sidebar-dark-success",
+    "sidebar_nav_small_text": False,
+    "sidebar_disable_expand": False,
+    "sidebar_nav_child_indent": True,
+    "sidebar_nav_compact_style": False,
+    "sidebar_nav_legacy_style": False,
+    "sidebar_nav_flat_style": False,
+    "theme": "default",
+    "dark_mode_theme": None,
+    "button_classes": {
+        "primary": "btn-primary",
+        "secondary": "btn-secondary",
+        "info": "btn-info",
+        "warning": "btn-warning",
+        "danger": "btn-danger",
+        "success": "btn-success",
+    },
+}
