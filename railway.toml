@@ -6,16 +6,3 @@ buildCommand = "pip install -r requirements.txt && python manage.py collectstati
 startCommand = "gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
-
-[[services]]
-name = "web"
-
-[[services]]
-name = "celery-worker"
-startCommand = "celery -A config worker --loglevel=info --concurrency=2"
-
-[[services]]
-name = "postgres"
-
-[[services]]
-name = "redis"
