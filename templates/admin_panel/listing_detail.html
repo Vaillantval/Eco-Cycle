@@ -1,0 +1,185 @@
+{% extends 'admin_panel/base_admin.html' %}
+
+{% block title %}Révision listing — Admin EcoCycle{% endblock %}
+{% block page_title %}Révision du listing{% endblock %}
+
+{% block topbar_actions %}
+<a href="{% url 'admin_listings' %}" class="btn-admin-sm btn-view">← Retour aux listings</a>
+{% endblock %}
+
+{% block admin_content %}
+<div style="display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start;">
+
+  <!-- COLONNE GAUCHE -->
+  <div>
+
+    <!-- PHOTO + INFOS -->
+    <div class="admin-card" style="margin-bottom:20px;">
+      <div class="admin-card-header">
+        <div class="admin-card-title">📦 {{ listing.title }}</div>
+        <span class="status-badge status-{{ listing.status }}">{{ listing.get_status_display }}</span>
+      </div>
+      <div style="padding:20px;">
+        {% if listing.photo_url %}
+        <img src="{{ listing.photo_url }}" style="width:100%;max-height:320px;object-fit:cover;border-radius:8px;margin-bottom:16px;" alt="">
+        {% endif %}
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;font-size:0.85rem;">
+          <div>
+            <div style="color:#64748b;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.5px;">Catégorie</div>
+            <div style="font-weight:600;margin-top:2px;">{{ listing.category.name|default:"—" }}</div>
+          </div>
+          <div>
+            <div style="color:#64748b;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.5px;">Poids estimé</div>
+            <div style="font-weight:600;margin-top:2px;">{{ listing.quantity_kg }} kg</div>
+          </div>
+          <div>
+            <div style="color:#64748b;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.5px;">Ville</div>
+            <div style="font-weight:600;margin-top:2px;">{{ listing.city|default:"—" }}</div>
+          </div>
+          <div>
+            <div style="color:#64748b;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.5px;">Valeur IA</div>
+            <div style="font-weight:600;margin-top:2px;color:var(--green);">
+              {% if listing.ai_estimated_value %}{{ listing.ai_estimated_value }} HTG{% else %}—{% endif %}
+            </div>
+          </div>
+        </div>
+
+        {% if listing.description %}
+        <div style="margin-top:16px;padding-top:16px;border-top:1px solid #f1f5f9;">
+          <div style="color:#64748b;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Description</div>
+          <p style="font-size:0.85rem;color:#334155;line-height:1.6;margin:0;">{{ listing.description }}</p>
+        </div>
+        {% endif %}
+
+        {% if listing.pickup_address %}
+        <div style="margin-top:16px;padding-top:16px;border-top:1px solid #f1f5f9;">
+          <div style="color:#64748b;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Adresse de ramassage</div>
+          <div style="font-size:0.85rem;color:#334155;">{{ listing.pickup_address }}</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- ANALYSE IA -->
+    {% if listing.ai_analysis %}
+    <div class="admin-card">
+      <div class="admin-card-header">
+        <div class="admin-card-title">🤖 Analyse IA</div>
+      </div>
+      <div style="padding:16px 20px;font-size:0.82rem;color:#334155;line-height:1.6;">
+        {% if listing.ai_analysis.summary %}<p>{{ listing.ai_analysis.summary }}</p>{% endif %}
+        {% if listing.ai_analysis.material_type %}
+        <div><span style="color:#64748b;">Matériau :</span> {{ listing.ai_analysis.material_type }}</div>
+        {% endif %}
+        {% if listing.ai_analysis.condition %}
+        <div><span style="color:#64748b;">État :</span> {{ listing.ai_analysis.condition }}</div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- COLONNE DROITE -->
+  <div>
+
+    <!-- SOUMETTEUR -->
+    <div class="admin-card" style="margin-bottom:16px;">
+      <div class="admin-card-header">
+        <div class="admin-card-title">👤 Soumetteur</div>
+      </div>
+      <div style="padding:16px 20px;font-size:0.85rem;">
+        <div style="font-weight:700;color:#0f172a;margin-bottom:4px;">{{ listing.user.full_name }}</div>
+        <div style="color:#64748b;">{{ listing.user.email }}</div>
+        {% if listing.user.phone %}
+        <div style="color:#64748b;">{{ listing.user.phone }}</div>
+        {% endif %}
+        <div style="margin-top:8px;font-size:0.75rem;color:#94a3b8;">Membre depuis {{ listing.user.created_at|date:"d/m/Y" }}</div>
+      </div>
+    </div>
+
+    <!-- DÉCISION -->
+    {% if listing.status == 'pending_review' %}
+    <div class="admin-card" style="margin-bottom:16px;">
+      <div class="admin-card-header">
+        <div class="admin-card-title">✅ Décision</div>
+      </div>
+      <div style="padding:16px 20px;display:flex;flex-direction:column;gap:12px;">
+
+        <form method="POST" action="{% url 'admin_review_listing' listing.id %}">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="approve">
+          <button type="submit" style="width:100%;padding:10px;background:#16a34a;color:white;border:none;
+                                       border-radius:8px;font-weight:700;cursor:pointer;font-size:0.88rem;">
+            ✅ Approuver le listing
+          </button>
+        </form>
+
+        <form method="POST" action="{% url 'admin_review_listing' listing.id %}">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="reject">
+          <div style="margin-bottom:8px;">
+            <label style="font-size:0.78rem;color:#64748b;font-weight:600;">Raison du rejet</label>
+            <textarea name="rejection_reason" rows="3" style="width:100%;margin-top:4px;padding:8px;
+                      border:1px solid #e2e8f0;border-radius:6px;font-size:0.82rem;resize:vertical;"
+                      placeholder="Expliquer pourquoi ce listing est rejeté..."></textarea>
+          </div>
+          <button type="submit" style="width:100%;padding:10px;background:#dc2626;color:white;border:none;
+                                       border-radius:8px;font-weight:700;cursor:pointer;font-size:0.88rem;">
+            ❌ Rejeter le listing
+          </button>
+        </form>
+
+      </div>
+    </div>
+    {% else %}
+    <div class="admin-card" style="margin-bottom:16px;">
+      <div class="admin-card-header">
+        <div class="admin-card-title">📋 Décision rendue</div>
+      </div>
+      <div style="padding:16px 20px;font-size:0.85rem;">
+        <div style="font-weight:600;margin-bottom:6px;">
+          {% if listing.status == 'approved' %}✅ Approuvé{% elif listing.status == 'rejected' %}❌ Rejeté{% else %}{{ listing.get_status_display }}{% endif %}
+        </div>
+        {% if listing.reviewed_by %}
+        <div style="color:#64748b;font-size:0.78rem;">Par {{ listing.reviewed_by.full_name }}</div>
+        {% endif %}
+        {% if listing.reviewed_at %}
+        <div style="color:#94a3b8;font-size:0.75rem;">{{ listing.reviewed_at|date:"d/m/Y à H:i" }}</div>
+        {% endif %}
+        {% if listing.rejection_reason %}
+        <div style="margin-top:10px;padding:10px;background:#fee2e2;border-radius:6px;font-size:0.82rem;color:#dc2626;">
+          {{ listing.rejection_reason }}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- DATES -->
+    <div class="admin-card">
+      <div class="admin-card-header">
+        <div class="admin-card-title">📅 Dates</div>
+      </div>
+      <div style="padding:14px 20px;font-size:0.82rem;display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;justify-content:space-between;">
+          <span style="color:#64748b;">Soumis le</span>
+          <span>{{ listing.created_at|date:"d/m/Y H:i" }}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;">
+          <span style="color:#64748b;">Mis à jour</span>
+          <span>{{ listing.updated_at|date:"d/m/Y H:i" }}</span>
+        </div>
+        {% if listing.ai_analyzed_at %}
+        <div style="display:flex;justify-content:space-between;">
+          <span style="color:#64748b;">Analysé par IA</span>
+          <span>{{ listing.ai_analyzed_at|date:"d/m/Y H:i" }}</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

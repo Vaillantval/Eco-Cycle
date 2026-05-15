@@ -1,0 +1,104 @@
+{% extends 'dashboard/base_dashboard.html' %}
+
+{% block title %}Dashboard — EcoCycle Haiti{% endblock %}
+
+{% block dashboard_content %}
+<div class="dashboard-header">
+  <div>
+    <h1 class="dashboard-title">Bonjour, {{ user.first_name }} 👋</h1>
+    <p class="dashboard-subtitle">Vue d'ensemble de votre activité EcoCycle</p>
+  </div>
+  <a href="{% url 'submit_waste' %}" class="btn btn-primary">+ Soumettre un déchet</a>
+</div>
+
+<!-- STATS -->
+<div class="stats-grid-dash">
+  <div class="stat-card">
+    <div class="stat-card-icon">♻️</div>
+    <div class="stat-card-value">{{ listings_count }}</div>
+    <div class="stat-card-label">Déchets soumis</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-icon">🌿</div>
+    <div class="stat-card-value">{{ summary.total_kg_recycled|floatformat:1 }}</div>
+    <div class="stat-card-label">kg recyclés</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-icon">💨</div>
+    <div class="stat-card-value">{{ summary.total_co2_saved_kg|floatformat:1 }}</div>
+    <div class="stat-card-label">kg CO₂ économisés</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-icon">🏆</div>
+    <div class="stat-card-value">{% if summary.community_rank %}#{{ summary.community_rank }}{% else %}—{% endif %}</div>
+    <div class="stat-card-label">Rang communauté</div>
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+
+  <!-- NOTIFICATIONS -->
+  <div class="data-card">
+    <div class="data-card-header">
+      <span class="data-card-title">🔔 Notifications récentes</span>
+      {% if notifications %}
+        <span style="font-size:0.78rem;color:var(--green);font-weight:600;">{{ notifications|length }} non lues</span>
+      {% endif %}
+    </div>
+    {% if notifications %}
+      {% for notif in notifications %}
+        <div class="notif-item">
+          <div class="notif-dot"></div>
+          <div>
+            <div class="notif-text">{{ notif.message }}</div>
+            <div class="notif-time">{{ notif.created_at|timesince }} ago</div>
+          </div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <p style="color:var(--gray);font-size:0.88rem;text-align:center;padding:20px 0;">
+        Aucune notification non lue.
+      </p>
+    {% endif %}
+  </div>
+
+  <!-- DERNIERS LISTINGS -->
+  <div class="data-card">
+    <div class="data-card-header">
+      <span class="data-card-title">♻️ Derniers déchets soumis</span>
+      <a href="{% url 'my_listings' %}" style="font-size:0.82rem;color:var(--green);text-decoration:none;">Tout voir →</a>
+    </div>
+    {% if recent_listings %}
+      <table class="data-table">
+        <thead>
+          <tr><th>Déchet</th><th>Statut</th><th>Date</th></tr>
+        </thead>
+        <tbody>
+          {% for listing in recent_listings %}
+          <tr>
+            <td style="display:flex;align-items:center;gap:10px;">
+              {% if listing.photo %}
+                <img src="{{ listing.photo.url }}" class="listing-thumb" alt="">
+              {% else %}
+                <div class="listing-thumb-placeholder">♻️</div>
+              {% endif %}
+              <span style="font-weight:600;">{{ listing.title|truncatechars:28 }}</span>
+            </td>
+            <td>
+              <span class="status-badge status-{{ listing.status }}">{{ listing.get_status_display }}</span>
+            </td>
+            <td style="color:var(--gray);font-size:0.82rem;">{{ listing.created_at|date:"d/m/Y" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p style="color:var(--gray);font-size:0.88rem;text-align:center;padding:20px 0;">
+        Vous n'avez encore soumis aucun déchet.
+        <a href="{% url 'submit_waste' %}" style="color:var(--green);">Commencer →</a>
+      </p>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

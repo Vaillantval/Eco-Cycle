@@ -1,0 +1,165 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}EcoCycle Haiti — Recyclez, Gagnez, Impactez{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}Plateforme de recyclage intelligent en Haïti. Vendez vos déchets, suivez votre impact environnemental et contribuez à l'économie circulaire.{% endblock %}">
+  <meta name="keywords" content="recyclage Haïti, déchets, économie circulaire, EcoCycle, plastique, métal">
+  <meta name="author" content="EcoCycle Haiti">
+  <meta name="robots" content="index, follow">
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="EcoCycle Haiti">
+  <meta property="og:title" content="{% block og_title %}EcoCycle Haiti — Recyclez, Gagnez, Impactez{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}Plateforme de recyclage intelligent en Haïti.{% endblock %}">
+  <meta property="og:image" content="{% block og_image %}{% static 'img/og-default.png' %}{% endblock %}">
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{% block tw_title %}EcoCycle Haiti{% endblock %}">
+  <meta name="twitter:description" content="{% block tw_description %}Recyclez intelligemment en Haïti.{% endblock %}">
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♻️</text></svg>">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/main.css' %}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-container">
+      <a href="{% url 'home' %}" class="nav-logo">
+        <div class="nav-logo-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+            <path d="M7 16.5C4.2 15 2 12.3 2 9a7 7 0 0 1 14 0"/>
+            <path d="M17 16.5C19.8 15 22 12.3 22 9"/>
+            <path d="M12 22v-7"/>
+            <path d="M9 19l3-3 3 3"/>
+          </svg>
+        </div>
+        <span>EcoCycle</span>
+      </a>
+
+      <ul class="nav-menu" id="mobileMenu">
+        <li><a href="{% url 'home' %}">Accueil</a></li>
+        <li><a href="{% url 'marketplace' %}">Marketplace</a></li>
+        <li><a href="{% url 'blog_list' %}">Blog</a></li>
+        <li><a href="{% url 'academy_list' %}">Academy</a></li>
+        <li><a href="{% url 'home' %}#contact">Contact</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        {% if request.session.user_id %}
+          <div class="user-menu">
+            <span class="user-name">{{ request.session.user_name }}</span>
+            <a href="{% url 'dashboard' %}" class="btn btn-outline">Dashboard</a>
+            {% if request.session.user_role == 'admin' %}
+              <a href="{% url 'admin_panel' %}" class="btn btn-warning">Admin</a>
+            {% endif %}
+            <a href="{% url 'web_logout' %}" class="btn btn-ghost">Déconnexion</a>
+          </div>
+        {% else %}
+          <a href="{% url 'web_login' %}" class="btn btn-outline">Connexion</a>
+          <a href="{% url 'web_register' %}" class="btn btn-primary">S'inscrire</a>
+        {% endif %}
+      </div>
+
+      <button class="hamburger" id="hamburger" onclick="toggleMenu()">☰</button>
+    </div>
+  </nav>
+
+  <!-- MESSAGES FLASH -->
+  {% if messages %}
+    <div class="messages-container">
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+          {{ message }}
+          <button class="alert-close" onclick="this.parentElement.remove()">×</button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <!-- CONTENU PRINCIPAL -->
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <div class="nav-logo" style="display:inline-flex; margin-bottom: 16px;">
+            <div class="nav-logo-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+                <path d="M7 16.5C4.2 15 2 12.3 2 9a7 7 0 0 1 14 0"/>
+                <path d="M17 16.5C19.8 15 22 12.3 22 9"/>
+                <path d="M12 22v-7"/>
+                <path d="M9 19l3-3 3 3"/>
+              </svg>
+            </div>
+            <span style="font-family:var(--font-display);font-weight:800;color:white;font-size:1.2rem;margin-left:10px;">EcoCycle</span>
+          </div>
+          <p>Transformez vos déchets en ressources. Achetez et vendez des matériaux recyclables via notre marketplace d'enchères de confiance. Révolutionnons le recyclage en Haïti.</p>
+          <div class="footer-social">
+            <a href="#" class="social-link">📘</a>
+            <a href="#" class="social-link">🐦</a>
+            <a href="#" class="social-link">📸</a>
+            <a href="#" class="social-link">💼</a>
+          </div>
+        </div>
+        <div class="footer-col">
+          <h5>Liens rapides</h5>
+          <ul class="footer-links">
+            <li><a href="{% url 'home' %}#how">Comment ça marche</a></li>
+            <li><a href="{% url 'home' %}#features">Fonctionnalités</a></li>
+            <li><a href="{% url 'marketplace' %}">Marketplace</a></li>
+            <li><a href="{% url 'academy_list' %}">Formation</a></li>
+            <li><a href="{% url 'blog_list' %}">Blog</a></li>
+            <li><a href="{% url 'home' %}#contact">Contact</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h5>Catégories</h5>
+          <ul class="footer-links">
+            <li><a href="{% url 'marketplace' %}?category=plastic">Plastiques</a></li>
+            <li><a href="{% url 'marketplace' %}?category=metal">Métaux</a></li>
+            <li><a href="{% url 'marketplace' %}?category=paper">Papier</a></li>
+            <li><a href="{% url 'marketplace' %}?category=electronics">Électronique</a></li>
+            <li><a href="{% url 'marketplace' %}?category=glass">Verre</a></li>
+            <li><a href="{% url 'marketplace' %}?category=tires">Pneus</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h5>Compte</h5>
+          <ul class="footer-links">
+            {% if request.session.user_id %}
+              <li><a href="{% url 'dashboard' %}">Mon Dashboard</a></li>
+              <li><a href="{% url 'web_logout' %}">Déconnexion</a></li>
+            {% else %}
+              <li><a href="{% url 'web_register' %}">S'inscrire</a></li>
+              <li><a href="{% url 'web_login' %}">Se connecter</a></li>
+              <li><a href="{% url 'dashboard' %}">Mon Dashboard</a></li>
+            {% endif %}
+            <li><a href="/api/docs/">Documentation API</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2026 EcoCycle Haiti. Tous droits réservés. Créé par Eliézer Léonce.</p>
+        <div class="footer-bottom-links">
+          <a href="#">Politique de confidentialité</a>
+          <a href="#">Conditions d'utilisation</a>
+          <a href="#">Cookies</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="{% static 'js/main.js' %}"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

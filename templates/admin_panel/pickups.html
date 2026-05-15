@@ -1,0 +1,80 @@
+{% extends 'admin_panel/base_admin.html' %}
+
+{% block title %}Ramassages — Admin EcoCycle{% endblock %}
+{% block page_title %}Ramassages{% endblock %}
+
+{% block topbar_actions %}
+<span style="font-size:0.82rem;color:#64748b;">{{ pickups|length }} ramassage{{ pickups|length|pluralize }}</span>
+{% endblock %}
+
+{% block admin_content %}
+
+<!-- FILTRES -->
+<div class="filter-bar">
+  <a href="{% url 'admin_pickups' %}" class="filter-btn {% if not status_filter %}active{% endif %}">Tous</a>
+  {% for value, label in status_choices %}
+  <a href="{% url 'admin_pickups' %}?status={{ value }}"
+     class="filter-btn {% if status_filter == value %}active{% endif %}">{{ label }}</a>
+  {% endfor %}
+</div>
+
+<div class="admin-card">
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>Utilisateur</th>
+        <th>Date souhaitée</th>
+        <th>Créneau</th>
+        <th>Ville</th>
+        <th>Statut</th>
+        <th>Collecteur</th>
+        <th>Assigner</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for pickup in pickups %}
+      <tr>
+        <td>
+          <div style="font-weight:600;font-size:0.84rem;color:#0f172a;">{{ pickup.user.full_name }}</div>
+          <div style="font-size:0.72rem;color:#94a3b8;">{{ pickup.user.email }}</div>
+        </td>
+        <td style="font-weight:600;font-size:0.84rem;">{{ pickup.preferred_date|date:"d/m/Y" }}</td>
+        <td style="font-size:0.82rem;color:#64748b;">{{ pickup.get_preferred_slot_display }}</td>
+        <td style="font-size:0.82rem;color:#64748b;">{{ pickup.city }}</td>
+        <td><span class="status-badge status-{{ pickup.status }}">{{ pickup.get_status_display }}</span></td>
+        <td style="font-size:0.82rem;">
+          {% if pickup.collector %}
+            <span style="font-weight:600;color:#15803d;">{{ pickup.collector.full_name }}</span>
+          {% else %}
+            <span style="color:#ef4444;font-size:0.78rem;">Non assigné</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if pickup.status == 'requested' or pickup.status == 'assigned' %}
+          <form method="POST" action="{% url 'admin_pickups' %}" style="display:flex;gap:6px;align-items:center;">
+            {% csrf_token %}
+            <input type="hidden" name="pickup_id" value="{{ pickup.id }}">
+            <select name="collector_id" style="font-size:0.75rem;padding:4px 8px;border:1px solid #e2e8f0;border-radius:6px;background:white;">
+              <option value="">— Collecteur —</option>
+              {% for c in collectors %}
+              <option value="{{ c.id }}" {% if pickup.collector_id == c.id %}selected{% endif %}>{{ c.full_name }}</option>
+              {% endfor %}
+            </select>
+            <button type="submit" class="btn-admin-sm btn-approve">Assigner</button>
+          </form>
+          {% else %}
+          <span style="font-size:0.75rem;color:#94a3b8;">—</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="7" style="text-align:center;padding:48px;color:#94a3b8;">
+          Aucun ramassage{% if status_filter %} avec ce statut{% endif %}.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

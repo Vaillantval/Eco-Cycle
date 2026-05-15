@@ -1,54 +1,87 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import permissions, status
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib import messages
 from .models import ContactMessage, NewsletterSubscriber
 from .serializers import ContactMessageSerializer, NewsletterSerializer
 
 
+def _is_html_request(request):
+    return 'application/x-www-form-urlencoded' in request.content_type or \
+           'multipart/form-data' in request.content_type
+
+
 class ContactView(APIView):
-    """POST /api/contact/"""
+    """POST /api/contact/ ou /contact/ (web form)"""
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
         serializer = ContactMessageSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        if not serializer.is_valid():
+            if _is_html_request(request):
+                messages.error(request, 'Erreur dans le formulaire. Vérifiez vos données.')
+                return redirect('home')
+            serializer.is_valid(raise_exception=True)
+
         message = serializer.save()
 
         from apps.notifications.email_service import EmailService
         from apps.accounts.models import User
         admins = User.objects.filter(role='admin', is_active=True)
         for admin in admins:
-            EmailService._send(
-                admin.email,
-                f'[EcoCycle Contact] {message.subject}',
-                f'<p>De : {message.first_name} {message.last_name} ({message.email})</p>'
-                f'<p>{message.message}</p>',
-            )
+            try:
+                EmailService._send(
+                    admin.email,
+                    f'[EcoCycle Contact] {message.subject}',
+                    f'<p>De : {message.first_name} {message.last_name} ({message.email})</p>'
+                    f'<p>{message.message}</p>',
+                )
+            except Exception:
+                pass
+
+        if _is_html_request(request):
+            messages.success(request, 'Message envoyé avec succès ! Nous vous répondrons bientôt.')
+            return redirect('home')
         return Response({'message': 'Message envoyé avec succès.'}, status=status.HTTP_201_CREATED)
 
 
 class NewsletterSubscribeView(APIView):
-    """POST /api/newsletter/subscribe/"""
+    """POST /api/newsletter/subscribe/ ou /newsletter/subscribe/ (web form)"""
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
         serializer = NewsletterSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        if not serializer.is_valid():
+            if _is_html_request(request):
+                messages.error(request, 'Adresse email invalide.')
+                return redirect('home')
+            serializer.is_valid(raise_exception=True)
+
         email = serializer.validated_data['email']
         subscriber, created = NewsletterSubscriber.objects.get_or_create(email=email)
         if created or not subscriber.is_confirmed:
-            from apps.notifications.email_service import EmailService
-            EmailService.send_newsletter_confirmation(subscriber)
+            try:
+                from apps.notifications.email_service import EmailService
+                EmailService.send_newsletter_confirmation(subscriber)
+            except Exception:
+                pass
+
+        if _is_html_request(request):
+            messages.success(request, "Inscription enregistrée ! Vérifiez votre email pour confirmer.")
+            return redirect('home')
         return Response({'message': "Vérifiez votre email pour confirmer l'abonnement."})
 
 
 class NewsletterConfirmView(APIView):
-    """GET /api/newsletter/confirm/<token>/"""
+    """GET /api/newsletter/confirm/<token>/ ou /newsletter/confirm/<token>/"""
     permission_classes = [permissions.AllowAny]
 
     def get(self, request, token):
         subscriber = get_object_or_404(NewsletterSubscriber, token=token)
         subscriber.is_confirmed = True
         subscriber.save()
+        if 'text/html' in request.META.get('HTTP_ACCEPT', ''):
+            messages.success(request, 'Abonnement confirmé ! Bienvenue dans la communauté EcoCycle.')
+            return redirect('home')
         return Response({'message': 'Abonnement confirmé !'})

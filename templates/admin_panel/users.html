@@ -1,0 +1,107 @@
+{% extends 'admin_panel/base_admin.html' %}
+
+{% block title %}Utilisateurs — Admin EcoCycle{% endblock %}
+{% block page_title %}Utilisateurs{% endblock %}
+
+{% block topbar_actions %}
+<span style="font-size:0.82rem;color:#64748b;">{{ users|length }} utilisateur{{ users|length|pluralize }}</span>
+{% endblock %}
+
+{% block admin_content %}
+
+<!-- FILTRES PAR RÔLE -->
+<div class="filter-bar">
+  <a href="{% url 'admin_users' %}" class="filter-btn {% if not role_filter %}active{% endif %}">Tous</a>
+  {% for value, label in role_choices %}
+  <a href="{% url 'admin_users' %}?role={{ value }}"
+     class="filter-btn {% if role_filter == value %}active{% endif %}">{{ label }}</a>
+  {% endfor %}
+</div>
+
+<div class="admin-card">
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>Utilisateur</th>
+        <th>Email</th>
+        <th>Rôle</th>
+        <th>Statut</th>
+        <th>Email vérifié</th>
+        <th>Inscrit le</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in users %}
+      <tr>
+        <td>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:32px;height:32px;border-radius:50%;background:{% if u.role == 'admin' %}#f07c1a{% elif u.role == 'collector' %}#0d7a45{% else %}#64748b{% endif %};
+                        display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:700;color:white;flex-shrink:0;">
+              {{ u.first_name|slice:":1" }}{{ u.last_name|slice:":1" }}
+            </div>
+            <div>
+              <div style="font-weight:600;font-size:0.84rem;color:#0f172a;">{{ u.full_name }}</div>
+              {% if u.city %}<div style="font-size:0.72rem;color:#94a3b8;">{{ u.city }}</div>{% endif %}
+            </div>
+          </div>
+        </td>
+        <td style="font-size:0.82rem;color:#64748b;">{{ u.email }}</td>
+        <td>
+          <span style="font-size:0.75rem;font-weight:600;padding:2px 10px;border-radius:10px;
+                       {% if u.role == 'admin' %}background:#fff7ed;color:#c2410c;
+                       {% elif u.role == 'collector' %}background:#f0fdf4;color:#15803d;
+                       {% else %}background:#f8fafc;color:#475569;{% endif %}">
+            {{ u.get_role_display }}
+          </span>
+        </td>
+        <td>
+          {% if u.is_active %}
+            <span style="font-size:0.75rem;color:#15803d;font-weight:600;">● Actif</span>
+          {% else %}
+            <span style="font-size:0.75rem;color:#dc2626;font-weight:600;">● Inactif</span>
+          {% endif %}
+        </td>
+        <td style="font-size:0.82rem;">
+          {% if u.is_email_verified %}✅{% else %}⏳{% endif %}
+        </td>
+        <td style="font-size:0.78rem;color:#94a3b8;">{{ u.created_at|date:"d/m/Y" }}</td>
+        <td>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            <!-- Toggle actif/inactif -->
+            <form method="POST" action="{% url 'admin_users' %}" style="display:inline;">
+              {% csrf_token %}
+              <input type="hidden" name="user_id" value="{{ u.id }}">
+              <input type="hidden" name="action" value="toggle_active">
+              <button type="submit" class="btn-admin-sm {% if u.is_active %}btn-reject{% else %}btn-approve{% endif %}"
+                      title="{% if u.is_active %}Désactiver{% else %}Activer{% endif %}">
+                {% if u.is_active %}Désactiver{% else %}Activer{% endif %}
+              </button>
+            </form>
+
+            <!-- Changer rôle -->
+            <form method="POST" action="{% url 'admin_users' %}" style="display:flex;gap:4px;align-items:center;">
+              {% csrf_token %}
+              <input type="hidden" name="user_id" value="{{ u.id }}">
+              <input type="hidden" name="action" value="change_role">
+              <select name="new_role" style="font-size:0.72rem;padding:3px 6px;border:1px solid #e2e8f0;border-radius:5px;">
+                {% for value, label in role_choices %}
+                <option value="{{ value }}" {% if u.role == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+              <button type="submit" class="btn-admin-sm btn-view">✓</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="7" style="text-align:center;padding:48px;color:#94a3b8;">
+          Aucun utilisateur{% if role_filter %} avec ce rôle{% endif %}.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

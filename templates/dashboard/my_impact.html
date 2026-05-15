@@ -1,0 +1,96 @@
+{% extends 'dashboard/base_dashboard.html' %}
+
+{% block title %}Mon impact — EcoCycle Haiti{% endblock %}
+
+{% block dashboard_content %}
+<div class="dashboard-header">
+  <div>
+    <h1 class="dashboard-title">🌱 Mon impact environnemental</h1>
+    <p class="dashboard-subtitle">Votre contribution à l'économie circulaire d'Haïti</p>
+  </div>
+</div>
+
+<!-- STATS IMPACT -->
+<div class="stats-grid-dash" style="margin-bottom:28px;">
+  <div class="stat-card">
+    <div class="stat-card-icon">♻️</div>
+    <div class="stat-card-value">{{ summary.total_kg_recycled|floatformat:1 }}</div>
+    <div class="stat-card-label">kg recyclés</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-icon">💨</div>
+    <div class="stat-card-value">{{ summary.total_co2_saved_kg|floatformat:2 }}</div>
+    <div class="stat-card-label">kg CO₂ économisés</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-icon">📦</div>
+    <div class="stat-card-value">{{ records|length }}</div>
+    <div class="stat-card-label">transactions récentes</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-icon">🏆</div>
+    <div class="stat-card-value">{% if summary.community_rank %}#{{ summary.community_rank }}{% else %}—{% endif %}</div>
+    <div class="stat-card-label">Rang communauté</div>
+  </div>
+</div>
+
+<!-- PROGRESSION CO2 -->
+{% if summary.total_kg_recycled > 0 %}
+<div class="data-card" style="margin-bottom:24px;">
+  <div class="data-card-title" style="margin-bottom:20px;">📊 Progression</div>
+  <div class="impact-bar-row">
+    <span class="impact-bar-label">kg recyclés</span>
+    <div class="impact-bar-track">
+      <div class="impact-bar-fill" style="width:{% widthratio summary.total_kg_recycled 1000 100 %}%"></div>
+    </div>
+    <span class="impact-bar-value">{{ summary.total_kg_recycled|floatformat:1 }}</span>
+  </div>
+  <div class="impact-bar-row">
+    <span class="impact-bar-label">CO₂ économisé</span>
+    <div class="impact-bar-track">
+      <div class="impact-bar-fill" style="width:{% widthratio summary.total_co2_saved_kg 500 100 %}%;background:var(--orange)"></div>
+    </div>
+    <span class="impact-bar-value">{{ summary.total_co2_saved_kg|floatformat:1 }}</span>
+  </div>
+</div>
+{% endif %}
+
+<!-- HISTORIQUE -->
+<div class="data-card">
+  <div class="data-card-title" style="margin-bottom:16px;">🕐 Historique des transactions</div>
+  {% if records %}
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Matériau</th>
+          <th>kg recyclés</th>
+          <th>CO₂ économisé</th>
+          <th>Type</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for record in records %}
+        <tr>
+          <td style="font-weight:600;">{{ record.category_slug|title }}</td>
+          <td style="color:var(--green);font-weight:600;">{{ record.kg_recycled }} kg</td>
+          <td style="color:#2563eb;font-weight:600;">{{ record.co2_saved_kg }} kg</td>
+          <td>
+            <span class="status-badge {% if record.source == 'auction' %}status-sold{% else %}status-completed{% endif %}">
+              {{ record.source|title }}
+            </span>
+          </td>
+          <td style="color:var(--gray);font-size:0.82rem;">{{ record.created_at|date:"d/m/Y" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div style="text-align:center;padding:32px;color:var(--gray);">
+      <div style="font-size:2.5rem;margin-bottom:12px;">🌱</div>
+      <p>Aucune transaction enregistrée pour l'instant.</p>
+      <p style="font-size:0.85rem;margin-top:8px;">Soumettez votre premier déchet pour commencer à mesurer votre impact !</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

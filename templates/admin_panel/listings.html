@@ -1,0 +1,76 @@
+{% extends 'admin_panel/base_admin.html' %}
+
+{% block title %}Listings — Admin EcoCycle{% endblock %}
+{% block page_title %}Listings{% endblock %}
+
+{% block topbar_actions %}
+<span style="font-size:0.82rem;color:#64748b;">{{ listings|length }} listing{{ listings|length|pluralize }}</span>
+{% endblock %}
+
+{% block admin_content %}
+
+<!-- FILTRES -->
+<div class="filter-bar">
+  <a href="{% url 'admin_listings' %}" class="filter-btn {% if not status_filter %}active{% endif %}">Tous</a>
+  {% for value, label in status_choices %}
+  <a href="{% url 'admin_listings' %}?status={{ value }}"
+     class="filter-btn {% if status_filter == value %}active{% endif %}">{{ label }}</a>
+  {% endfor %}
+</div>
+
+<div class="admin-card">
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>Listing</th>
+        <th>Utilisateur</th>
+        <th>Catégorie</th>
+        <th>Poids</th>
+        <th>Valeur IA</th>
+        <th>Statut</th>
+        <th>Soumis le</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for listing in listings %}
+      <tr>
+        <td>
+          <div style="display:flex;align-items:center;gap:10px;">
+            {% if listing.photo_url %}
+              <img src="{{ listing.photo_url }}" class="listing-thumb" alt="">
+            {% else %}
+              <div class="listing-thumb-placeholder">♻️</div>
+            {% endif %}
+            <div>
+              <div style="font-weight:600;color:#0f172a;font-size:0.84rem;">{{ listing.title|truncatechars:36 }}</div>
+              <div style="color:#94a3b8;font-size:0.72rem;">{{ listing.city|default:"—" }}</div>
+            </div>
+          </div>
+        </td>
+        <td>
+          <div style="font-size:0.82rem;font-weight:500;color:#334155;">{{ listing.user.full_name }}</div>
+          <div style="font-size:0.72rem;color:#94a3b8;">{{ listing.user.email }}</div>
+        </td>
+        <td style="font-size:0.82rem;color:#64748b;">{{ listing.category.name|default:"—" }}</td>
+        <td style="font-size:0.82rem;font-weight:600;">{{ listing.quantity_kg }} kg</td>
+        <td style="font-size:0.82rem;color:var(--green);">
+          {% if listing.ai_estimated_value %}{{ listing.ai_estimated_value }} HTG{% else %}—{% endif %}
+        </td>
+        <td><span class="status-badge status-{{ listing.status }}">{{ listing.get_status_display }}</span></td>
+        <td style="font-size:0.78rem;color:#94a3b8;">{{ listing.created_at|date:"d/m/Y" }}</td>
+        <td>
+          <a href="{% url 'admin_review_listing' listing.id %}" class="btn-admin-sm btn-view">Réviser</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="8" style="text-align:center;padding:48px;color:#94a3b8;">
+          Aucun listing{% if status_filter %} avec ce statut{% endif %}.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

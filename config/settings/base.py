@@ -18,6 +18,7 @@ INSTALLED_APPS = [
 
     # Third-party
     'rest_framework',
+    'drf_spectacular',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
@@ -37,6 +38,7 @@ INSTALLED_APPS = [
     'apps.academy',
     'apps.blog',
     'apps.core',
+    'web',
 ]
 
 MIDDLEWARE = [
@@ -64,6 +66,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'web.context_processors.admin_badges',
             ],
         },
     },
@@ -111,6 +114,7 @@ CLOUDINARY_STORAGE = {
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
@@ -133,6 +137,15 @@ REST_FRAMEWORK = {
         'user': '1000/day',
         'ai_analysis': '20/hour',
     },
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'EcoCycle Haiti API',
+    'DESCRIPTION': 'API REST pour la plateforme de recyclage intelligent EcoCycle Haiti.',
+    'VERSION': 'v1',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+    'SECURITY': [{'BearerAuth': []}],
 }
 
 SIMPLE_JWT = {
@@ -169,3 +182,12 @@ FIREBASE_CREDENTIALS_PATH = config('FIREBASE_CREDENTIALS_PATH', default='firebas
 FIREBASE_CREDENTIALS_B64 = config('FIREBASE_CREDENTIALS_B64', default='')
 FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:8000')
 ADMIN_EMAIL = config('ADMIN_EMAIL', default='admin@ecocycle.ht')
+
+MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
+
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/dashboard/'
+LOGOUT_REDIRECT_URL = '/'
+
+SESSION_COOKIE_AGE = 86400 * 7
+SESSION_COOKIE_HTTPONLY = True

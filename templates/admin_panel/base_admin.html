@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Panel Admin — EcoCycle Haiti{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/main.css">
+  <link rel="stylesheet" href="/static/css/dashboard.css">
+  <style>
+    .admin-layout { display:grid; grid-template-columns:240px 1fr; min-height:100vh; }
+
+    .admin-sidebar {
+      background:#0f172a;
+      color:#e2e8f0;
+      padding:0;
+      position:sticky;
+      top:0;
+      height:100vh;
+      overflow-y:auto;
+      display:flex;
+      flex-direction:column;
+    }
+
+    .admin-sidebar-brand {
+      padding:20px 20px 16px;
+      border-bottom:1px solid #1e293b;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .admin-sidebar-brand .brand-icon {
+      width:34px; height:34px;
+      background:var(--orange);
+      border-radius:8px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:1rem;
+    }
+    .admin-sidebar-brand span {
+      font-family:var(--font-display);
+      font-weight:700;
+      font-size:1rem;
+      color:#f1f5f9;
+    }
+    .admin-sidebar-brand small {
+      display:block;
+      font-size:0.65rem;
+      color:#f07c1a;
+      text-transform:uppercase;
+      letter-spacing:1px;
+      font-weight:600;
+    }
+
+    .admin-sidebar-user {
+      padding:14px 20px;
+      border-bottom:1px solid #1e293b;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .admin-avatar {
+      width:36px; height:36px;
+      border-radius:50%;
+      background:var(--orange);
+      display:flex; align-items:center; justify-content:center;
+      font-family:var(--font-display);
+      font-weight:700;
+      color:white;
+      font-size:0.85rem;
+      flex-shrink:0;
+    }
+    .admin-sidebar-user .user-info small {
+      font-size:0.7rem;
+      color:#64748b;
+      text-transform:uppercase;
+      letter-spacing:0.5px;
+    }
+    .admin-sidebar-user .user-info div {
+      font-size:0.82rem;
+      font-weight:600;
+      color:#e2e8f0;
+    }
+
+    .admin-nav { padding:10px 0; flex:1; }
+    .admin-nav-section {
+      padding:8px 20px 4px;
+      font-size:0.65rem;
+      text-transform:uppercase;
+      letter-spacing:1px;
+      color:#475569;
+      font-weight:600;
+    }
+    .admin-nav a {
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:9px 20px;
+      color:#94a3b8;
+      text-decoration:none;
+      font-size:0.85rem;
+      font-weight:500;
+      transition:all 0.15s;
+      border-left:3px solid transparent;
+    }
+    .admin-nav a:hover { background:#1e293b; color:#e2e8f0; }
+    .admin-nav a.active { background:#1e293b; color:#fff; border-left-color:var(--orange); }
+    .admin-nav a .nav-icon { font-size:1rem; width:20px; text-align:center; }
+    .admin-nav a .nav-badge {
+      margin-left:auto;
+      background:#ef4444;
+      color:white;
+      font-size:0.65rem;
+      font-weight:700;
+      padding:1px 6px;
+      border-radius:10px;
+    }
+
+    .admin-sidebar-footer {
+      padding:14px 20px;
+      border-top:1px solid #1e293b;
+      display:flex;
+      gap:8px;
+    }
+    .admin-sidebar-footer a {
+      font-size:0.78rem;
+      color:#64748b;
+      text-decoration:none;
+      display:flex;
+      align-items:center;
+      gap:5px;
+    }
+    .admin-sidebar-footer a:hover { color:#e2e8f0; }
+
+    .admin-content {
+      background:#f8fafc;
+      min-height:100vh;
+      display:flex;
+      flex-direction:column;
+    }
+
+    .admin-topbar {
+      background:white;
+      border-bottom:1px solid #e2e8f0;
+      padding:14px 28px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      position:sticky;
+      top:0;
+      z-index:100;
+    }
+    .admin-topbar h1 {
+      font-family:var(--font-display);
+      font-size:1.15rem;
+      font-weight:700;
+      color:#0f172a;
+      margin:0;
+    }
+    .admin-topbar-actions { display:flex; align-items:center; gap:12px; }
+
+    .admin-main { padding:24px 28px; flex:1; }
+
+    .admin-stat-grid {
+      display:grid;
+      grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));
+      gap:16px;
+      margin-bottom:28px;
+    }
+    .admin-stat {
+      background:white;
+      border-radius:10px;
+      padding:18px 20px;
+      border:1px solid #e2e8f0;
+    }
+    .admin-stat-label {
+      font-size:0.72rem;
+      text-transform:uppercase;
+      letter-spacing:0.5px;
+      color:#64748b;
+      font-weight:600;
+      margin-bottom:6px;
+    }
+    .admin-stat-value {
+      font-family:var(--font-display);
+      font-size:1.8rem;
+      font-weight:800;
+      color:#0f172a;
+      line-height:1;
+    }
+    .admin-stat-sub {
+      font-size:0.72rem;
+      color:#94a3b8;
+      margin-top:4px;
+    }
+    .admin-stat.alert-stat { border-left:3px solid #ef4444; }
+    .admin-stat.alert-stat .admin-stat-value { color:#ef4444; }
+
+    .admin-card {
+      background:white;
+      border-radius:10px;
+      border:1px solid #e2e8f0;
+      overflow:hidden;
+      margin-bottom:20px;
+    }
+    .admin-card-header {
+      padding:14px 20px;
+      border-bottom:1px solid #f1f5f9;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+    }
+    .admin-card-title {
+      font-family:var(--font-display);
+      font-weight:700;
+      font-size:0.92rem;
+      color:#0f172a;
+    }
+
+    .admin-table { width:100%; border-collapse:collapse; font-size:0.84rem; }
+    .admin-table thead th {
+      text-align:left;
+      padding:10px 16px;
+      font-size:0.72rem;
+      text-transform:uppercase;
+      letter-spacing:0.5px;
+      color:#64748b;
+      font-weight:600;
+      border-bottom:1px solid #f1f5f9;
+      background:#f8fafc;
+    }
+    .admin-table tbody td {
+      padding:12px 16px;
+      border-bottom:1px solid #f8fafc;
+      color:#334155;
+      vertical-align:middle;
+    }
+    .admin-table tbody tr:hover { background:#fafafa; }
+    .admin-table tbody tr:last-child td { border-bottom:none; }
+
+    .filter-bar {
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-bottom:16px;
+    }
+    .filter-btn {
+      padding:5px 14px;
+      border-radius:20px;
+      border:1px solid #e2e8f0;
+      background:white;
+      font-size:0.78rem;
+      color:#64748b;
+      cursor:pointer;
+      text-decoration:none;
+      font-weight:500;
+      transition:all 0.15s;
+    }
+    .filter-btn:hover { border-color:#0d7a45; color:#0d7a45; }
+    .filter-btn.active { background:#0d7a45; color:white; border-color:#0d7a45; }
+
+    .btn-admin-sm {
+      padding:4px 12px;
+      border-radius:6px;
+      font-size:0.75rem;
+      font-weight:600;
+      border:none;
+      cursor:pointer;
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+      transition:all 0.15s;
+    }
+    .btn-approve { background:#dcfce7; color:#15803d; }
+    .btn-approve:hover { background:#bbf7d0; }
+    .btn-reject  { background:#fee2e2; color:#dc2626; }
+    .btn-reject:hover  { background:#fecaca; }
+    .btn-view    { background:#f1f5f9; color:#334155; }
+    .btn-view:hover    { background:#e2e8f0; }
+    .btn-admin-primary { background:#0f172a; color:white; }
+    .btn-admin-primary:hover { background:#1e293b; }
+
+    .listing-thumb {
+      width:44px; height:44px;
+      border-radius:6px;
+      object-fit:cover;
+      background:#f1f5f9;
+      flex-shrink:0;
+    }
+    .listing-thumb-placeholder {
+      width:44px; height:44px;
+      border-radius:6px;
+      background:#f1f5f9;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:1.2rem;
+    }
+  </style>
+</head>
+<body style="margin:0;background:#f8fafc;">
+
+<div class="admin-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="admin-sidebar">
+    <div class="admin-sidebar-brand">
+      <div class="brand-icon">♻️</div>
+      <div>
+        <span>EcoCycle</span>
+        <small>Admin Panel</small>
+      </div>
+    </div>
+
+    <div class="admin-sidebar-user">
+      <div class="admin-avatar">
+        {{ user.first_name|slice:":1" }}{{ user.last_name|slice:":1" }}
+      </div>
+      <div class="user-info">
+        <small>Administrateur</small>
+        <div>{{ user.first_name }}</div>
+      </div>
+    </div>
+
+    <nav class="admin-nav">
+      <div class="admin-nav-section">Vue d'ensemble</div>
+      <a href="{% url 'admin_panel' %}"
+         class="{% if request.resolver_match.url_name == 'admin_panel' %}active{% endif %}">
+        <span class="nav-icon">📊</span> Dashboard
+      </a>
+
+      <div class="admin-nav-section">Contenu</div>
+      <a href="{% url 'admin_listings' %}"
+         class="{% if request.resolver_match.url_name == 'admin_listings' or request.resolver_match.url_name == 'admin_review_listing' %}active{% endif %}">
+        <span class="nav-icon">📦</span> Listings
+        {% if pending_listings_count %}<span class="nav-badge">{{ pending_listings_count }}</span>{% endif %}
+      </a>
+      <a href="{% url 'admin_pickups' %}"
+         class="{% if request.resolver_match.url_name == 'admin_pickups' %}active{% endif %}">
+        <span class="nav-icon">🚚</span> Ramassages
+        {% if pending_pickups_count %}<span class="nav-badge">{{ pending_pickups_count }}</span>{% endif %}
+      </a>
+      <a href="{% url 'admin_orders' %}"
+         class="{% if request.resolver_match.url_name == 'admin_orders' %}active{% endif %}">
+        <span class="nav-icon">🛒</span> Commandes
+      </a>
+
+      <div class="admin-nav-section">Utilisateurs</div>
+      <a href="{% url 'admin_users' %}"
+         class="{% if request.resolver_match.url_name == 'admin_users' %}active{% endif %}">
+        <span class="nav-icon">👥</span> Utilisateurs
+      </a>
+    </nav>
+
+    <div class="admin-sidebar-footer">
+      <a href="{% url 'dashboard' %}">🏠 Dashboard</a>
+      <a href="{% url 'web_logout' %}" style="margin-left:auto;">🚪 Déconnexion</a>
+    </div>
+  </aside>
+
+  <!-- CONTENU -->
+  <div class="admin-content">
+
+    <div class="admin-topbar">
+      <h1>{% block page_title %}Panel Admin{% endblock %}</h1>
+      <div class="admin-topbar-actions">
+        {% block topbar_actions %}{% endblock %}
+      </div>
+    </div>
+
+    {% if messages %}
+    <div style="padding:12px 28px 0;">
+      {% for message in messages %}
+      <div style="padding:10px 16px;border-radius:8px;margin-bottom:8px;font-size:0.85rem;font-weight:500;
+                  {% if message.tags == 'success' %}background:#dcfce7;color:#15803d;
+                  {% elif message.tags == 'warning' %}background:#fef9c3;color:#92400e;
+                  {% elif message.tags == 'error' %}background:#fee2e2;color:#dc2626;
+                  {% else %}background:#e0f2fe;color:#0369a1;{% endif %}">
+        {{ message }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <main class="admin-main">
+      {% block admin_content %}{% endblock %}
+    </main>
+
+  </div>
+</div>
+
+</body>
+</html>

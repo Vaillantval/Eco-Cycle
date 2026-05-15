@@ -1,0 +1,703 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}EcoCycle Haiti — Recyclez, Gagnez, Impactez{% endblock %}
+
+{% block content %}
+
+<!-- ══ HERO ══ -->
+<section id="hero">
+  <div class="hero-bg-pattern"></div>
+  <div class="hero-grid-overlay"></div>
+  <div class="container">
+    <div class="hero-inner">
+      <div class="hero-content reveal">
+        <div class="hero-badge">
+          <span class="hero-badge-dot"></span>
+          <span>🇭🇹 Pionnier du Recyclage en Haïti</span>
+        </div>
+        <h1 class="hero-title">Transformez Vos Déchets<br>En <span>Trésor</span></h1>
+        <p class="hero-desc">Achetez et vendez des matériaux recyclables via des enchères sécurisées. Rejoignez l'économie circulaire d'Haïti et transformez les déchets en ressources précieuses — propulsé par l'IA.</p>
+        <div class="hero-btns">
+          <a href="{% url 'marketplace' %}" class="btn-primary">🛒 Voir les Enchères</a>
+          <a href="{% url 'web_register' %}" class="btn-secondary">Commencer à Vendre →</a>
+        </div>
+        <div class="hero-stats">
+          <div class="hero-stat-item">
+            <span class="hero-stat-num">{{ stats.total_kg_recycled|default:"0" }}+</span>
+            <span class="hero-stat-label">kg Recyclés</span>
+          </div>
+          <div class="hero-stat-divider"></div>
+          <div class="hero-stat-item">
+            <span class="hero-stat-num">{{ stats.total_users|default:"0" }}+</span>
+            <span class="hero-stat-label">Utilisateurs Actifs</span>
+          </div>
+          <div class="hero-stat-divider"></div>
+          <div class="hero-stat-item">
+            <span class="hero-stat-num">{{ stats.total_collections|default:"0" }}+</span>
+            <span class="hero-stat-label">Collectes Réalisées</span>
+          </div>
+        </div>
+      </div>
+      <div class="hero-visual reveal">
+        <div class="hero-card hero-card-top">
+          <div class="hero-card-label">Enchères actives</div>
+          <div class="hero-card-value"><span class="dot"></span> {{ featured_auctions|length }} En Direct</div>
+        </div>
+        <div class="hero-phone">
+          <div class="hero-phone-screen">
+            <div class="hero-phone-header">
+              <h4>🤖 Analyse IA des Déchets</h4>
+              <p>Pointez la caméra sur vos déchets</p>
+            </div>
+            <div class="hero-phone-scan">
+              <div class="scan-circle">
+                <svg viewBox="0 0 64 64" fill="none" stroke="white" stroke-width="2"><circle cx="32" cy="32" r="16"/><path d="M32 8v8M32 48v8M8 32h8M48 32h8"/><path d="M16 16l6 6M42 42l6 6M42 16l-6 6M22 42l-6 6"/></svg>
+              </div>
+              <div class="scan-label">Analyse en cours...</div>
+              <div class="scan-sublabel">Identifiez les matériaux recyclables<br>avec l'IA en quelques secondes</div>
+            </div>
+            <div class="hero-phone-footer">
+              <div class="pf-btn pf-btn-green">Planifier Ramassage</div>
+              <div class="pf-btn pf-btn-outline">Créer Enchère</div>
+            </div>
+          </div>
+        </div>
+        <div class="hero-card hero-card-bot">
+          <div class="hero-card-icon">♻️</div>
+          <div class="hero-card-label">Top Acheteur</div>
+          <div class="hero-card-value">{{ stats.total_collections|default:"0" }} Collectes</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ HOW IT WORKS ══ -->
+<section id="how">
+  <div class="container">
+    <div class="how-inner">
+      <div class="reveal">
+        <span class="tag">Processus</span>
+        <h2 class="section-title" style="margin-bottom:12px;">Comment fonctionne<br>EcoCycle</h2>
+        <p class="section-sub" style="margin-bottom:40px;">Rejoignez l'économie circulaire en quatre étapes simples — du scan de vos déchets à la transaction réussie.</p>
+        <div class="how-steps">
+          <div class="how-step active" data-step="0">
+            <div class="how-step-num">1</div>
+            <div class="how-step-body">
+              <h4>Scanner les Déchets</h4>
+              <p>Utilisez la caméra IA pour photographier vos matériaux recyclables. Notre modèle identifie le type et la valeur estimée instantanément.</p>
+            </div>
+          </div>
+          <div class="how-step" data-step="1">
+            <div class="how-step-num">2</div>
+            <div class="how-step-body">
+              <h4>Identifier avec l'IA</h4>
+              <p>Notre système intelligent catégorise plastique, métal, papier, électronique, verre et plus — avec 95%+ de précision.</p>
+            </div>
+          </div>
+          <div class="how-step" data-step="2">
+            <div class="how-step-num">3</div>
+            <div class="how-step-body">
+              <h4>Planifier ou Enchérir</h4>
+              <p>Réservez un ramassage ou créez une annonce d'enchère pour toucher des acheteurs vérifiés à travers Haïti.</p>
+            </div>
+          </div>
+          <div class="how-step" data-step="3">
+            <div class="how-step-num">4</div>
+            <div class="how-step-body">
+              <h4>Recycler & Être Payé</h4>
+              <p>Finalisez des transactions sécurisées, suivez votre impact environnemental, et gagnez sur des matériaux que vous jetiez.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="how-visual reveal" id="howVisual">
+        <div style="text-align:center;">
+          <div class="how-visual-icon" id="howIcon">📷</div>
+          <div class="how-visual-text" id="howTitle">Scanner IA</div>
+          <div class="how-visual-sub" id="howSub">Pointez votre téléphone sur n'importe quel déchet</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ FEATURES ══ -->
+<section id="features">
+  <div class="container">
+    <div class="features-header reveal">
+      <span class="tag green">Fonctionnalités</span>
+      <h2 class="section-title" style="margin-bottom:12px;">Tout ce qu'il faut<br>pour un Recyclage Intelligent</h2>
+      <p class="section-sub">Une plateforme complète connectant producteurs de déchets et recycleurs, propulsée par l'intelligence artificielle — conçue pour les besoins uniques d'Haïti.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card reveal">
+        <span class="feature-badge new">Nouveau</span>
+        <div class="feature-icon">🤖</div>
+        <h3>Identification IA des Déchets</h3>
+        <p>Scannez n'importe quel matériau avec votre caméra et obtenez une identification instantanée, une catégorie et une estimation de la valeur marchande.</p>
+      </div>
+      <div class="feature-card reveal">
+        <span class="feature-badge popular">Populaire</span>
+        <div class="feature-icon">🚚</div>
+        <h3>Service de Collecte</h3>
+        <p>Planifiez un ramassage de déchets à votre adresse. Nos partenaires collecteurs vérifiés arriveront à l'heure choisie.</p>
+      </div>
+      <div class="feature-card reveal">
+        <span class="feature-badge popular">Populaire</span>
+        <div class="feature-icon">🏷️</div>
+        <h3>Marketplace d'Enchères</h3>
+        <p>Mettez vos recyclables aux enchères ou achetez directement. Enchères transparentes, paiements sécurisés, contreparties vérifiées.</p>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">📊</div>
+        <h3>Suivi d'Impact</h3>
+        <p>Consultez votre tableau de bord environnemental personnel — CO₂ économisé, kilogrammes recyclés, et classement communautaire.</p>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">🏫</div>
+        <h3>Academy EcoCycle</h3>
+        <p>Accédez à des cours, programmes de certification et vidéos éducatives. Devenez un professionnel certifié du recyclage.</p>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">🔔</div>
+        <h3>Alertes Intelligentes</h3>
+        <p>Recevez des notifications lorsque les matériaux qui vous intéressent sont listés, quand les enchères ferment, et quand la collecte est en route.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ STATS ══ -->
+<section id="stats">
+  <div class="container">
+    <div class="stats-grid reveal">
+      <div class="stat-item">
+        <div class="stat-num"><span id="stat1">{{ stats.total_kg_recycled|default:"0" }}</span>+</div>
+        <div class="stat-label">kg Recyclés</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num"><span id="stat2">{{ stats.total_users|default:"0" }}</span>+</div>
+        <div class="stat-label">Utilisateurs Inscrits</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num"><span id="stat3">{{ stats.total_collections|default:"0" }}</span>+</div>
+        <div class="stat-label">Collectes Réalisées</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num"><span id="stat4">{{ stats.total_co2_saved|default:"0" }}</span></div>
+        <div class="stat-label">kg CO₂ Économisés</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ MARKETPLACE PREVIEW ══ -->
+<section id="marketplace">
+  <div class="container">
+    <div class="marketplace-header reveal">
+      <div>
+        <span class="tag">Marketplace</span>
+        <h2 class="section-title">Catégories de Matériaux</h2>
+        <p class="section-sub">Parcourez les matériaux recyclables par type</p>
+      </div>
+      <a href="{% url 'marketplace' %}" class="view-all-btn">Tout voir →</a>
+    </div>
+    <div class="categories-grid reveal">
+      <a href="{% url 'marketplace' %}?category=plastic" class="cat-card">
+        <span class="cat-icon">🥤</span>
+        <div class="cat-name">Plastiques</div>
+      </a>
+      <a href="{% url 'marketplace' %}?category=metal" class="cat-card">
+        <span class="cat-icon">⚙️</span>
+        <div class="cat-name">Métaux</div>
+      </a>
+      <a href="{% url 'marketplace' %}?category=paper" class="cat-card">
+        <span class="cat-icon">📄</span>
+        <div class="cat-name">Papier</div>
+      </a>
+      <a href="{% url 'marketplace' %}?category=electronics" class="cat-card">
+        <span class="cat-icon">💻</span>
+        <div class="cat-name">Électronique</div>
+      </a>
+      <a href="{% url 'marketplace' %}?category=glass" class="cat-card">
+        <span class="cat-icon">🪟</span>
+        <div class="cat-name">Verre</div>
+      </a>
+      <a href="{% url 'marketplace' %}?category=tires" class="cat-card">
+        <span class="cat-icon">🚗</span>
+        <div class="cat-name">Pneus</div>
+      </a>
+    </div>
+
+    {% if featured_auctions %}
+    <div class="auctions-preview reveal" style="margin-top:48px;">
+      <h3 style="font-family:var(--font-display);font-size:1.4rem;margin-bottom:24px;color:var(--charcoal);">Enchères en cours</h3>
+      <div class="auctions-grid">
+        {% for auction in featured_auctions %}
+        <div class="auction-card">
+          {% if auction.listing.photo %}
+            <img src="{{ auction.listing.photo.url }}" alt="{{ auction.listing.title }}" class="auction-card-img">
+          {% else %}
+            <div class="auction-card-img auction-card-placeholder">♻️</div>
+          {% endif %}
+          <div class="auction-card-body">
+            <span class="badge badge-category">{{ auction.listing.category.name }}</span>
+            <h4>{{ auction.listing.title }}</h4>
+            <p class="auction-city">📍 {{ auction.listing.city }}</p>
+            <div class="auction-price-row">
+              <span class="auction-price">{{ auction.current_price }} HTG</span>
+              <span class="auction-bids">{{ auction.total_bids }} enchère{{ auction.total_bids|pluralize }}</span>
+            </div>
+            <div class="auction-countdown" data-ends-at="{{ auction.ends_at|date:'c' }}">...</div>
+            <a href="{% url 'auction_detail' auction.id %}" class="btn btn-primary btn-sm">Voir l'enchère</a>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% else %}
+    <div class="auction-cta reveal">
+      <h3>♻️ Aucune Enchère Active pour l'instant</h3>
+      <p>Soyez le premier à lister des matériaux recyclables sur EcoCycle et touchez des centaines d'acheteurs vérifiés.</p>
+      <a href="{% url 'web_register' %}" class="btn-primary btn-orange">Devenir Vendeur</a>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<!-- ══ BENEFITS ══ -->
+<section id="benefits">
+  <div class="container">
+    <div class="benefits-inner">
+      <div class="benefits-visual reveal">
+        <div class="benefits-main-card">
+          <div class="benefits-main-icon">🌍</div>
+          <h3>Le Marketplace le Plus Vert d'Haïti</h3>
+          <p>EcoCycle construit l'infrastructure dont Haïti a besoin pour transformer son défi des déchets en opportunité économique — une transaction à la fois.</p>
+        </div>
+        <div class="benefits-small-cards">
+          <div class="benefit-small">
+            <div class="benefit-small-icon">🌱</div>
+            <h4>Impact Écologique</h4>
+            <p>Suivez chaque kg sauvé de la décharge en temps réel.</p>
+          </div>
+          <div class="benefit-small">
+            <div class="benefit-small-icon">💰</div>
+            <h4>Générez des Revenus</h4>
+            <p>Transformez vos déchets quotidiens en source de revenus complémentaire.</p>
+          </div>
+          <div class="benefit-small">
+            <div class="benefit-small-icon">🤝</div>
+            <h4>Communauté</h4>
+            <p>Connectez-vous avec des ONG, entreprises et municipalités.</p>
+          </div>
+          <div class="benefit-small">
+            <div class="benefit-small-icon">🛡️</div>
+            <h4>Confiance & Sécurité</h4>
+            <p>Tous les utilisateurs sont vérifiés. Les paiements sont sécurisés en escrow.</p>
+          </div>
+        </div>
+      </div>
+      <div class="benefits-list reveal">
+        <span class="tag">Pourquoi EcoCycle</span>
+        <h2 class="section-title" style="margin-bottom:40px;">Conçu pour<br>l'Économie Circulaire<br>d'Haïti</h2>
+        <div class="benefit-row">
+          <span class="benefit-num">01</span>
+          <div class="benefit-text">
+            <h4>Protection de l'Environnement</h4>
+            <p>Réduire la pollution dans les villes, côtes et zones rurales d'Haïti en détournant les déchets des décharges vers des cycles de réutilisation productifs.</p>
+          </div>
+        </div>
+        <div class="benefit-row">
+          <span class="benefit-num">02</span>
+          <div class="benefit-text">
+            <h4>Système de Recyclage Intelligent</h4>
+            <p>Tri piloté par l'IA, logistique intelligente et analyses de données pour une récupération des déchets optimale.</p>
+          </div>
+        </div>
+        <div class="benefit-row">
+          <span class="benefit-num">03</span>
+          <div class="benefit-text">
+            <h4>Impact Réel et Mesurable</h4>
+            <p>Chaque action est enregistrée — des grammes scannés aux tonnes collectées — offrant des rapports transparents à tous les acteurs.</p>
+          </div>
+        </div>
+        <div class="benefit-row">
+          <span class="benefit-num">04</span>
+          <div class="benefit-text">
+            <h4>Communauté Éco-Responsable</h4>
+            <p>Rejoignez des milliers d'Haïtiens qui construisent un avenir plus propre et plus vert à travers l'action collective et les incitations partagées.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ ACADEMY ══ -->
+<section id="training">
+  <div class="container">
+    <div class="training-header reveal">
+      <span class="tag">Academy</span>
+      <h2 class="section-title" style="margin-bottom:12px;">Centre de Formation EcoCycle</h2>
+      <p class="section-sub" style="margin:0 auto;text-align:center;">Maîtrisez le recyclage, l'économie circulaire et les compétences environnementales via nos cours certifiants.</p>
+    </div>
+    <div class="courses-grid">
+      <div class="course-card reveal">
+        <div class="course-thumb green">🌿</div>
+        <div class="course-body">
+          <span class="course-level">Débutant</span>
+          <h3>Introduction à l'Économie Circulaire en Haïti</h3>
+          <p>Comprendre les bases de la gestion des déchets, des systèmes de recyclage, et comment Haïti peut bénéficier des modèles d'entreprise circulaires.</p>
+          <div class="course-meta">
+            <span>📚 <strong>6 modules</strong></span>
+            <span>⏱ <strong>3 heures</strong></span>
+            <span>🎓 <strong>Certificat</strong></span>
+          </div>
+        </div>
+      </div>
+      <div class="course-card reveal">
+        <div class="course-thumb orange">🤖</div>
+        <div class="course-body">
+          <span class="course-level">Intermédiaire</span>
+          <h3>Utiliser l'IA pour la Classification et la Valorisation des Déchets</h3>
+          <p>Apprenez à utiliser la caméra IA d'EcoCycle, comprendre les catégories de matériaux, les prix, et maximiser vos revenus de recyclage.</p>
+          <div class="course-meta">
+            <span>📚 <strong>8 modules</strong></span>
+            <span>⏱ <strong>5 heures</strong></span>
+            <span>🎓 <strong>Certificat</strong></span>
+          </div>
+        </div>
+      </div>
+      <div class="course-card reveal">
+        <div class="course-thumb dark">🏭</div>
+        <div class="course-body">
+          <span class="course-level">Avancé</span>
+          <h3>Créer une Entreprise de Recyclage en Haïti</h3>
+          <p>De l'approvisionnement et la logistique à la vente sur les enchères EcoCycle — un guide complet pour lancer une entreprise de recyclage rentable.</p>
+          <div class="course-meta">
+            <span>📚 <strong>12 modules</strong></span>
+            <span>⏱ <strong>10 heures</strong></span>
+            <span>🎓 <strong>Certificat</strong></span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:40px;">
+      <a href="{% url 'academy_list' %}" class="btn btn-outline">Voir tous les cours →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ══ TESTIMONIALS ══ -->
+<section id="testimonials">
+  <div class="container">
+    <div class="testimonials-header reveal">
+      <span class="tag">Témoignages</span>
+      <h2 class="section-title" style="margin-bottom:12px;">Ce que dit notre Communauté</h2>
+      <p class="section-sub" style="margin:0 auto;text-align:center;">Entreprises, collecteurs et particuliers qui changent Haïti grâce au recyclage.</p>
+    </div>
+    <div class="testimonials-grid">
+      <div class="testimonial-card reveal">
+        <div class="stars">★★★★★</div>
+        <p class="testimonial-text">EcoCycle a changé notre façon de gérer les déchets dans notre usine à Port-au-Prince. En un mois, nous avons vendu 3 tonnes de ferraille via les enchères. Plateforme incroyable.</p>
+        <div class="testimonial-author">
+          <div class="author-avatar">MJ</div>
+          <div>
+            <div class="author-name">Marie Jean</div>
+            <div class="author-role">Directrice d'usine, PAP</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card reveal">
+        <div class="stars">★★★★★</div>
+        <p class="testimonial-text">La caméra IA est incroyablement précise — elle a identifié nos types de déchets électroniques mieux que je ne l'espérais. Le service de collecte est rapide et l'équipe est professionnelle.</p>
+        <div class="testimonial-author">
+          <div class="author-avatar">KP</div>
+          <div>
+            <div class="author-name">Kervens Pierre</div>
+            <div class="author-role">Responsable IT, Pétion-Ville</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card reveal">
+        <div class="stars">★★★★★</div>
+        <p class="testimonial-text">Notre ONG a collaboré avec EcoCycle pour éduquer les communautés à Cap-Haïtien. Le centre de formation est fantastique et le suivi d'impact nous aide à rendre compte à nos bailleurs.</p>
+        <div class="testimonial-author">
+          <div class="author-avatar">CL</div>
+          <div>
+            <div class="author-name">Claudine Louis</div>
+            <div class="author-role">Directrice d'ONG, Cap-Haïtien</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ PARTNERS ══ -->
+<section id="partners">
+  <div class="container">
+    <div class="partners-header">
+      <p>Fait confiance par les principales organisations à travers Haïti</p>
+    </div>
+    <div class="partners-row reveal">
+      <div class="partner-logo">♻️ ReHaiti</div>
+      <div class="partner-logo">🏙️ Mairie PAP</div>
+      <div class="partner-logo">🌿 GreenHaïti ONG</div>
+      <div class="partner-logo">🏭 RecycloTech</div>
+      <div class="partner-logo">🌊 CoastalClean</div>
+      <div class="partner-logo">🏫 UniNord</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ BLOG ══ -->
+<section id="blog">
+  <div class="container">
+    <div class="blog-header reveal">
+      <span class="tag">Actualités</span>
+      <h2 class="section-title" style="margin-bottom:12px;">Depuis Notre Blog</h2>
+      <p class="section-sub" style="margin:0 auto;text-align:center;">Derniers articles sur l'environnement, l'innovation recyclage et l'économie verte en Haïti.</p>
+    </div>
+    <div class="blog-grid">
+      <div class="blog-card reveal">
+        <div class="blog-thumb bg1">🌱</div>
+        <div class="blog-body">
+          <span class="blog-cat">Environnement</span>
+          <h3>Haïti Génère 2 500 Tonnes de Déchets par Jour — Voici Ce Que Nous Pouvons Faire</h3>
+          <p>Un regard approfondi sur la crise des déchets en Haïti et comment les marketplaces de recyclage technologiques peuvent renverser la tendance.</p>
+          <div class="blog-meta"><span>📅 10 mars 2026</span><span>⏱ 5 min</span></div>
+        </div>
+      </div>
+      <div class="blog-card reveal">
+        <div class="blog-thumb bg2">🤖</div>
+        <div class="blog-body">
+          <span class="blog-cat">Technologie</span>
+          <h3>Comment l'IA Révolutionne le Tri des Déchets — Et Pourquoi Haïti Devrait Mener</h3>
+          <p>Des modèles de machine learning entraînés sur des flux de déchets locaux atteignent une précision sans précédent dans l'identification des matériaux.</p>
+          <div class="blog-meta"><span>📅 5 mars 2026</span><span>⏱ 4 min</span></div>
+        </div>
+      </div>
+      <div class="blog-card reveal">
+        <div class="blog-thumb bg3">💰</div>
+        <div class="blog-body">
+          <span class="blog-cat">Business</span>
+          <h3>Des Ordures à l'Or : 5 Haïtiens qui Vivent du Recyclage via EcoCycle</h3>
+          <p>Des témoignages d'entrepreneurs qui ont transformé la collecte de déchets recyclables en entreprises durables et rentables.</p>
+          <div class="blog-meta"><span>📅 28 fév 2026</span><span>⏱ 6 min</span></div>
+        </div>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:40px;">
+      <a href="{% url 'blog_list' %}" class="btn btn-outline">Lire tous les articles →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ══ APP ══ -->
+<section id="app">
+  <div class="container">
+    <div class="app-inner">
+      <div class="app-content reveal">
+        <span class="tag">Application Mobile</span>
+        <h2 class="section-title">Recyclez Plus Intelligemment<br>depuis Votre Téléphone</h2>
+        <p class="section-sub">L'application EcoCycle met l'identification des déchets par IA, la gestion des enchères et la planification des collectes dans votre poche.</p>
+        <div class="app-features-list">
+          <div class="app-feature"><div class="app-feature-icon">📷</div><span>Caméra IA pour identification instantanée des déchets</span></div>
+          <div class="app-feature"><div class="app-feature-icon">📦</div><span>Enchères en temps réel et création d'annonces</span></div>
+          <div class="app-feature"><div class="app-feature-icon">📍</div><span>Suivi GPS en direct des collectes</span></div>
+          <div class="app-feature"><div class="app-feature-icon">📈</div><span>Tableau de bord d'impact environnemental personnel</span></div>
+        </div>
+        <div class="app-btns">
+          <a href="#" class="store-btn">
+            <span class="store-btn-icon">🍎</span>
+            <div class="store-btn-text">
+              <small>Télécharger sur</small>
+              <strong>App Store</strong>
+            </div>
+          </a>
+          <a href="#" class="store-btn">
+            <span class="store-btn-icon">▶️</span>
+            <div class="store-btn-text">
+              <small>Disponible sur</small>
+              <strong>Google Play</strong>
+            </div>
+          </a>
+        </div>
+      </div>
+      <div class="app-mockup reveal">
+        <div class="app-phone">
+          <div class="app-phone-screen phone-screen-1">
+            <div class="p-icon">♻️</div>
+            <div class="p-title">EcoCycle<br>Scan & Sell</div>
+          </div>
+        </div>
+        <div class="app-phone">
+          <div class="app-phone-screen phone-screen-2">
+            <div class="ps2-header"><h5>🏷️ Mes Enchères</h5></div>
+            <div class="ps2-list">
+              <div class="ps2-item"><div class="ps2-item-dot" style="background:#22c55e"></div><span>Ferraille — HTG 1 200</span></div>
+              <div class="ps2-item"><div class="ps2-item-dot" style="background:#f07c1a"></div><span>Plastique PET — HTG 340</span></div>
+              <div class="ps2-item"><div class="ps2-item-dot" style="background:#3b82f6"></div><span>Balles Papier — HTG 580</span></div>
+              <div class="ps2-item"><div class="ps2-item-dot" style="background:#8b5cf6"></div><span>E-Waste — HTG 2 800</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ FAQ ══ -->
+<section id="faq">
+  <div class="container">
+    <div class="faq-inner">
+      <div class="reveal">
+        <span class="tag">FAQ</span>
+        <h2 class="section-title" style="margin-bottom:16px;">Questions Fréquentes</h2>
+        <p class="section-sub">Tout ce que vous devez savoir sur EcoCycle en Haïti.</p>
+      </div>
+      <div class="faq-list reveal">
+        <div class="faq-item open">
+          <div class="faq-question" onclick="toggleFaq(this)">
+            <h4>Comment fonctionne le service de collecte ?</h4>
+            <span class="faq-toggle">+</span>
+          </div>
+          <div class="faq-answer"><p>Après avoir scanné vos matériaux avec la caméra IA, vous pouvez planifier un ramassage. Nos collecteurs vérifiés arriveront à votre adresse dans le créneau convenu. Le paiement est traité de manière sécurisée après vérification des matériaux.</p></div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
+            <h4>Comment utiliser la caméra IA ?</h4>
+            <span class="faq-toggle">+</span>
+          </div>
+          <div class="faq-answer"><p>Ouvrez l'application EcoCycle, appuyez sur l'icône caméra et pointez-la sur votre déchet. L'IA identifie le type en moins de 3 secondes, vous donne une estimation de la valeur marchande, et suggère d'enchérir ou de planifier un ramassage.</p></div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
+            <h4>Le service est-il gratuit ?</h4>
+            <span class="faq-toggle">+</span>
+          </div>
+          <div class="faq-answer"><p>Créer un compte, parcourir les enchères et utiliser le scanner IA sont entièrement gratuits. EcoCycle prélève une petite commission (5%) sur les ventes aux enchères finalisées. Les services de collecte peuvent avoir des frais logistiques selon la localisation.</p></div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
+            <h4>Quelles zones en Haïti servez-vous ?</h4>
+            <span class="faq-toggle">+</span>
+          </div>
+          <div class="faq-answer"><p>Nous opérons actuellement à Port-au-Prince, Pétion-Ville et Cap-Haïtien. Nous nous étendons à Jacmel, Les Cayes et Gonaïves en 2026. Consultez l'application pour les zones disponibles dans votre région.</p></div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
+            <h4>Comment les paiements sont-ils sécurisés ?</h4>
+            <span class="faq-toggle">+</span>
+          </div>
+          <div class="faq-answer"><p>Tous les paiements sont conservés en escrow jusqu'à ce que l'acheteur et le vendeur confirment que la transaction est complète. Nous prenons en charge MonCash, Stripe et virement bancaire pour les utilisateurs haïtiens.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ CONTACT ══ -->
+<section id="contact">
+  <div class="container">
+    <div class="contact-inner">
+      <div class="reveal">
+        <span class="tag">Contactez-nous</span>
+        <h2 class="section-title" style="margin-bottom:12px;">Parlons-en</h2>
+        <p class="section-sub" style="margin-bottom:0;">Une question, une proposition de partenariat ou vous souhaitez amener EcoCycle dans votre ville ? Nous serions ravis de vous entendre.</p>
+        <div class="contact-info">
+          <div class="contact-item">
+            <div class="contact-item-icon">📍</div>
+            <div>
+              <h4>Adresse</h4>
+              <p>Port-au-Prince, Haïti<br>Zone Industrielle Sonapi</p>
+            </div>
+          </div>
+          <div class="contact-item">
+            <div class="contact-item-icon">📞</div>
+            <div>
+              <h4>Téléphone</h4>
+              <p>+509 2222-0000<br>Lun–Ven, 8h–17h</p>
+            </div>
+          </div>
+          <div class="contact-item">
+            <div class="contact-item-icon">✉️</div>
+            <div>
+              <h4>Email</h4>
+              <p>hello@ecocycle.ht<br>partnerships@ecocycle.ht</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="contact-form reveal">
+        <form method="POST" action="{% url 'contact' %}">
+          {% csrf_token %}
+          <div class="form-row">
+            <div class="form-group">
+              <label>Prénom</label>
+              <input type="text" name="first_name" placeholder="Marie" required>
+            </div>
+            <div class="form-group">
+              <label>Nom</label>
+              <input type="text" name="last_name" placeholder="Jean" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" name="email" placeholder="marie@exemple.com" required>
+          </div>
+          <div class="form-group">
+            <label>Sujet</label>
+            <select name="subject">
+              <option>Demande générale</option>
+              <option>Partenariat</option>
+              <option>Support technique</option>
+              <option>Devenir vendeur</option>
+              <option>Médias & Presse</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Message</label>
+            <textarea name="message" placeholder="Dites-nous comment nous pouvons vous aider..." required></textarea>
+          </div>
+          <button type="submit" class="form-submit">Envoyer le message →</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ NEWSLETTER ══ -->
+<section id="newsletter">
+  <div class="container">
+    <div class="newsletter-inner reveal">
+      <h2>Restez Informé 🌿</h2>
+      <p>Recevez chaque semaine des conseils recyclage, de nouvelles annonces marketplace et les actualités EcoCycle directement dans votre boîte mail.</p>
+      <form method="POST" action="{% url 'newsletter_subscribe' %}" class="newsletter-form">
+        {% csrf_token %}
+        <input class="newsletter-input" type="email" name="email" placeholder="votre@email.com" required>
+        <button type="submit" class="newsletter-btn">S'abonner</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- ══ CTA ══ -->
+<section id="cta">
+  <div class="container">
+    <div class="cta-box reveal">
+      <h2>Prêt à Rejoindre<br>l'Économie Circulaire ?</h2>
+      <p>Que vous soyez une entreprise avec des déchets recyclables ou à la recherche de matériaux, EcoCycle vous connecte avec les bons partenaires à travers Haïti.</p>
+      <div class="cta-btns">
+        <a href="{% url 'web_register' %}" class="btn-primary" style="background:var(--white);color:var(--green-dark);">Créer un Compte Gratuit</a>
+        <a href="{% url 'marketplace' %}" class="btn-secondary">Explorer le Marketplace</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

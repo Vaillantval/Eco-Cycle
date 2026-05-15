@@ -1,0 +1,64 @@
+{% extends 'dashboard/base_dashboard.html' %}
+
+{% block title %}Mes ramassages — EcoCycle Haiti{% endblock %}
+
+{% block dashboard_content %}
+<div class="dashboard-header">
+  <div>
+    <h1 class="dashboard-title">🚚 Mes ramassages</h1>
+    <p class="dashboard-subtitle">Suivi de vos demandes de collecte</p>
+  </div>
+  <a href="{% url 'request_pickup' %}" class="btn btn-primary">+ Nouvelle demande</a>
+</div>
+
+<div class="data-card">
+  {% if pickups %}
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Date souhaitée</th>
+          <th>Créneau</th>
+          <th>Adresse</th>
+          <th>Statut</th>
+          <th>Collecteur</th>
+          <th>Soumis le</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for pickup in pickups %}
+        <tr>
+          <td style="font-weight:600;">{{ pickup.preferred_date|date:"d/m/Y" }}</td>
+          <td style="color:var(--gray);">{{ pickup.get_preferred_slot_display }}</td>
+          <td style="max-width:180px;color:var(--gray);font-size:0.85rem;">
+            {{ pickup.address|truncatechars:40 }}, {{ pickup.city }}
+          </td>
+          <td>
+            <span class="status-badge status-{{ pickup.status }}">
+              {{ pickup.get_status_display }}
+            </span>
+          </td>
+          <td>
+            {% if pickup.collector %}
+              <span style="font-weight:600;">{{ pickup.collector.full_name }}</span>
+            {% else %}
+              <span style="color:var(--gray);font-size:0.82rem;">En attente</span>
+            {% endif %}
+          </td>
+          <td style="color:var(--gray);font-size:0.82rem;">{{ pickup.created_at|date:"d/m/Y" }}</td>
+          <td>
+            <a href="{% url 'pickup_detail' pickup.id %}" class="btn btn-outline btn-sm">Détail</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div style="text-align:center;padding:48px 20px;">
+      <div style="font-size:3rem;margin-bottom:16px;">🚚</div>
+      <p style="color:var(--gray);margin-bottom:20px;">Vous n'avez encore soumis aucune demande de ramassage.</p>
+      <a href="{% url 'request_pickup' %}" class="btn btn-primary">Faire ma première demande</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

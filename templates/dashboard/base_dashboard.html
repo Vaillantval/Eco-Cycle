@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-user">
+      {% if user.avatar %}
+        <img src="{{ user.avatar.url }}" alt="Avatar" class="sidebar-avatar">
+      {% else %}
+        <div class="sidebar-avatar-placeholder">
+          {{ user.first_name|slice:":1" }}{{ user.last_name|slice:":1" }}
+        </div>
+      {% endif %}
+      <div>
+        <p class="sidebar-name">{{ user.full_name }}</p>
+        <span class="role-badge role-{{ user.role }}">{{ user.get_role_display }}</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="{% url 'dashboard' %}"
+         class="sidebar-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+        🏠 Vue d'ensemble
+      </a>
+      <a href="{% url 'my_listings' %}"
+         class="sidebar-link {% if 'listing' in request.resolver_match.url_name %}active{% endif %}">
+        ♻️ Mes déchets
+      </a>
+      <a href="{% url 'marketplace' %}" class="sidebar-link">
+        🏪 Marketplace
+      </a>
+      <a href="{% url 'my_orders' %}"
+         class="sidebar-link {% if request.resolver_match.url_name == 'my_orders' %}active{% endif %}">
+        🛒 Mes commandes
+      </a>
+      <a href="{% url 'my_pickups' %}"
+         class="sidebar-link {% if 'pickup' in request.resolver_match.url_name %}active{% endif %}">
+        🚚 Ramassages
+      </a>
+      <a href="{% url 'my_impact' %}"
+         class="sidebar-link {% if request.resolver_match.url_name == 'my_impact' %}active{% endif %}">
+        🌱 Mon impact
+      </a>
+      <a href="{% url 'academy_list' %}"
+         class="sidebar-link {% if request.resolver_match.url_name == 'academy_list' or request.resolver_match.url_name == 'course_detail' %}active{% endif %}">
+        🎓 Academy
+      </a>
+      <a href="{% url 'blog_list' %}"
+         class="sidebar-link {% if request.resolver_match.url_name == 'blog_list' or request.resolver_match.url_name == 'blog_detail' %}active{% endif %}">
+        📰 Blog
+      </a>
+      <div class="sidebar-divider"></div>
+      <a href="{% url 'profile' %}"
+         class="sidebar-link {% if request.resolver_match.url_name == 'profile' %}active{% endif %}">
+        👤 Mon profil
+      </a>
+      {% if request.session.user_role == 'admin' %}
+      <a href="{% url 'admin_panel' %}" class="sidebar-link">
+        ⚙️ Panel admin
+      </a>
+      {% endif %}
+      <a href="{% url 'web_logout' %}" class="sidebar-link" style="color: rgba(255,100,100,0.7); margin-top: 8px;">
+        🚪 Déconnexion
+      </a>
+    </nav>
+  </aside>
+
+  <!-- CONTENU PRINCIPAL -->
+  <div class="dashboard-content">
+    {% block dashboard_content %}{% endblock %}
+  </div>
+
+</div>
+{% endblock %}

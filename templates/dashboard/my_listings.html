@@ -1,0 +1,80 @@
+{% extends 'dashboard/base_dashboard.html' %}
+
+{% block title %}Mes déchets — EcoCycle Haiti{% endblock %}
+
+{% block dashboard_content %}
+<div class="dashboard-header">
+  <div>
+    <h1 class="dashboard-title">♻️ Mes déchets</h1>
+    <p class="dashboard-subtitle">Gérez vos annonces de matériaux recyclables</p>
+  </div>
+  <a href="{% url 'submit_waste' %}" class="btn btn-primary">+ Nouveau déchet</a>
+</div>
+
+<!-- FILTRES -->
+<div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
+  <a href="{% url 'my_listings' %}"
+     class="btn {% if not status_filter %}btn-primary{% else %}btn-outline{% endif %}" style="padding:8px 16px;font-size:0.85rem;">
+    Tous
+  </a>
+  {% for val, label in listing_statuses %}
+  <a href="{% url 'my_listings' %}?status={{ val }}"
+     class="btn {% if status_filter == val %}btn-primary{% else %}btn-outline{% endif %}" style="padding:8px 16px;font-size:0.85rem;">
+    {{ label }}
+  </a>
+  {% endfor %}
+</div>
+
+<div class="data-card">
+  {% if listings %}
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Photo</th>
+          <th>Titre</th>
+          <th>Catégorie</th>
+          <th>Poids</th>
+          <th>Statut</th>
+          <th>Valeur IA</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for listing in listings %}
+        <tr>
+          <td>
+            {% if listing.photo %}
+              <img src="{{ listing.photo.url }}" class="listing-thumb" alt="">
+            {% else %}
+              <div class="listing-thumb-placeholder">♻️</div>
+            {% endif %}
+          </td>
+          <td style="font-weight:600;max-width:180px;">{{ listing.title|truncatechars:32 }}</td>
+          <td style="color:var(--gray);">{{ listing.category.name|default:"—" }}</td>
+          <td>{{ listing.quantity_kg }} kg</td>
+          <td><span class="status-badge status-{{ listing.status }}">{{ listing.get_status_display }}</span></td>
+          <td>
+            {% if listing.ai_analysis %}
+              <span style="color:var(--green);font-weight:600;">
+                {{ listing.ai_analysis.estimated_value_htg|default:"—" }} HTG
+              </span>
+            {% else %}
+              <span style="color:var(--gray);">En attente</span>
+            {% endif %}
+          </td>
+          <td style="color:var(--gray);font-size:0.82rem;">{{ listing.created_at|date:"d/m/Y" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div style="text-align:center;padding:48px 20px;">
+      <div style="font-size:3rem;margin-bottom:16px;">♻️</div>
+      <p style="color:var(--gray);margin-bottom:20px;">
+        {% if status_filter %}Aucun déchet avec ce statut.{% else %}Vous n'avez encore rien soumis.{% endif %}
+      </p>
+      <a href="{% url 'submit_waste' %}" class="btn btn-primary">Soumettre mon premier déchet</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

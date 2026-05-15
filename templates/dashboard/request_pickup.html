@@ -1,0 +1,118 @@
+{% extends 'dashboard/base_dashboard.html' %}
+
+{% block title %}Demande de ramassage — EcoCycle Haiti{% endblock %}
+
+{% block dashboard_content %}
+<div class="dashboard-header">
+  <div>
+    <h1 class="dashboard-title">🚚 Nouvelle demande de ramassage</h1>
+    <p class="dashboard-subtitle">Un collecteur agréé viendra récupérer vos déchets</p>
+  </div>
+  <a href="{% url 'my_pickups' %}" class="btn btn-outline">← Mes ramassages</a>
+</div>
+
+<div style="max-width:680px;">
+  <div class="data-card">
+    <form method="POST" action="{% url 'request_pickup' %}">
+      {% csrf_token %}
+
+      <!-- ADRESSE -->
+      <div style="margin-bottom:20px;">
+        <h3 style="font-family:var(--font-display);font-size:1rem;font-weight:700;color:var(--charcoal);margin-bottom:16px;">
+          📍 Lieu de ramassage
+        </h3>
+        <div class="form-group" style="margin-bottom:14px;">
+          <label>Adresse complète *</label>
+          <input type="text" name="address" required class="form-control"
+                 placeholder="Rue, numéro, quartier, commune...">
+        </div>
+        <div class="form-group">
+          <label>Ville *</label>
+          <input type="text" name="city" required class="form-control"
+                 placeholder="Port-au-Prince, Cap-Haïtien, Pétion-Ville...">
+        </div>
+      </div>
+
+      <div style="height:1px;background:#f0ede8;margin:20px 0;"></div>
+
+      <!-- DATE ET CRÉNEAU -->
+      <div style="margin-bottom:20px;">
+        <h3 style="font-family:var(--font-display);font-size:1rem;font-weight:700;color:var(--charcoal);margin-bottom:16px;">
+          📅 Date et créneau
+        </h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Date souhaitée *</label>
+            <input type="date" name="preferred_date" required class="form-control"
+                   min="{{ today }}">
+          </div>
+          <div class="form-group">
+            <label>Créneau horaire *</label>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-top:2px;">
+              <label style="display:flex;align-items:center;gap:8px;font-weight:400;cursor:pointer;">
+                <input type="radio" name="preferred_slot" value="morning" checked>
+                ☀️ Matin (8h–12h)
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;font-weight:400;cursor:pointer;">
+                <input type="radio" name="preferred_slot" value="afternoon">
+                🌤️ Après-midi (12h–17h)
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;font-weight:400;cursor:pointer;">
+                <input type="radio" name="preferred_slot" value="evening">
+                🌆 Soir (17h–20h)
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="height:1px;background:#f0ede8;margin:20px 0;"></div>
+
+      <!-- LISTING LIÉ -->
+      {% if user_listings %}
+      <div style="margin-bottom:20px;">
+        <h3 style="font-family:var(--font-display);font-size:1rem;font-weight:700;color:var(--charcoal);margin-bottom:16px;">
+          ♻️ Lier à un listing (optionnel)
+        </h3>
+        <div class="form-group">
+          <label>Déchet approuvé à récupérer</label>
+          <select name="listing_id" class="form-control">
+            <option value="">— Sélectionner un listing (optionnel) —</option>
+            {% for listing in user_listings %}
+              <option value="{{ listing.id }}">{{ listing.title }} — {{ listing.quantity_kg }} kg</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div style="height:1px;background:#f0ede8;margin:20px 0;"></div>
+      {% endif %}
+
+      <!-- INSTRUCTIONS -->
+      <div style="margin-bottom:24px;">
+        <h3 style="font-family:var(--font-display);font-size:1rem;font-weight:700;color:var(--charcoal);margin-bottom:16px;">
+          💬 Instructions spéciales
+        </h3>
+        <div class="form-group">
+          <label>Informations pour le collecteur</label>
+          <textarea name="special_instructions" rows="3" class="form-control"
+                    placeholder="Accès, code portail, volume estimé, matériaux spécifiques, précautions..."></textarea>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-full">
+        🚚 Soumettre la demande de ramassage
+      </button>
+      <p style="text-align:center;font-size:0.78rem;color:var(--gray);margin-top:12px;">
+        Un collecteur agréé sera assigné dans les 24–48h suivant votre demande.
+      </p>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Date minimum = aujourd'hui
+document.querySelector('[type="date"]').min = new Date().toISOString().split('T')[0];
+</script>
+{% endblock %}

@@ -1,0 +1,232 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ course.title }} — Academy EcoCycle{% endblock %}
+
+{% block content %}
+<section style="padding:60px 0 80px;background:var(--cream);">
+  <div class="container">
+
+    <!-- BREADCRUMB -->
+    <div style="margin-bottom:24px;font-size:0.82rem;color:#999;">
+      <a href="{% url 'home' %}" style="color:#999;text-decoration:none;">Accueil</a>
+      <span style="margin:0 6px;">›</span>
+      <a href="{% url 'academy_list' %}" style="color:#999;text-decoration:none;">Academy</a>
+      <span style="margin:0 6px;">›</span>
+      {{ course.title|truncatechars:40 }}
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 320px;gap:28px;align-items:start;">
+
+      <!-- COLONNE PRINCIPALE -->
+      <div>
+
+        <!-- EN-TÊTE COURS -->
+        <div style="background:white;border-radius:16px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.07);margin-bottom:24px;">
+          {% if course.thumbnail %}
+          <img src="{{ course.thumbnail.url }}" alt="{{ course.title }}"
+               style="width:100%;max-height:340px;object-fit:cover;display:block;">
+          {% else %}
+          <div style="height:240px;background:linear-gradient(135deg,var(--orange),#c85d0a);
+                      display:flex;align-items:center;justify-content:center;font-size:5rem;">🎓</div>
+          {% endif %}
+
+          <div style="padding:28px 32px;">
+            <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+              <span style="font-size:0.7rem;font-weight:700;text-transform:uppercase;padding:2px 10px;border-radius:10px;
+                           {% if course.level == 'beginner' %}background:#f0fdf4;color:#15803d;
+                           {% elif course.level == 'intermediate' %}background:#fff7ed;color:#c2410c;
+                           {% else %}background:#fef2f2;color:#dc2626;{% endif %}">
+                {{ course.get_level_display }}
+              </span>
+              {% if course.is_free %}
+              <span style="font-size:0.7rem;font-weight:700;text-transform:uppercase;padding:2px 10px;border-radius:10px;background:#e0f2fe;color:#0369a1;">Gratuit</span>
+              {% endif %}
+            </div>
+
+            <h1 style="font-family:var(--font-display);font-size:clamp(1.4rem,3vw,2rem);font-weight:800;
+                       color:var(--charcoal);margin:0 0 12px;line-height:1.2;">
+              {{ course.title }}
+            </h1>
+
+            <p style="color:#555;font-size:0.95rem;line-height:1.65;margin:0 0 20px;">
+              {{ course.description }}
+            </p>
+
+            <div style="display:flex;gap:20px;font-size:0.82rem;color:#888;flex-wrap:wrap;">
+              <span>📚 {{ total_lessons }} leçon{{ total_lessons|pluralize }}</span>
+              <span>⏱ {{ course.duration_minutes }} min</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- LISTE DES LEÇONS -->
+        <div style="background:white;border-radius:16px;box-shadow:0 2px 16px rgba(0,0,0,0.07);overflow:hidden;">
+          <div style="padding:18px 24px;border-bottom:1px solid #f5f2ed;display:flex;align-items:center;justify-content:space-between;">
+            <h2 style="font-family:var(--font-display);font-size:1.05rem;font-weight:700;color:var(--charcoal);margin:0;">
+              📖 Contenu du cours
+            </h2>
+            {% if enrollment %}
+            <span style="font-size:0.78rem;font-weight:700;color:var(--green);">{{ enrollment.progress_percent }}% complété</span>
+            {% endif %}
+          </div>
+
+          {% if enrollment %}
+          <!-- BARRE DE PROGRESSION GLOBALE -->
+          <div style="padding:12px 24px;background:#f8fffe;border-bottom:1px solid #f0fdf4;">
+            <div style="background:#e2f5eb;border-radius:6px;height:8px;">
+              <div style="background:var(--green);height:100%;border-radius:6px;width:{{ enrollment.progress_percent }}%;transition:width 0.4s;"></div>
+            </div>
+            {% if enrollment.is_completed %}
+            <div style="text-align:center;margin-top:6px;font-size:0.8rem;color:#15803d;font-weight:700;">
+              🎉 Cours terminé — Félicitations !
+            </div>
+            {% endif %}
+          </div>
+          {% endif %}
+
+          <div>
+            {% for lesson in lessons %}
+            {% with is_done=lesson.id|stringformat:"s" %}
+            <div style="display:flex;align-items:flex-start;gap:14px;padding:18px 24px;
+                        border-bottom:1px solid #f8f9fa;
+                        {% if is_done in completed_ids %}background:#f0fdf4;{% endif %}">
+
+              <!-- NUMÉRO / CHECK -->
+              <div style="width:32px;height:32px;border-radius:50%;flex-shrink:0;
+                          display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem;
+                          {% if is_done in completed_ids %}background:var(--green);color:white;
+                          {% else %}background:#f1f5f9;color:#64748b;{% endif %}">
+                {% if is_done in completed_ids %}✓{% else %}{{ forloop.counter }}{% endif %}
+              </div>
+
+              <div style="flex:1;min-width:0;">
+                <div style="font-weight:600;color:var(--charcoal);font-size:0.92rem;margin-bottom:4px;">
+                  {{ lesson.title }}
+                </div>
+                {% if lesson.duration_minutes %}
+                <div style="font-size:0.75rem;color:#94a3b8;">⏱ {{ lesson.duration_minutes }} min</div>
+                {% endif %}
+
+                {% if enrollment %}
+                  {% if is_done in completed_ids %}
+                  <span style="font-size:0.72rem;color:#15803d;font-weight:600;margin-top:4px;display:inline-block;">✅ Complétée</span>
+                  {% else %}
+                  <form method="POST" action="{% url 'complete_lesson' course.slug lesson.id %}" style="margin-top:8px;display:inline;">
+                    {% csrf_token %}
+                    <button type="submit"
+                            style="padding:4px 14px;background:var(--green);color:white;border:none;
+                                   border-radius:6px;font-size:0.75rem;font-weight:700;cursor:pointer;">
+                      Marquer complétée
+                    </button>
+                  </form>
+                  {% endif %}
+                {% else %}
+                <div style="margin-top:6px;font-size:0.78rem;color:#94a3b8;">
+                  <a href="{% url 'web_login' %}" style="color:var(--green);font-weight:600;">Connectez-vous</a> pour suivre votre progression
+                </div>
+                {% endif %}
+              </div>
+
+              {% if lesson.video_url %}
+              <div style="flex-shrink:0;">
+                <a href="{{ lesson.video_url }}" target="_blank" rel="noopener"
+                   style="font-size:0.75rem;color:var(--orange);font-weight:700;text-decoration:none;">
+                  ▶ Vidéo
+                </a>
+              </div>
+              {% endif %}
+
+            </div>
+            {% endwith %}
+            {% empty %}
+            <div style="padding:40px;text-align:center;color:#94a3b8;font-size:0.9rem;">
+              Les leçons arrivent bientôt…
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+      </div>
+
+      <!-- COLONNE DROITE (sticky) -->
+      <div style="position:sticky;top:24px;">
+        <div style="background:white;border-radius:16px;box-shadow:0 2px 16px rgba(0,0,0,0.07);overflow:hidden;">
+
+          <!-- CTA INSCRIPTION -->
+          <div style="padding:24px;">
+            {% if enrollment %}
+              {% if enrollment.is_completed %}
+              <div style="text-align:center;padding:20px 0;">
+                <div style="font-size:3rem;margin-bottom:8px;">🏆</div>
+                <div style="font-family:var(--font-display);font-weight:800;color:var(--green);font-size:1.1rem;margin-bottom:4px;">Cours complété !</div>
+                <div style="font-size:0.82rem;color:#64748b;">Inscrit le {{ enrollment.enrolled_at|date:"d/m/Y" }}</div>
+              </div>
+              {% else %}
+              <div style="margin-bottom:16px;">
+                <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:#64748b;margin-bottom:6px;">
+                  <span>Progression</span>
+                  <span style="font-weight:700;color:var(--green);">{{ enrollment.progress_percent }}%</span>
+                </div>
+                <div style="background:#f1f5f9;border-radius:6px;height:10px;">
+                  <div style="background:var(--green);height:100%;border-radius:6px;width:{{ enrollment.progress_percent }}%;"></div>
+                </div>
+              </div>
+              <div style="text-align:center;font-size:0.82rem;color:#64748b;">
+                Inscrit le {{ enrollment.enrolled_at|date:"d/m/Y" }}
+              </div>
+              {% endif %}
+
+            {% elif request.session.user_id %}
+            <form method="POST" action="{% url 'enroll_course' course.slug %}">
+              {% csrf_token %}
+              <button type="submit"
+                      style="width:100%;padding:14px;background:var(--green);color:white;border:none;
+                             border-radius:10px;font-family:var(--font-display);font-weight:700;
+                             font-size:1rem;cursor:pointer;transition:background 0.2s;">
+                🎓 S'inscrire gratuitement
+              </button>
+            </form>
+            {% else %}
+            <a href="{% url 'web_login' %}?next={{ request.path }}"
+               style="display:block;text-align:center;padding:14px;background:var(--green);color:white;
+                      border-radius:10px;font-family:var(--font-display);font-weight:700;
+                      font-size:1rem;text-decoration:none;">
+              🔑 Se connecter pour s'inscrire
+            </a>
+            <p style="text-align:center;font-size:0.75rem;color:#94a3b8;margin-top:8px;">
+              Pas encore de compte ? <a href="{% url 'web_register' %}" style="color:var(--green);font-weight:600;">Créer un compte gratuit</a>
+            </p>
+            {% endif %}
+          </div>
+
+          <!-- INFOS COURS -->
+          <div style="border-top:1px solid #f5f2ed;padding:20px 24px;display:flex;flex-direction:column;gap:12px;font-size:0.85rem;">
+            <div style="display:flex;justify-content:space-between;">
+              <span style="color:#64748b;">Niveau</span>
+              <span style="font-weight:600;">{{ course.get_level_display }}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;">
+              <span style="color:#64748b;">Leçons</span>
+              <span style="font-weight:600;">{{ total_lessons }}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;">
+              <span style="color:#64748b;">Durée totale</span>
+              <span style="font-weight:600;">{{ course.duration_minutes }} min</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;">
+              <span style="color:#64748b;">Accès</span>
+              <span style="font-weight:600;color:var(--green);">{% if course.is_free %}Gratuit{% else %}Payant{% endif %}</span>
+            </div>
+          </div>
+
+        </div>
+
+        <div style="text-align:center;margin-top:16px;">
+          <a href="{% url 'academy_list' %}" style="color:#64748b;font-size:0.82rem;text-decoration:none;">← Tous les cours</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+{% endblock %}

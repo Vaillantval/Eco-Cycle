@@ -1,0 +1,102 @@
+{% extends 'admin_panel/base_admin.html' %}
+
+{% block title %}Dashboard Admin — EcoCycle Haiti{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block admin_content %}
+
+<!-- STATS -->
+<div class="admin-stat-grid">
+  <div class="admin-stat">
+    <div class="admin-stat-label">Utilisateurs</div>
+    <div class="admin-stat-value">{{ total_users }}</div>
+    <div class="admin-stat-sub">comptes actifs</div>
+  </div>
+  <div class="admin-stat {% if pending_listings %}alert-stat{% endif %}">
+    <div class="admin-stat-label">Listings en attente</div>
+    <div class="admin-stat-value">{{ pending_listings }}</div>
+    <div class="admin-stat-sub">{{ total_listings }} total</div>
+  </div>
+  <div class="admin-stat {% if pending_pickups %}alert-stat{% endif %}">
+    <div class="admin-stat-label">Ramassages en attente</div>
+    <div class="admin-stat-value">{{ pending_pickups }}</div>
+    <div class="admin-stat-sub">{{ total_pickups }} total</div>
+  </div>
+  <div class="admin-stat">
+    <div class="admin-stat-label">Commandes</div>
+    <div class="admin-stat-value">{{ total_orders }}</div>
+    <div class="admin-stat-sub">toutes</div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+
+  <!-- LISTINGS RÉCENTS -->
+  <div class="admin-card">
+    <div class="admin-card-header">
+      <div class="admin-card-title">📦 Derniers listings</div>
+      <a href="{% url 'admin_listings' %}?status=pending_review" class="btn-admin-sm btn-view">Voir en attente</a>
+    </div>
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Listing</th>
+          <th>Utilisateur</th>
+          <th>Statut</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for listing in recent_listings %}
+        <tr>
+          <td>
+            <div style="font-weight:600;color:#0f172a;font-size:0.82rem;">{{ listing.title|truncatechars:32 }}</div>
+            <div style="color:#94a3b8;font-size:0.72rem;">{{ listing.quantity_kg }} kg · {{ listing.category.name|default:"—" }}</div>
+          </td>
+          <td style="font-size:0.78rem;color:#64748b;">{{ listing.user.full_name }}</td>
+          <td><span class="status-badge status-{{ listing.status }}">{{ listing.get_status_display }}</span></td>
+          <td>
+            <a href="{% url 'admin_review_listing' listing.id %}" class="btn-admin-sm btn-view">Voir</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:24px;">Aucun listing</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- RAMASSAGES RÉCENTS -->
+  <div class="admin-card">
+    <div class="admin-card-header">
+      <div class="admin-card-title">🚚 Derniers ramassages</div>
+      <a href="{% url 'admin_pickups' %}?status=requested" class="btn-admin-sm btn-view">Voir non assignés</a>
+    </div>
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Utilisateur</th>
+          <th>Ville</th>
+          <th>Statut</th>
+          <th>Collecteur</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for pickup in recent_pickups %}
+        <tr>
+          <td style="font-size:0.82rem;font-weight:600;color:#0f172a;">{{ pickup.user.full_name }}</td>
+          <td style="font-size:0.78rem;color:#64748b;">{{ pickup.city }}</td>
+          <td><span class="status-badge status-{{ pickup.status }}">{{ pickup.get_status_display }}</span></td>
+          <td style="font-size:0.78rem;color:#64748b;">
+            {% if pickup.collector %}{{ pickup.collector.full_name }}{% else %}<span style="color:#ef4444;">Non assigné</span>{% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:24px;">Aucun ramassage</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+{% endblock %}

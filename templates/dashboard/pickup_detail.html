@@ -1,0 +1,186 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load web_filters %}
+
+{% block title %}Ramassage #{{ pickup.id|stringformat:"s"|slice:":8" }} — EcoCycle Haiti{% endblock %}
+
+{% block dashboard_content %}
+<div class="dashboard-header">
+  <div>
+    <h1 class="dashboard-title">🚚 Détail du ramassage</h1>
+    <p class="dashboard-subtitle">Référence #{{ pickup.id|stringformat:"s"|slice:":8" }}</p>
+  </div>
+  <a href="{% url 'my_pickups' %}" class="btn btn-outline">← Mes ramassages</a>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 340px;gap:24px;align-items:start;">
+
+  <!-- COLONNE GAUCHE -->
+  <div>
+
+    <!-- TIMELINE -->
+    <div class="data-card" style="margin-bottom:24px;">
+      <div class="data-card-title" style="margin-bottom:20px;">📊 Statut du ramassage</div>
+
+      <div class="pickup-timeline">
+        {% for step_key, step_label in timeline_steps %}
+          {% with step_statuses="requested assigned in_transit arrived completed" %}
+          {% comment %}Determine step state{% endcomment %}
+          <div class="timeline-step">
+            <div class="timeline-dot
+              {% if pickup.status == step_key %}active
+              {% elif pickup.status == 'completed' %}done
+              {% elif step_key == 'requested' and pickup.status != 'cancelled' and pickup.status != 'failed' %}done
+              {% elif step_key == 'assigned' and pickup.status in 'assigned in_transit arrived completed' %}done
+              {% elif step_key == 'in_transit' and pickup.status in 'in_transit arrived completed' %}done
+              {% elif step_key == 'arrived' and pickup.status in 'arrived completed' %}done
+              {% endif %}
+            ">
+              {% if pickup.status == step_key %}●
+              {% elif step_key == 'requested' %}✓
+              {% elif step_key == 'assigned' and pickup.status in 'assigned in_transit arrived completed' %}✓
+              {% elif step_key == 'in_transit' and pickup.status in 'in_transit arrived completed' %}✓
+              {% elif step_key == 'arrived' and pickup.status in 'arrived completed' %}✓
+              {% elif step_key == 'completed' and pickup.status == 'completed' %}✓
+              {% else %}○
+              {% endif %}
+            </div>
+            <div class="timeline-label">{{ step_label }}</div>
+          </div>
+          {% endwith %}
+        {% endfor %}
+      </div>
+
+      {% if pickup.status == 'failed' or pickup.status == 'cancelled' %}
+      <div style="background:#fee2e2;border-radius:8px;padding:12px 16px;text-align:center;margin-top:12px;">
+        <span style="color:#dc2626;font-weight:600;">
+          {% if pickup.status == 'failed' %}❌ Ramassage échoué{% else %}🚫 Ramassage annulé{% endif %}
+        </span>
+      </div>
+      {% endif %}
+
+      {% if pickup.status == 'completed' %}
+      <div style="background:#d1fae5;border-radius:8px;padding:12px 16px;text-align:center;margin-top:12px;">
+        <span style="color:#059669;font-weight:700;">✅ Ramassage complété avec succès !</span>
+        {% if pickup.completed_at %}
+          <div style="font-size:0.82rem;color:#065f46;margin-top:4px;">{{ pickup.completed_at|date:"d/m/Y à H:i" }}</div>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- HISTORIQUE -->
+    {% if pickup.status_history %}
+    <div class="data-card">
+      <div class="data-card-title" style="margin-bottom:16px;">🕐 Historique des mises à jour</div>
+      <div style="display:flex;flex-direction:column;gap:0;">
+        {% for entry in pickup.status_history %}
+        <div style="display:flex;gap:14px;padding:12px 0;border-bottom:1px solid #f5f2ed;">
+          <div style="width:2px;background:var(--green);border-radius:1px;flex-shrink:0;"></div>
+          <div>
+            <div style="font-weight:600;font-size:0.88rem;color:var(--charcoal);">
+              {{ entry.status|title }}
+            </div>
+            {% if entry.note %}
+              <div style="font-size:0.82rem;color:var(--gray);margin-top:2px;">{{ entry.note }}</div>
+            {% endif %}
+            <div style="font-size:0.75rem;color:var(--gray);margin-top:3px;">{{ entry.timestamp|slice:":16"|replace:"T, " }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- COLONNE DROITE -->
+  <div>
+
+    <!-- INFOS DEMANDE -->
+    <div class="data-card" style="margin-bottom:16px;">
+      <div class="data-card-title" style="margin-bottom:16px;">📋 Détails de la demande</div>
+      <div style="display:flex;flex-direction:column;gap:14px;font-size:0.88rem;">
+        <div>
+          <span style="color:var(--gray);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Statut</span>
+          <div style="margin-top:4px;">
+            <span class="status-badge status-{{ pickup.status }}">{{ pickup.get_status_display }}</span>
+          </div>
+        </div>
+        <div>
+          <span style="color:var(--gray);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Adresse</span>
+          <div style="margin-top:4px;font-weight:500;">{{ pickup.address }}, {{ pickup.city }}</div>
+        </div>
+        <div>
+          <span style="color:var(--gray);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Date souhaitée</span>
+          <div style="margin-top:4px;font-weight:500;">{{ pickup.preferred_date|date:"l d/m/Y" }}</div>
+        </div>
+        <div>
+          <span style="color:var(--gray);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Créneau</span>
+          <div style="margin-top:4px;font-weight:500;">{{ pickup.get_preferred_slot_display }}</div>
+        </div>
+        {% if pickup.special_instructions %}
+        <div>
+          <span style="color:var(--gray);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Instructions</span>
+          <div style="margin-top:4px;color:var(--charcoal);line-height:1.5;">{{ pickup.special_instructions }}</div>
+        </div>
+        {% endif %}
+        {% if pickup.listing %}
+        <div>
+          <span style="color:var(--gray);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Listing lié</span>
+          <div style="margin-top:4px;font-weight:500;">{{ pickup.listing.title }}</div>
+        </div>
+        {% endif %}
+        <div>
+          <span style="color:var(--gray);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Soumis le</span>
+          <div style="margin-top:4px;">{{ pickup.created_at|date:"d/m/Y à H:i" }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COLLECTEUR -->
+    {% if pickup.collector %}
+    <div class="data-card" style="margin-bottom:16px;">
+      <div class="data-card-title" style="margin-bottom:14px;">👷 Collecteur assigné</div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:44px;height:44px;border-radius:50%;background:var(--orange);
+                    display:flex;align-items:center;justify-content:center;
+                    font-family:var(--font-display);font-weight:700;color:white;">
+          {{ pickup.collector.first_name|slice:":1" }}{{ pickup.collector.last_name|slice:":1" }}
+        </div>
+        <div>
+          <div style="font-weight:700;color:var(--charcoal);">{{ pickup.collector.full_name }}</div>
+          {% if pickup.collector.phone %}
+          <div style="font-size:0.85rem;color:var(--gray);">📞 {{ pickup.collector.phone }}</div>
+          {% endif %}
+          {% if pickup.collector.city %}
+          <div style="font-size:0.82rem;color:var(--gray);">📍 {{ pickup.collector.city }}</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- RÉSULTAT (si complété) -->
+    {% if pickup.status == 'completed' %}
+    <div class="data-card">
+      <div class="data-card-title" style="margin-bottom:14px;">✅ Résultat de la collecte</div>
+      <div style="display:flex;flex-direction:column;gap:10px;font-size:0.88rem;">
+        {% if pickup.actual_weight_kg %}
+        <div style="display:flex;justify-content:space-between;">
+          <span style="color:var(--gray);">Poids collecté</span>
+          <span style="font-weight:700;color:var(--green);">{{ pickup.actual_weight_kg }} kg</span>
+        </div>
+        {% endif %}
+        {% if pickup.collector_notes %}
+        <div>
+          <span style="color:var(--gray);">Notes du collecteur</span>
+          <p style="margin-top:4px;color:var(--charcoal);line-height:1.5;">{{ pickup.collector_notes }}</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

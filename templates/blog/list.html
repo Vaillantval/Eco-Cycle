@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+
+{% block title %}Blog — EcoCycle Haiti{% endblock %}
+
+{% block content %}
+<section style="padding:60px 0 80px;background:var(--cream);">
+  <div class="container">
+
+    <!-- EN-TÊTE -->
+    <div style="text-align:center;margin-bottom:48px;">
+      <span style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--green);">Ressources</span>
+      <h1 style="font-family:var(--font-display);font-size:clamp(2rem,4vw,3rem);font-weight:800;color:var(--charcoal);margin:8px 0 12px;">
+        Blog EcoCycle
+      </h1>
+      <p style="color:#666;font-size:1.05rem;max-width:520px;margin:0 auto;">
+        Conseils, actualités et inspirations pour recycler mieux et vivre plus durablement en Haïti.
+      </p>
+    </div>
+
+    <!-- FILTRES CATÉGORIES -->
+    {% if categories %}
+    <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:40px;">
+      <a href="{% url 'blog_list' %}"
+         style="padding:6px 18px;border-radius:20px;border:1.5px solid {% if not active_category %}var(--green){% else %}#ddd{% endif %};
+                background:{% if not active_category %}var(--green){% else %}white{% endif %};
+                color:{% if not active_category %}white{% else %}#555{% endif %};
+                text-decoration:none;font-size:0.82rem;font-weight:600;transition:all 0.15s;">
+        Tous
+      </a>
+      {% for cat in categories %}
+      <a href="{% url 'blog_list' %}?category={{ cat.slug }}"
+         style="padding:6px 18px;border-radius:20px;border:1.5px solid {% if active_category.slug == cat.slug %}var(--green){% else %}#ddd{% endif %};
+                background:{% if active_category.slug == cat.slug %}var(--green){% else %}white{% endif %};
+                color:{% if active_category.slug == cat.slug %}white{% else %}#555{% endif %};
+                text-decoration:none;font-size:0.82rem;font-weight:600;transition:all 0.15s;">
+        {{ cat.name }}
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- GRILLE ARTICLES -->
+    {% if posts %}
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:28px;">
+      {% for post in posts %}
+      <article style="background:white;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.06);
+                      transition:transform 0.2s,box-shadow 0.2s;"
+               onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 8px 28px rgba(0,0,0,0.1)'"
+               onmouseout="this.style.transform='';this.style.boxShadow='0 2px 12px rgba(0,0,0,0.06)'">
+        <!-- COVER -->
+        {% if post.cover_image %}
+        <img src="{{ post.cover_image.url }}" alt="{{ post.title }}"
+             style="width:100%;height:200px;object-fit:cover;display:block;">
+        {% else %}
+        <div style="height:200px;background:linear-gradient(135deg,var(--green),#0a5c34);
+                    display:flex;align-items:center;justify-content:center;font-size:3.5rem;">
+          {% if post.category %}{{ post.category.name|slice:":1" }}{% else %}♻{% endif %}
+        </div>
+        {% endif %}
+
+        <div style="padding:20px 22px 22px;">
+          {% if post.category %}
+          <span style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;
+                       color:var(--green);background:#f0fdf4;padding:3px 10px;border-radius:10px;">
+            {{ post.category.name }}
+          </span>
+          {% endif %}
+
+          <h2 style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--charcoal);
+                     margin:10px 0 8px;line-height:1.35;">
+            <a href="{% url 'blog_detail' post.slug %}" style="text-decoration:none;color:inherit;">
+              {{ post.title }}
+            </a>
+          </h2>
+
+          <p style="font-size:0.87rem;color:#666;line-height:1.55;margin:0 0 14px;">
+            {{ post.excerpt|truncatechars:120 }}
+          </p>
+
+          <div style="display:flex;align-items:center;justify-content:space-between;font-size:0.78rem;color:#999;">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <span>📅 {{ post.published_at|date:"d/m/Y" }}</span>
+              <span>⏱ {{ post.read_time_minutes }} min</span>
+              <span>👁 {{ post.views }}</span>
+            </div>
+            <a href="{% url 'blog_detail' post.slug %}"
+               style="color:var(--green);font-weight:700;text-decoration:none;font-size:0.82rem;">
+              Lire →
+            </a>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:8px;margin-top:14px;padding-top:14px;border-top:1px solid #f5f2ed;">
+            <div style="width:28px;height:28px;border-radius:50%;background:var(--orange);
+                        display:flex;align-items:center;justify-content:center;
+                        font-size:0.7rem;font-weight:700;color:white;">
+              {{ post.author.first_name|slice:":1" }}{{ post.author.last_name|slice:":1" }}
+            </div>
+            <span style="font-size:0.78rem;color:#555;font-weight:500;">{{ post.author.full_name }}</span>
+          </div>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+
+    {% else %}
+    <div style="text-align:center;padding:80px 20px;">
+      <div style="font-size:4rem;margin-bottom:16px;">✍️</div>
+      <p style="color:#999;font-size:1.05rem;margin-bottom:20px;">
+        {% if active_category %}Aucun article dans cette catégorie pour le moment.{% else %}Aucun article publié pour le moment.{% endif %}
+      </p>
+      {% if active_category %}
+      <a href="{% url 'blog_list' %}" style="color:var(--green);font-weight:700;text-decoration:none;">← Voir tous les articles</a>
+      {% endif %}
+    </div>
+    {% endif %}
+
+  </div>
+</section>
+{% endblock %}

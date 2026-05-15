@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+
+{% block title %}Academy — EcoCycle Haiti{% endblock %}
+
+{% block content %}
+<section style="padding:60px 0 80px;background:var(--cream);">
+  <div class="container">
+
+    <!-- EN-TÊTE -->
+    <div style="text-align:center;margin-bottom:48px;">
+      <span style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--green);">Formation gratuite</span>
+      <h1 style="font-family:var(--font-display);font-size:clamp(2rem,4vw,3rem);font-weight:800;color:var(--charcoal);margin:8px 0 12px;">
+        EcoCycle Academy
+      </h1>
+      <p style="color:#666;font-size:1.05rem;max-width:540px;margin:0 auto;">
+        Formez-vous au recyclage, à l'économie circulaire et au business durable en Haïti. Cours 100% gratuits.
+      </p>
+    </div>
+
+    <!-- FILTRES PAR NIVEAU -->
+    <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:40px;">
+      <a href="{% url 'academy_list' %}"
+         style="padding:6px 18px;border-radius:20px;border:1.5px solid {% if not level_filter %}var(--green){% else %}#ddd{% endif %};
+                background:{% if not level_filter %}var(--green){% else %}white{% endif %};
+                color:{% if not level_filter %}white{% else %}#555{% endif %};
+                text-decoration:none;font-size:0.82rem;font-weight:600;">
+        Tous les niveaux
+      </a>
+      {% for value, label in level_choices %}
+      <a href="{% url 'academy_list' %}?level={{ value }}"
+         style="padding:6px 18px;border-radius:20px;border:1.5px solid {% if level_filter == value %}var(--green){% else %}#ddd{% endif %};
+                background:{% if level_filter == value %}var(--green){% else %}white{% endif %};
+                color:{% if level_filter == value %}white{% else %}#555{% endif %};
+                text-decoration:none;font-size:0.82rem;font-weight:600;">
+        {{ label }}
+      </a>
+      {% endfor %}
+    </div>
+
+    <!-- GRILLE COURS -->
+    {% if courses %}
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:28px;">
+      {% for course in courses %}
+      {% with enrollment=user_enrollments|default_if_none:"" %}
+
+      <div style="background:white;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.06);
+                  display:flex;flex-direction:column;transition:transform 0.2s,box-shadow 0.2s;"
+           onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 8px 28px rgba(0,0,0,0.1)'"
+           onmouseout="this.style.transform='';this.style.boxShadow='0 2px 12px rgba(0,0,0,0.06)'">
+
+        <!-- THUMBNAIL -->
+        {% if course.thumbnail %}
+        <img src="{{ course.thumbnail.url }}" alt="{{ course.title }}"
+             style="width:100%;height:180px;object-fit:cover;display:block;">
+        {% else %}
+        <div style="height:180px;background:linear-gradient(135deg,var(--orange),#c85d0a);
+                    display:flex;align-items:center;justify-content:center;font-size:3.5rem;">🎓</div>
+        {% endif %}
+
+        <div style="padding:20px 22px 22px;flex:1;display:flex;flex-direction:column;">
+
+          <!-- BADGES -->
+          <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
+            <span style="font-size:0.7rem;font-weight:700;text-transform:uppercase;padding:2px 10px;border-radius:10px;
+                         {% if course.level == 'beginner' %}background:#f0fdf4;color:#15803d;
+                         {% elif course.level == 'intermediate' %}background:#fff7ed;color:#c2410c;
+                         {% else %}background:#fef2f2;color:#dc2626;{% endif %}">
+              {{ course.get_level_display }}
+            </span>
+            {% if course.is_free %}
+            <span style="font-size:0.7rem;font-weight:700;text-transform:uppercase;padding:2px 10px;border-radius:10px;background:#e0f2fe;color:#0369a1;">Gratuit</span>
+            {% endif %}
+          </div>
+
+          <h2 style="font-family:var(--font-display);font-size:1.05rem;font-weight:700;color:var(--charcoal);margin:0 0 8px;line-height:1.3;flex:1;">
+            {{ course.title }}
+          </h2>
+
+          <p style="font-size:0.85rem;color:#666;line-height:1.55;margin:0 0 14px;">
+            {{ course.description|truncatechars:100 }}
+          </p>
+
+          <div style="display:flex;gap:16px;font-size:0.78rem;color:#999;margin-bottom:16px;">
+            <span>📚 {{ course.lessons.count }} leçon{{ course.lessons.count|pluralize }}</span>
+            <span>⏱ {{ course.duration_minutes }} min</span>
+          </div>
+
+          <!-- PROGRESSION si inscrit -->
+          {% with enroll=user_enrollments|dictsort:"0" %}
+          {% endwith %}
+          {% if user_enrollments %}
+            {% for key, enroll in user_enrollments.items %}
+              {% if key == course.id|stringformat:"s" %}
+              <div style="margin-bottom:12px;">
+                <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:#64748b;margin-bottom:4px;">
+                  <span>Progression</span>
+                  <span style="font-weight:700;color:var(--green);">{{ enroll.progress_percent }}%</span>
+                </div>
+                <div style="background:#f1f5f9;border-radius:4px;height:6px;">
+                  <div style="background:var(--green);height:100%;border-radius:4px;width:{{ enroll.progress_percent }}%;transition:width 0.3s;"></div>
+                </div>
+                {% if enroll.is_completed %}
+                <div style="font-size:0.75rem;color:#15803d;font-weight:700;margin-top:4px;">✅ Terminé !</div>
+                {% endif %}
+              </div>
+              {% endif %}
+            {% endfor %}
+          {% endif %}
+
+          <a href="{% url 'course_detail' course.slug %}"
+             style="display:block;text-align:center;padding:10px;background:var(--green);color:white;
+                    border-radius:8px;text-decoration:none;font-weight:700;font-size:0.88rem;">
+            {% if course.id|stringformat:"s" in user_enrollments %}Continuer le cours{% else %}Voir le cours{% endif %}
+          </a>
+
+        </div>
+      </div>
+      {% endwith %}
+      {% endfor %}
+    </div>
+
+    {% else %}
+    <div style="text-align:center;padding:80px 20px;">
+      <div style="font-size:4rem;margin-bottom:16px;">🎓</div>
+      <p style="color:#999;font-size:1.05rem;">
+        {% if level_filter %}Aucun cours à ce niveau pour le moment.{% else %}Aucun cours publié pour le moment.{% endif %}
+      </p>
+      {% if level_filter %}<a href="{% url 'academy_list' %}" style="color:var(--green);font-weight:700;text-decoration:none;">← Voir tous les cours</a>{% endif %}
+    </div>
+    {% endif %}
+
+  </div>
+</section>
+{% endblock %}
