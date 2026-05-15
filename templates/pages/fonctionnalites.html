@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Fonctionnalités — EcoCycle Haiti{% endblock %}
+{% block meta_description %}Découvrez toutes les fonctionnalités d'EcoCycle : IA de tri, marketplace d'enchères, collecte à domicile, suivi d'impact et Academy.{% endblock %}
+
+{% block content %}
+
+<div class="page-hero">
+  <div class="container">
+    <span class="page-hero-tag">Fonctionnalités</span>
+    <h1>Tout ce qu'il faut<br>pour recycler intelligemment</h1>
+    <p>Une plateforme complète connectant producteurs de déchets et recycleurs, propulsée par l'IA — conçue pour les besoins uniques d'Haïti.</p>
+    <div class="page-hero-breadcrumb">
+      <a href="{% url 'home' %}">Accueil</a>
+      <span>›</span>
+      <span>Fonctionnalités</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══ FEATURES GRID ══ -->
+<section style="padding: 80px 0;">
+  <div class="container">
+    <div class="features-grid">
+      <div class="feature-card reveal">
+        <span class="feature-badge new">Nouveau</span>
+        <div class="feature-icon">🤖</div>
+        <h3>Identification IA des Déchets</h3>
+        <p>Scannez n'importe quel matériau avec votre caméra et obtenez une identification instantanée, une catégorie et une estimation de la valeur marchande en moins de 3 secondes.</p>
+      </div>
+      <div class="feature-card reveal">
+        <span class="feature-badge popular">Populaire</span>
+        <div class="feature-icon">🚚</div>
+        <h3>Service de Collecte à Domicile</h3>
+        <p>Planifiez un ramassage de déchets directement à votre adresse. Nos partenaires collecteurs vérifiés arriveront dans le créneau convenu.</p>
+      </div>
+      <div class="feature-card reveal">
+        <span class="feature-badge popular">Populaire</span>
+        <div class="feature-icon">🏷️</div>
+        <h3>Marketplace d'Enchères</h3>
+        <p>Mettez vos recyclables aux enchères ou achetez directement. Enchères transparentes, paiements sécurisés, contreparties vérifiées à travers Haïti.</p>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">📊</div>
+        <h3>Suivi d'Impact Environnemental</h3>
+        <p>Consultez votre tableau de bord personnel — CO₂ économisé, kilogrammes recyclés, classement communautaire et historique complet.</p>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">🏫</div>
+        <h3>Academy EcoCycle</h3>
+        <p>Accédez à des cours certifiants, programmes de formation et vidéos éducatives. Devenez un professionnel certifié du recyclage.</p>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">🔔</div>
+        <h3>Alertes Intelligentes</h3>
+        <p>Recevez des notifications lorsque des matériaux qui vous intéressent sont listés, quand les enchères ferment, et quand la collecte est en route.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ APP MOBILE ══ -->
+<section style="padding: 0 0 80px; background: var(--cream);">
+  <div class="container" style="padding-top: 80px;">
+    <div class="app-inner">
+      <div class="app-content reveal">
+        <span class="tag">Application Mobile</span>
+        <h2 class="section-title">Recyclez Plus Intelligemment<br>depuis Votre Téléphone</h2>
+        <p class="section-sub">L'application EcoCycle met l'identification des déchets par IA, la gestion des enchères et la planification des collectes dans votre poche.</p>
+        <div class="app-features-list">
+          <div class="app-feature"><div class="app-feature-icon">📷</div><span>Caméra IA pour identification instantanée des déchets</span></div>
+          <div class="app-feature"><div class="app-feature-icon">📦</div><span>Enchères en temps réel et création d'annonces</span></div>
+          <div class="app-feature"><div class="app-feature-icon">📍</div><span>Suivi GPS en direct des collectes</span></div>
+          <div class="app-feature"><div class="app-feature-icon">📈</div><span>Tableau de bord d'impact environnemental personnel</span></div>
+        </div>
+        <div class="app-btns">
+          <a href="#" class="store-btn">
+            <span class="store-btn-icon">🍎</span>
+            <div class="store-btn-text"><small>Télécharger sur</small><strong>App Store</strong></div>
+          </a>
+          <a href="#" class="store-btn">
+            <span class="store-btn-icon">▶️</span>
+            <div class="store-btn-text"><small>Disponible sur</small><strong>Google Play</strong></div>
+          </a>
+        </div>
+      </div>
+      <div class="app-mockup reveal">
+        <div class="app-phone">
+          <div class="app-phone-screen phone-screen-1">
+            <div class="p-icon">♻️</div>
+            <div class="p-title">EcoCycle<br>Scan & Sell</div>
+          </div>
+        </div>
+        <div class="app-phone">
+          <div class="app-phone-screen phone-screen-2">
+            <div class="ps2-header"><h5>🏷️ Mes Enchères</h5></div>
+            <div class="ps2-list">
+              <div class="ps2-item"><div class="ps2-item-dot" style="background:#22c55e"></div><span>Ferraille — HTG 1 200</span></div>
+              <div class="ps2-item"><div class="ps2-item-dot" style="background:#f07c1a"></div><span>Plastique PET — HTG 340</span></div>
+              <div class="ps2-item"><div class="ps2-item-dot" style="background:#3b82f6"></div><span>Balles Papier — HTG 580</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ CTA ══ -->
+<section style="padding: 80px 0;">
+  <div class="container">
+    <div class="cta-box reveal">
+      <h2>Toutes ces fonctionnalités,<br>gratuitement</h2>
+      <p>Créez votre compte et accédez immédiatement au scanner IA, aux enchères en cours et à l'Academy.</p>
+      <div class="cta-btns">
+        <a href="{% url 'web_register' %}" class="btn-primary" style="background:var(--white);color:var(--green-dark);">Commencer Gratuitement</a>
+        <a href="{% url 'marketplace' %}" class="btn-secondary">Explorer le Marketplace</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

@@ -29,7 +29,8 @@
 
   <!-- NAVBAR -->
   <nav class="navbar" id="navbar">
-    <div class="nav-container">
+    <div class="nav-inner">
+
       <a href="{% url 'home' %}" class="nav-logo">
         <div class="nav-logo-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
@@ -39,36 +40,73 @@
             <path d="M9 19l3-3 3 3"/>
           </svg>
         </div>
-        <span>EcoCycle</span>
+        <span class="nav-logo-text">EcoCycle</span>
       </a>
 
-      <ul class="nav-menu" id="mobileMenu">
+      <ul class="nav-links">
         <li><a href="{% url 'home' %}">Accueil</a></li>
+
+        <li class="has-dropdown">
+          <button class="nav-dropdown-trigger">La Plateforme <span class="nav-chevron">▾</span></button>
+          <ul class="nav-dropdown">
+            <li><a href="{% url 'comment_ca_marche' %}">⚙️ Comment ça marche</a></li>
+            <li><a href="{% url 'fonctionnalites' %}">✨ Fonctionnalités</a></li>
+            <li><a href="{% url 'notre_impact' %}">📊 Notre Impact</a></li>
+          </ul>
+        </li>
+
         <li><a href="{% url 'marketplace' %}">Marketplace</a></li>
-        <li><a href="{% url 'blog_list' %}">Blog</a></li>
-        <li><a href="{% url 'academy_list' %}">Academy</a></li>
-        <li><a href="{% url 'home' %}#contact">Contact</a></li>
+
+        <li class="has-dropdown">
+          <button class="nav-dropdown-trigger">Apprendre <span class="nav-chevron">▾</span></button>
+          <ul class="nav-dropdown">
+            <li><a href="{% url 'academy_list' %}">🎓 Academy</a></li>
+            <li><a href="{% url 'blog_list' %}">📝 Blog</a></li>
+            <li><a href="{% url 'faq' %}">❓ FAQ</a></li>
+          </ul>
+        </li>
+
+        <li><a href="{% url 'contact' %}">Contact</a></li>
       </ul>
 
       <div class="nav-actions">
         {% if request.session.user_id %}
-          <div class="user-menu">
-            <span class="user-name">{{ request.session.user_name }}</span>
-            <a href="{% url 'dashboard' %}" class="btn btn-outline">Dashboard</a>
-            {% if request.session.user_role == 'admin' %}
-              <a href="{% url 'admin_panel' %}" class="btn btn-warning">Admin</a>
-            {% endif %}
-            <a href="{% url 'web_logout' %}" class="btn btn-ghost">Déconnexion</a>
-          </div>
+          <span class="nav-user-name">{{ request.session.user_name }}</span>
+          {% if request.session.user_role == 'admin' %}
+            <a href="{% url 'admin_panel' %}" class="nav-login">Admin ⚡</a>
+          {% endif %}
+          <a href="{% url 'dashboard' %}" class="nav-dashboard">Dashboard</a>
+          <a href="{% url 'web_logout' %}" class="nav-login">Déconnexion</a>
         {% else %}
-          <a href="{% url 'web_login' %}" class="btn btn-outline">Connexion</a>
-          <a href="{% url 'web_register' %}" class="btn btn-primary">S'inscrire</a>
+          <a href="{% url 'web_login' %}" class="nav-login">Connexion</a>
+          <a href="{% url 'web_register' %}" class="nav-signup">S'inscrire</a>
         {% endif %}
       </div>
 
-      <button class="hamburger" id="hamburger" onclick="toggleMenu()">☰</button>
+      <button class="hamburger" id="hamburger" aria-label="Ouvrir le menu">
+        <span></span><span></span><span></span>
+      </button>
     </div>
   </nav>
+
+  <!-- MOBILE MENU -->
+  <div class="mobile-menu" id="mobileMenu">
+    <button class="mobile-close" id="mobileClose">✕</button>
+    <a href="{% url 'home' %}">Accueil</a>
+    <a href="{% url 'comment_ca_marche' %}">Comment ça marche</a>
+    <a href="{% url 'fonctionnalites' %}">Fonctionnalités</a>
+    <a href="{% url 'notre_impact' %}">Notre Impact</a>
+    <a href="{% url 'marketplace' %}">Marketplace</a>
+    <a href="{% url 'academy_list' %}">Academy</a>
+    <a href="{% url 'blog_list' %}">Blog</a>
+    <a href="{% url 'faq' %}">FAQ</a>
+    <a href="{% url 'contact' %}">Contact</a>
+    {% if request.session.user_id %}
+      <a href="{% url 'dashboard' %}" style="color:var(--green-light);">Dashboard</a>
+    {% else %}
+      <a href="{% url 'web_register' %}" style="color:var(--orange);">S'inscrire</a>
+    {% endif %}
+  </div>
 
   <!-- MESSAGES FLASH -->
   {% if messages %}

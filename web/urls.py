@@ -19,11 +19,21 @@ from .views.admin_views import (
 )
 from .views.blog_views import BlogListView, BlogDetailView
 from .views.academy_views import AcademyListView, CourseDetailView, EnrollCourseView, CompleteLessonView
-from apps.core.views import ContactView, NewsletterSubscribeView, NewsletterConfirmView
+from apps.core.views import NewsletterSubscribeView, NewsletterConfirmView
+from .views.page_views import (
+    CommentCaMarcheView, FonctionnalitesView, NotreImpactView,
+    FaqView, ContactPageView,
+)
 
 urlpatterns = [
     # Landing
     path('', HomeView.as_view(), name='home'),
+
+    # Pages dédiées (La Plateforme + Apprendre)
+    path('comment-ca-marche/', CommentCaMarcheView.as_view(), name='comment_ca_marche'),
+    path('fonctionnalites/',   FonctionnalitesView.as_view(), name='fonctionnalites'),
+    path('notre-impact/',      NotreImpactView.as_view(),     name='notre_impact'),
+    path('faq/',               FaqView.as_view(),             name='faq'),
 
     # Auth
     path('login/',    WebLoginView.as_view(),    name='web_login'),
@@ -51,8 +61,7 @@ urlpatterns = [
          ProfileView.as_view(), name='profile'),
 
     # Contact & newsletter
-    path('contact/',
-         ContactView.as_view(), name='contact'),
+    path('contact/', ContactPageView.as_view(), name='contact'),
     path('newsletter/subscribe/',
          NewsletterSubscribeView.as_view(), name='newsletter_subscribe'),
     path('newsletter/confirm/<uuid:token>/',

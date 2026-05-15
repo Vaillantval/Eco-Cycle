@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}FAQ — Questions Fréquentes — EcoCycle Haiti{% endblock %}
+{% block meta_description %}Tout ce que vous devez savoir sur EcoCycle Haiti : collecte, paiements, scanner IA, zones desservies et tarifs.{% endblock %}
+
+{% block content %}
+
+<div class="page-hero">
+  <div class="container">
+    <span class="page-hero-tag">FAQ</span>
+    <h1>Questions Fréquentes</h1>
+    <p>Tout ce que vous devez savoir sur EcoCycle en Haïti. Une question non répondue ? <a href="{% url 'contact' %}" style="color:#fff;text-decoration:underline;">Contactez-nous.</a></p>
+    <div class="page-hero-breadcrumb">
+      <a href="{% url 'home' %}">Accueil</a>
+      <span>›</span>
+      <span>FAQ</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══ FAQ ══ -->
+<section style="padding: 80px 0;">
+  <div class="container" style="max-width: 820px;">
+    <div class="faq-list reveal">
+      <div class="faq-item open">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          <h4>Comment fonctionne le service de collecte ?</h4>
+          <span class="faq-toggle">+</span>
+        </div>
+        <div class="faq-answer">
+          <p>Après avoir scanné vos matériaux avec la caméra IA, vous pouvez planifier un ramassage. Nos collecteurs vérifiés arriveront à votre adresse dans le créneau convenu. Le paiement est traité de manière sécurisée après vérification des matériaux.</p>
+        </div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          <h4>Comment utiliser la caméra IA ?</h4>
+          <span class="faq-toggle">+</span>
+        </div>
+        <div class="faq-answer">
+          <p>Ouvrez l'application EcoCycle, appuyez sur l'icône caméra et pointez-la sur votre déchet. L'IA identifie le type en moins de 3 secondes, vous donne une estimation de la valeur marchande, et suggère d'enchérir ou de planifier un ramassage.</p>
+        </div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          <h4>Le service est-il gratuit ?</h4>
+          <span class="faq-toggle">+</span>
+        </div>
+        <div class="faq-answer">
+          <p>Créer un compte, parcourir les enchères et utiliser le scanner IA sont entièrement gratuits. EcoCycle prélève une petite commission (5%) sur les ventes aux enchères finalisées. Les services de collecte peuvent avoir des frais logistiques selon la localisation.</p>
+        </div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          <h4>Quelles zones en Haïti servez-vous ?</h4>
+          <span class="faq-toggle">+</span>
+        </div>
+        <div class="faq-answer">
+          <p>Nous opérons actuellement à Port-au-Prince, Pétion-Ville et Cap-Haïtien. Nous nous étendons à Jacmel, Les Cayes et Gonaïves en 2026. Consultez l'application pour les zones disponibles dans votre région.</p>
+        </div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          <h4>Comment les paiements sont-ils sécurisés ?</h4>
+          <span class="faq-toggle">+</span>
+        </div>
+        <div class="faq-answer">
+          <p>Tous les paiements sont conservés en escrow jusqu'à ce que l'acheteur et le vendeur confirment la transaction. Nous prenons en charge MonCash, Stripe et virement bancaire pour les utilisateurs haïtiens.</p>
+        </div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          <h4>Qui peut s'inscrire sur EcoCycle ?</h4>
+          <span class="faq-toggle">+</span>
+        </div>
+        <div class="faq-answer">
+          <p>Toute personne ou entreprise souhaitant vendre ou acheter des matériaux recyclables peut créer un compte. Des rôles spécifiques existent pour les collecteurs professionnels — contactez-nous pour devenir collecteur agréé.</p>
+        </div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          <h4>Comment fonctionne l'Academy EcoCycle ?</h4>
+          <span class="faq-toggle">+</span>
+        </div>
+        <div class="faq-answer">
+          <p>L'Academy propose des cours en ligne avec modules vidéo et quiz. Chaque cours se termine par un certificat reconnu. Vous pouvez vous inscrire à tout moment et progresser à votre rythme.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTACT TEASER -->
+    <div class="reveal" style="margin-top: 64px; text-align: center; padding: 48px; background: var(--cream); border-radius: 20px;">
+      <h3 style="font-family: var(--font-display); margin-bottom: 12px;">Vous n'avez pas trouvé votre réponse ?</h3>
+      <p style="color: var(--charcoal); margin-bottom: 24px;">Notre équipe est disponible du lundi au vendredi, 8h–17h.</p>
+      <a href="{% url 'contact' %}" class="nav-signup" style="display:inline-block; text-decoration:none;">Nous contacter →</a>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

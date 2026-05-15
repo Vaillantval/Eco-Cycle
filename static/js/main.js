@@ -10,12 +10,22 @@ if (navbar) {
 function toggleMenu() {
   const menu = document.getElementById('mobileMenu');
   if (menu) menu.classList.toggle('open');
+  document.body.style.overflow = menu && menu.classList.contains('open') ? 'hidden' : '';
 }
 
 const hamburger = document.getElementById('hamburger');
-if (hamburger) {
-  hamburger.addEventListener('click', toggleMenu);
-}
+if (hamburger) hamburger.addEventListener('click', toggleMenu);
+
+const mobileClose = document.getElementById('mobileClose');
+if (mobileClose) mobileClose.addEventListener('click', toggleMenu);
+
+// ferme le menu si on clique sur un lien
+document.querySelectorAll('.mobile-menu a').forEach(a => {
+  a.addEventListener('click', () => {
+    const menu = document.getElementById('mobileMenu');
+    if (menu) { menu.classList.remove('open'); document.body.style.overflow = ''; }
+  });
+});
 
 // ── REVEAL ON SCROLL ──
 const reveals = document.querySelectorAll('.reveal');

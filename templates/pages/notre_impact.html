@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Notre Impact — EcoCycle Haiti{% endblock %}
+{% block meta_description %}Découvrez l'impact mesurable d'EcoCycle sur l'environnement haïtien : tonnes recyclées, CO₂ économisé, collectes réalisées et témoignages.{% endblock %}
+
+{% block content %}
+
+<div class="page-hero">
+  <div class="container">
+    <span class="page-hero-tag">Impact</span>
+    <h1>Notre Impact<br>sur Haïti</h1>
+    <p>Des chiffres réels, mesurables, et une communauté qui grandit chaque jour autour d'un objectif commun : un Haïti plus propre.</p>
+    <div class="page-hero-breadcrumb">
+      <a href="{% url 'home' %}">Accueil</a>
+      <span>›</span>
+      <span>Notre Impact</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══ STATS ══ -->
+<section id="stats" style="padding: 80px 0;">
+  <div class="container">
+    <div class="stats-grid reveal">
+      <div class="stat-item">
+        <div class="stat-num"><span id="stat1">{{ stats.total_kg_recycled|default:"0" }}</span>+</div>
+        <div class="stat-label">kg Recyclés</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num"><span id="stat2">{{ stats.total_users|default:"0" }}</span>+</div>
+        <div class="stat-label">Utilisateurs Inscrits</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num"><span id="stat3">{{ stats.total_collections|default:"0" }}</span>+</div>
+        <div class="stat-label">Collectes Réalisées</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num"><span id="stat4">{{ stats.total_co2_saved|default:"0" }}</span></div>
+        <div class="stat-label">kg CO₂ Économisés</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ TESTIMONIALS ══ -->
+<section style="padding: 0 0 80px; background: var(--cream);">
+  <div class="container" style="padding-top: 80px;">
+    <div class="testimonials-header reveal">
+      <span class="tag">Témoignages</span>
+      <h2 class="section-title" style="margin-bottom:12px;">Ce que dit notre Communauté</h2>
+      <p class="section-sub" style="margin:0 auto;text-align:center;">Entreprises, collecteurs et particuliers qui changent Haïti grâce au recyclage.</p>
+    </div>
+    <div class="testimonials-grid">
+      <div class="testimonial-card reveal">
+        <div class="stars">★★★★★</div>
+        <p class="testimonial-text">EcoCycle a changé notre façon de gérer les déchets dans notre usine à Port-au-Prince. En un mois, nous avons vendu 3 tonnes de ferraille via les enchères.</p>
+        <div class="testimonial-author">
+          <div class="author-avatar">MJ</div>
+          <div>
+            <div class="author-name">Marie Jean</div>
+            <div class="author-role">Directrice d'usine, PAP</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card reveal">
+        <div class="stars">★★★★★</div>
+        <p class="testimonial-text">La caméra IA est incroyablement précise — elle a identifié nos déchets électroniques mieux que je ne l'espérais. Le service de collecte est rapide.</p>
+        <div class="testimonial-author">
+          <div class="author-avatar">KP</div>
+          <div>
+            <div class="author-name">Kervens Pierre</div>
+            <div class="author-role">Responsable IT, Pétion-Ville</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card reveal">
+        <div class="stars">★★★★★</div>
+        <p class="testimonial-text">Notre ONG a collaboré avec EcoCycle pour éduquer les communautés à Cap-Haïtien. Le centre de formation et le suivi d'impact sont fantastiques.</p>
+        <div class="testimonial-author">
+          <div class="author-avatar">CL</div>
+          <div>
+            <div class="author-name">Claudine Louis</div>
+            <div class="author-role">Directrice d'ONG, Cap-Haïtien</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ PARTNERS ══ -->
+<section style="padding: 80px 0;">
+  <div class="container">
+    <div class="partners-header">
+      <p>Fait confiance par les principales organisations à travers Haïti</p>
+    </div>
+    <div class="partners-row reveal">
+      <div class="partner-logo">♻️ ReHaiti</div>
+      <div class="partner-logo">🏙️ Mairie PAP</div>
+      <div class="partner-logo">🌿 GreenHaïti ONG</div>
+      <div class="partner-logo">🏭 RecycloTech</div>
+      <div class="partner-logo">🌊 CoastalClean</div>
+      <div class="partner-logo">🏫 UniNord</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ CTA ══ -->
+<section style="padding: 0 0 80px;">
+  <div class="container">
+    <div class="cta-box reveal">
+      <h2>Rejoignez le Mouvement</h2>
+      <p>Chaque action compte. Inscrivez-vous et contribuez à l'impact collectif d'EcoCycle sur Haïti.</p>
+      <div class="cta-btns">
+        <a href="{% url 'web_register' %}" class="btn-primary" style="background:var(--white);color:var(--green-dark);">Créer un Compte Gratuit</a>
+        <a href="{% url 'marketplace' %}" class="btn-secondary">Explorer le Marketplace</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

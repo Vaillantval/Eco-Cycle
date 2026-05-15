@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Comment ça marche — EcoCycle Haiti{% endblock %}
+{% block meta_description %}Découvrez en 4 étapes simples comment fonctionne EcoCycle : scanner, identifier, planifier et être payé.{% endblock %}
+
+{% block content %}
+
+<div class="page-hero">
+  <div class="container">
+    <span class="page-hero-tag">Processus</span>
+    <h1>Comment fonctionne EcoCycle</h1>
+    <p>Du scan de vos déchets à la transaction réussie — rejoignez l'économie circulaire en quatre étapes simples.</p>
+    <div class="page-hero-breadcrumb">
+      <a href="{% url 'home' %}">Accueil</a>
+      <span>›</span>
+      <span>Comment ça marche</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 4 ÉTAPES ══ -->
+<section style="padding: 80px 0;">
+  <div class="container">
+    <div class="how-inner">
+      <div class="reveal">
+        <div class="how-steps">
+          <div class="how-step active" data-step="0">
+            <div class="how-step-num">1</div>
+            <div class="how-step-body">
+              <h4>Scanner les Déchets</h4>
+              <p>Utilisez la caméra IA pour photographier vos matériaux recyclables. Notre modèle identifie le type et la valeur estimée instantanément.</p>
+            </div>
+          </div>
+          <div class="how-step" data-step="1">
+            <div class="how-step-num">2</div>
+            <div class="how-step-body">
+              <h4>Identifier avec l'IA</h4>
+              <p>Notre système intelligent catégorise plastique, métal, papier, électronique, verre et plus — avec 95%+ de précision.</p>
+            </div>
+          </div>
+          <div class="how-step" data-step="2">
+            <div class="how-step-num">3</div>
+            <div class="how-step-body">
+              <h4>Planifier ou Enchérir</h4>
+              <p>Réservez un ramassage ou créez une annonce d'enchère pour toucher des acheteurs vérifiés à travers Haïti.</p>
+            </div>
+          </div>
+          <div class="how-step" data-step="3">
+            <div class="how-step-num">4</div>
+            <div class="how-step-body">
+              <h4>Recycler & Être Payé</h4>
+              <p>Finalisez des transactions sécurisées, suivez votre impact environnemental, et gagnez sur des matériaux que vous jetiez.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="how-visual reveal" id="howVisual">
+        <div style="text-align:center;">
+          <div class="how-visual-icon" id="howIcon">📷</div>
+          <div class="how-visual-text" id="howTitle">Scanner IA</div>
+          <div class="how-visual-sub" id="howSub">Pointez votre téléphone sur n'importe quel déchet</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ POURQUOI ECOCYCLE ══ -->
+<section style="padding: 0 0 80px; background: var(--cream);">
+  <div class="container" style="padding-top: 80px;">
+    <div class="benefits-inner">
+      <div class="benefits-visual reveal">
+        <div class="benefits-main-card">
+          <div class="benefits-main-icon">🌍</div>
+          <h3>Le Marketplace le Plus Vert d'Haïti</h3>
+          <p>EcoCycle construit l'infrastructure dont Haïti a besoin pour transformer son défi des déchets en opportunité économique.</p>
+        </div>
+        <div class="benefits-small-cards">
+          <div class="benefit-small">
+            <div class="benefit-small-icon">🌱</div>
+            <h4>Impact Écologique</h4>
+            <p>Suivez chaque kg sauvé de la décharge en temps réel.</p>
+          </div>
+          <div class="benefit-small">
+            <div class="benefit-small-icon">💰</div>
+            <h4>Générez des Revenus</h4>
+            <p>Transformez vos déchets en source de revenus complémentaire.</p>
+          </div>
+          <div class="benefit-small">
+            <div class="benefit-small-icon">🤝</div>
+            <h4>Communauté</h4>
+            <p>Connectez-vous avec des ONG, entreprises et municipalités.</p>
+          </div>
+          <div class="benefit-small">
+            <div class="benefit-small-icon">🛡️</div>
+            <h4>Confiance & Sécurité</h4>
+            <p>Tous les utilisateurs sont vérifiés. Les paiements sont sécurisés en escrow.</p>
+          </div>
+        </div>
+      </div>
+      <div class="benefits-list reveal">
+        <span class="tag">Pourquoi EcoCycle</span>
+        <h2 class="section-title" style="margin-bottom:40px;">Conçu pour<br>l'Économie Circulaire<br>d'Haïti</h2>
+        <div class="benefit-row">
+          <span class="benefit-num">01</span>
+          <div class="benefit-text">
+            <h4>Protection de l'Environnement</h4>
+            <p>Réduire la pollution dans les villes, côtes et zones rurales d'Haïti en détournant les déchets vers des cycles productifs.</p>
+          </div>
+        </div>
+        <div class="benefit-row">
+          <span class="benefit-num">02</span>
+          <div class="benefit-text">
+            <h4>Système de Recyclage Intelligent</h4>
+            <p>Tri piloté par l'IA, logistique intelligente et analyses de données pour une récupération des déchets optimale.</p>
+          </div>
+        </div>
+        <div class="benefit-row">
+          <span class="benefit-num">03</span>
+          <div class="benefit-text">
+            <h4>Impact Réel et Mesurable</h4>
+            <p>Chaque action est enregistrée — des grammes scannés aux tonnes collectées — avec des rapports transparents.</p>
+          </div>
+        </div>
+        <div class="benefit-row">
+          <span class="benefit-num">04</span>
+          <div class="benefit-text">
+            <h4>Communauté Éco-Responsable</h4>
+            <p>Rejoignez des milliers d'Haïtiens qui construisent un avenir plus propre à travers l'action collective.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ CTA ══ -->
+<section style="padding: 80px 0;">
+  <div class="container">
+    <div class="cta-box reveal">
+      <h2>Prêt à démarrer ?</h2>
+      <p>Créez votre compte gratuitement et commencez à recycler intelligemment dès aujourd'hui.</p>
+      <div class="cta-btns">
+        <a href="{% url 'web_register' %}" class="btn-primary" style="background:var(--white);color:var(--green-dark);">Créer un Compte</a>
+        <a href="{% url 'fonctionnalites' %}" class="btn-secondary">Voir les Fonctionnalités →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Contact — EcoCycle Haiti{% endblock %}
+{% block meta_description %}Contactez l'équipe EcoCycle Haiti pour une question, un partenariat ou pour amener EcoCycle dans votre ville.{% endblock %}
+
+{% block content %}
+
+<div class="page-hero">
+  <div class="container">
+    <span class="page-hero-tag">Contactez-nous</span>
+    <h1>Parlons-en</h1>
+    <p>Une question, une proposition de partenariat, ou vous souhaitez amener EcoCycle dans votre ville ? Nous serions ravis de vous entendre.</p>
+    <div class="page-hero-breadcrumb">
+      <a href="{% url 'home' %}">Accueil</a>
+      <span>›</span>
+      <span>Contact</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CONTACT ══ -->
+<section style="padding: 80px 0;">
+  <div class="container">
+    <div class="contact-inner">
+      <div class="reveal">
+        <div class="contact-info">
+          <div class="contact-item">
+            <div class="contact-item-icon">📍</div>
+            <div>
+              <h4>Adresse</h4>
+              <p>Port-au-Prince, Haïti<br>Zone Industrielle Sonapi</p>
+            </div>
+          </div>
+          <div class="contact-item">
+            <div class="contact-item-icon">📞</div>
+            <div>
+              <h4>Téléphone</h4>
+              <p>+509 2222-0000<br>Lun–Ven, 8h–17h</p>
+            </div>
+          </div>
+          <div class="contact-item">
+            <div class="contact-item-icon">✉️</div>
+            <div>
+              <h4>Email</h4>
+              <p>hello@ecocycle.ht<br>partnerships@ecocycle.ht</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Newsletter -->
+        <div style="margin-top: 48px; padding: 32px; background: var(--cream); border-radius: 16px;">
+          <h4 style="font-family:var(--font-display); margin-bottom: 8px;">Restez Informé 🌿</h4>
+          <p style="font-size:0.9rem; color:#666; margin-bottom:16px;">Recevez nos actualités chaque semaine.</p>
+          <form method="POST" action="{% url 'newsletter_subscribe' %}" class="newsletter-form" style="flex-direction:column; gap:10px;">
+            {% csrf_token %}
+            <input class="newsletter-input" type="email" name="email" placeholder="votre@email.com" required>
+            <button type="submit" class="newsletter-btn" style="width:100%;">S'abonner</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="contact-form reveal">
+        <form method="POST" action="{% url 'contact' %}">
+          {% csrf_token %}
+          <div class="form-row">
+            <div class="form-group">
+              <label>Prénom</label>
+              <input type="text" name="first_name" placeholder="Marie" required>
+            </div>
+            <div class="form-group">
+              <label>Nom</label>
+              <input type="text" name="last_name" placeholder="Jean" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" name="email" placeholder="marie@exemple.com" required>
+          </div>
+          <div class="form-group">
+            <label>Sujet</label>
+            <select name="subject">
+              <option>Demande générale</option>
+              <option>Partenariat</option>
+              <option>Support technique</option>
+              <option>Devenir vendeur</option>
+              <option>Médias & Presse</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Message</label>
+            <textarea name="message" placeholder="Dites-nous comment nous pouvons vous aider..." required></textarea>
+          </div>
+          <button type="submit" class="form-submit">Envoyer le message →</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
