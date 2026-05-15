@@ -234,7 +234,7 @@ body { font-family: var(--font-body); background: var(--white); color: var(--bla
 .pf-btn-green { background: var(--green); color: var(--white); }
 .pf-btn-outline { background: transparent; border: 2px solid var(--green); color: var(--green); }
 
-.hero-card { position: absolute; background: var(--white); border-radius: 14px; box-shadow: 0 16px 40px rgba(0,0,0,0.2); padding: 14px 18px; }
+.hero-card { position: absolute; background: var(--white); border-radius: 14px; box-shadow: 0 16px 40px rgba(0,0,0,0.2); padding: 14px 18px; z-index: 3; }
 .hero-card-top { top: 20px; right: -30px; }
 .hero-card-bot { bottom: 30px; left: -30px; }
 .hero-card-label { font-size: 0.7rem; color: var(--gray); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 1px; }
