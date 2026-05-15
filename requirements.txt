@@ -30,7 +30,7 @@ resend==2.4.0
 firebase-admin==6.5.0
 
 # Claude AI
-anthropic==0.34.2
+anthropic>=0.49.0
 
 # Utilitaires
 Pillow==10.4.0

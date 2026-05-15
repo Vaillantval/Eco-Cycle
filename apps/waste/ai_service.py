@@ -104,4 +104,14 @@ class WasteAIService:
             return {'error': f'Erreur API Claude: {str(e)}'}
 
 
-ai_service = WasteAIService()
+class _LazyAIService:
+    """Proxy lazy — n'instancie WasteAIService qu'au premier appel."""
+    _instance = None
+
+    def __getattr__(self, name):
+        if _LazyAIService._instance is None:
+            _LazyAIService._instance = WasteAIService()
+        return getattr(_LazyAIService._instance, name)
+
+
+ai_service = _LazyAIService()
