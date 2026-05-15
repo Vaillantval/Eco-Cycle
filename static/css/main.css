@@ -98,11 +98,12 @@ nav.scrolled .nav-dropdown-trigger { color: var(--charcoal); }
 .nav-chevron { font-size: 0.65rem; transition: transform 0.22s; display: inline-block; }
 .has-dropdown:hover .nav-chevron { transform: rotate(180deg); }
 .nav-dropdown {
-  position: absolute; top: calc(100% + 14px); left: 50%;
-  transform: translateX(-50%) translateY(-6px);
+  position: absolute; top: 100%; left: 50%;
+  transform: translateX(-50%) translateY(-4px);
   background: #fff; border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.13);
-  min-width: 210px; list-style: none; padding: 6px;
+  min-width: 210px; list-style: none;
+  padding: 14px 6px 6px; /* padding-top = pont invisible entre trigger et menu */
   opacity: 0; visibility: hidden; pointer-events: none;
   transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
   z-index: 200;
@@ -111,9 +112,9 @@ nav.scrolled .nav-dropdown-trigger { color: var(--charcoal); }
   opacity: 1; visibility: visible; pointer-events: auto;
   transform: translateX(-50%) translateY(0);
 }
-/* petit triangle */
+/* petit triangle dans le padding-top */
 .nav-dropdown::before {
-  content: ''; position: absolute; top: -6px; left: 50%;
+  content: ''; position: absolute; top: 2px; left: 50%;
   transform: translateX(-50%);
   border: 6px solid transparent; border-top: 0;
   border-bottom-color: #fff;
