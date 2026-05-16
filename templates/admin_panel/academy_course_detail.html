@@ -65,37 +65,6 @@
       {% endif %}
     </div>
 
-    <!-- AJOUTER UNE LEÇON -->
-    <div class="admin-card">
-      <div class="admin-card-header"><span class="admin-card-title">➕ Ajouter une leçon</span></div>
-      <div style="padding:20px;">
-        <form method="POST">
-          {% csrf_token %}
-          <input type="hidden" name="action" value="add_lesson">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
-            <div>
-              <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Titre *</label>
-              <input type="text" name="lesson_title" required placeholder="Ex: Introduction au recyclage..."
-                     style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.85rem;">
-            </div>
-            <div>
-              <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Ordre</label>
-              <input type="number" name="lesson_order" value="{{ lessons|length|add:1 }}" min="0"
-                     style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.85rem;">
-            </div>
-          </div>
-          <div style="margin-bottom:14px;">
-            <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Contenu de la leçon</label>
-            <textarea name="lesson_content" rows="6" placeholder="Texte de la leçon (Markdown supporté)..."
-                      style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.85rem;font-family:monospace;resize:vertical;"></textarea>
-          </div>
-          <button type="submit" class="btn-admin-sm btn-approve" style="width:100%;justify-content:center;padding:9px;">
-            ➕ Ajouter la leçon
-          </button>
-        </form>
-      </div>
-    </div>
-
   </div>
 
   <!-- DROITE : éditer les infos du cours -->

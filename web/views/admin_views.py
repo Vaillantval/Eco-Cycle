@@ -535,20 +535,6 @@ class AdminAcademyCourseDetailView(AdminRequiredMixin, View):
             course.save()
             messages.success(request, 'Cours mis à jour.')
 
-        elif action == 'add_lesson':
-            lesson_title = request.POST.get('lesson_title', '').strip()
-            if lesson_title:
-                Lesson.objects.create(
-                    course=course,
-                    title=lesson_title,
-                    content=request.POST.get('lesson_content', ''),
-                    order=request.POST.get('lesson_order') or 0,
-                    duration_minutes=0,
-                )
-                messages.success(request, f'Leçon « {lesson_title} » ajoutée.')
-            else:
-                messages.error(request, 'Le titre de la leçon est requis.')
-
         elif action == 'delete_lesson':
             lesson_id = request.POST.get('lesson_id')
             lesson = get_object_or_404(Lesson, pk=lesson_id, course=course)
