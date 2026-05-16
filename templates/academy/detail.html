@@ -149,10 +149,18 @@
           <div style="padding:24px;">
             {% if enrollment %}
               {% if enrollment.is_completed %}
-              <div style="text-align:center;padding:20px 0;">
+              <div style="text-align:center;padding:16px 0 8px;">
                 <div style="font-size:3rem;margin-bottom:8px;">🏆</div>
                 <div style="font-family:var(--font-display);font-weight:800;color:var(--green);font-size:1.1rem;margin-bottom:4px;">Cours complété !</div>
-                <div style="font-size:0.82rem;color:#64748b;">Inscrit le {{ enrollment.enrolled_at|date:"d/m/Y" }}</div>
+                <div style="font-size:0.82rem;color:#64748b;margin-bottom:16px;">Inscrit le {{ enrollment.enrolled_at|date:"d/m/Y" }}</div>
+                {% if first_lesson %}
+                <a href="{% url 'lesson_detail' slug=course.slug lesson_id=first_lesson.id %}"
+                   style="display:block;padding:12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;
+                          font-family:var(--font-display);font-weight:700;font-size:0.88rem;color:var(--green);
+                          text-decoration:none;">
+                  ▶ Revoir le cours
+                </a>
+                {% endif %}
               </div>
               {% else %}
               <div style="margin-bottom:16px;">

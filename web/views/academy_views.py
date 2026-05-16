@@ -47,12 +47,14 @@ class CourseDetailView(View):
             except User.DoesNotExist:
                 pass
 
+        lessons_list = list(lessons)
         return render(request, 'academy/detail.html', {
             'course': course,
-            'lessons': lessons,
+            'lessons': lessons_list,
             'enrollment': enrollment,
             'completed_ids': completed_ids,
-            'total_lessons': lessons.count(),
+            'total_lessons': len(lessons_list),
+            'first_lesson': lessons_list[0] if lessons_list else None,
         })
 
 
