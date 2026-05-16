@@ -16,66 +16,119 @@
     {% if lesson %}<span style="font-size:0.78rem;color:#94a3b8;">{{ videos|length }} vidéo{{ videos|length|pluralize }}</span>{% endif %}
   </div>
 
-  {% if lesson %}
-    {% if videos %}
-    <table class="admin-table">
-      <thead><tr>
-        <th>Ordre</th><th>Titre</th><th>Type</th><th>Durée</th><th>Téléchargement</th><th></th>
-      </tr></thead>
-      <tbody>
-      {% for v in videos %}
-      <tr>
-        <td style="text-align:center;color:#64748b;font-weight:600;">{{ v.order }}</td>
-        <td style="font-weight:600;">
-          {% if v.title %}{{ v.title }}{% else %}<span style="color:#94a3b8;font-style:italic;">Sans titre</span>{% endif %}
-        </td>
-        <td>
+  {% if lesson and videos %}
+    {% for v in videos %}
+    <form method="POST" enctype="multipart/form-data"
+          style="border-bottom:1px solid #f1f5f9;padding:16px 20px;">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="update_video">
+      <input type="hidden" name="video_id" value="{{ v.id }}">
+
+      <!-- Ligne 1 : ordre · titre · durée · boutons -->
+      <div style="display:grid;grid-template-columns:64px 1fr 80px auto;gap:10px;align-items:end;margin-bottom:12px;">
+        <div>
+          <label style="font-size:0.72rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Ordre</label>
+          <input type="number" name="video_order" value="{{ v.order }}" min="0"
+                 style="width:100%;padding:7px 10px;border:1px solid #e2e8f0;border-radius:7px;font-size:0.88rem;">
+        </div>
+        <div>
+          <label style="font-size:0.72rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Titre</label>
+          <input type="text" name="video_title" value="{{ v.title }}" placeholder="Sans titre"
+                 style="width:100%;padding:7px 10px;border:1px solid #e2e8f0;border-radius:7px;font-size:0.88rem;">
+        </div>
+        <div>
+          <label style="font-size:0.72rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Durée (min)</label>
+          <input type="number" name="video_duration" value="{{ v.duration_minutes }}" min="0"
+                 style="width:100%;padding:7px 10px;border:1px solid #e2e8f0;border-radius:7px;font-size:0.88rem;">
+        </div>
+        <div style="display:flex;gap:6px;padding-bottom:1px;">
+          <button type="submit" name="action" value="update_video"
+                  style="padding:7px 14px;background:#0d7a45;color:#fff;border:none;border-radius:7px;
+                         font-size:0.8rem;font-weight:700;cursor:pointer;white-space:nowrap;">
+            💾 Sauvegarder
+          </button>
+          <button type="submit" name="action" value="delete_video"
+                  onclick="return confirm('Supprimer cette vidéo ?')"
+                  style="padding:7px 10px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;
+                         border-radius:7px;font-size:0.8rem;font-weight:700;cursor:pointer;">
+            🗑
+          </button>
+        </div>
+      </div>
+
+      <!-- Ligne 2 : source (URL / Fichier) -->
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;padding:12px 14px;">
+        <!-- Type badge + radio toggle -->
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px;flex-wrap:wrap;">
+          <span style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#94a3b8;">Source</span>
+          <label style="display:flex;align-items:center;gap:5px;font-size:0.82rem;cursor:pointer;color:#334155;">
+            <input type="radio" name="video_source" value="url"
+                   {% if not v.video_file %}checked{% endif %}
+                   onchange="toggleVideoSrc(this)"
+                   style="accent-color:#0d7a45;">
+            🔗 Lien externe
+          </label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:0.82rem;cursor:pointer;color:#334155;">
+            <input type="radio" name="video_source" value="file"
+                   {% if v.video_file %}checked{% endif %}
+                   onchange="toggleVideoSrc(this)"
+                   style="accent-color:#0d7a45;">
+            📁 Fichier uploadé
+          </label>
+          <!-- badge type actuel -->
           {% if v.video_file %}
-            <span style="font-size:0.75rem;background:#f0fdf4;color:#15803d;padding:2px 8px;border-radius:8px;font-weight:700;">📁 Fichier</span>
+            <span style="font-size:0.7rem;background:#f0fdf4;color:#15803d;padding:2px 8px;border-radius:8px;font-weight:700;">📁 Fichier actif</span>
           {% elif v.is_youtube %}
-            <span style="font-size:0.75rem;background:#fef2f2;color:#dc2626;padding:2px 8px;border-radius:8px;font-weight:700;">▶ YouTube</span>
+            <span style="font-size:0.7rem;background:#fef2f2;color:#dc2626;padding:2px 8px;border-radius:8px;font-weight:700;">▶ YouTube</span>
           {% elif v.is_vimeo %}
-            <span style="font-size:0.75rem;background:#eff6ff;color:#2563eb;padding:2px 8px;border-radius:8px;font-weight:700;">▶ Vimeo</span>
+            <span style="font-size:0.7rem;background:#eff6ff;color:#2563eb;padding:2px 8px;border-radius:8px;font-weight:700;">▶ Vimeo</span>
           {% elif v.video_url %}
-            <span style="font-size:0.75rem;background:#fafafa;color:#64748b;padding:2px 8px;border-radius:8px;font-weight:700;">🔗 URL</span>
+            <span style="font-size:0.7rem;background:#fafafa;color:#64748b;padding:2px 8px;border-radius:8px;font-weight:700;">🔗 URL</span>
           {% endif %}
-        </td>
-        <td style="color:#64748b;">{{ v.duration_minutes }} min</td>
-        <td>
+        </div>
+
+        <!-- Champ URL -->
+        <div class="vs-url" {% if v.video_file %}style="display:none;"{% endif %}>
+          <input type="url" name="video_url" value="{{ v.video_url }}"
+                 placeholder="https://youtube.com/watch?v=…  ou  https://vimeo.com/…"
+                 style="width:100%;padding:7px 10px;border:1px solid #e2e8f0;border-radius:7px;
+                        font-size:0.85rem;background:#fff;box-sizing:border-box;">
+        </div>
+
+        <!-- Champ fichier -->
+        <div class="vs-file" {% if not v.video_file %}style="display:none;"{% endif %}>
           {% if v.video_file %}
-            <form method="POST" style="display:inline;">
-              {% csrf_token %}
-              <input type="hidden" name="action" value="toggle_video_download">
-              <input type="hidden" name="video_id" value="{{ v.id }}">
-              <button type="submit"
-                style="border:none;cursor:pointer;font-size:0.78rem;font-weight:700;padding:3px 10px;border-radius:20px;
-                       {% if v.allow_download %}background:#f0fdf4;color:#15803d;{% else %}background:#f1f5f9;color:#94a3b8;{% endif %}">
-                {% if v.allow_download %}✅ Activé{% else %}🔒 Désactivé{% endif %}
-              </button>
-            </form>
-          {% else %}
-            <span style="font-size:0.72rem;color:#cbd5e1;font-style:italic;">N/A</span>
+          <div style="font-size:0.72rem;color:#64748b;margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+            <span>📁 Actuel :</span>
+            <span style="font-family:monospace;color:#334155;">{{ v.video_file.name }}</span>
+          </div>
           {% endif %}
-        </td>
-        <td>
-          <form method="POST" style="display:inline;" onsubmit="return confirm('Supprimer cette vidéo ?');">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="delete_video">
-            <input type="hidden" name="video_id" value="{{ v.id }}">
-            <button type="submit" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:0.82rem;font-weight:700;">🗑 Supprimer</button>
-          </form>
-        </td>
-      </tr>
-      {% endfor %}
-      </tbody>
-    </table>
-    {% else %}
+          <input type="file" name="video_file" accept="video/*"
+                 style="width:100%;padding:6px 10px;border:1px solid #e2e8f0;border-radius:7px;
+                        font-size:0.82rem;background:#fff;">
+          <div style="font-size:0.7rem;color:#94a3b8;margin-top:4px;">Laisser vide pour conserver le fichier actuel.</div>
+        </div>
+      </div>
+
+      <!-- Ligne 3 : allow download -->
+      <div style="margin-top:10px;">
+        <label style="display:flex;align-items:center;gap:8px;font-size:0.82rem;cursor:pointer;color:#475569;">
+          <input type="checkbox" name="video_allow_download" value="1"
+                 {% if v.allow_download %}checked{% endif %}
+                 style="width:15px;height:15px;accent-color:#0d7a45;flex-shrink:0;">
+          📥 Autoriser le téléchargement (fichiers uploadés uniquement)
+        </label>
+      </div>
+
+    </form>
+    {% endfor %}
+
+  {% elif lesson %}
     <div style="padding:16px 24px;color:#94a3b8;font-size:0.88rem;">Aucune vidéo pour l'instant.</div>
-    {% endif %}
   {% endif %}
 
   <!-- Ajouter une vidéo -->
-  <div style="border-top:{% if lesson and videos %}1px solid #f1f5f9{% else %}0{% endif %};padding:20px 24px;">
+  <div style="border-top:{% if lesson and videos %}1px solid #e2e8f0{% else %}0{% endif %};padding:20px 24px;background:{% if lesson and videos %}#fafbff{% else %}transparent{% endif %};">
     {% if not lesson %}
     <div style="display:flex;align-items:center;gap:8px;background:#fef9ec;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:0.8rem;color:#92400e;">
       ℹ️ La vidéo sera ajoutée automatiquement à la création de la leçon.
@@ -84,8 +137,7 @@
     <div style="font-size:0.82rem;font-weight:700;color:#334155;margin-bottom:14px;">
       {% if lesson %}➕ Ajouter une vidéo{% else %}🎬 Première vidéo (optionnel){% endif %}
     </div>
-    <form method="POST" enctype="multipart/form-data"
-          {% if lesson %}action=""{% endif %}>
+    <form method="POST" enctype="multipart/form-data">
       {% csrf_token %}
       {% if lesson %}<input type="hidden" name="action" value="add_video">{% endif %}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
@@ -271,7 +323,21 @@
 </form>
 
 <script>
-// Toggle "Autoriser le téléchargement vidéo" uniquement si un fichier est sélectionné
+// ── Source toggle pour chaque vidéo existante ──────────────────────────────────
+function toggleVideoSrc(radio) {
+  const form    = radio.closest('form');
+  const urlDiv  = form.querySelector('.vs-url');
+  const fileDiv = form.querySelector('.vs-file');
+  if (radio.value === 'url') {
+    urlDiv.style.display  = '';
+    fileDiv.style.display = 'none';
+  } else {
+    urlDiv.style.display  = 'none';
+    fileDiv.style.display = '';
+  }
+}
+
+// ── Toggle "Autoriser le téléchargement vidéo" (formulaire ajout) ──────────────
 document.getElementById('videoFileInput').addEventListener('change', function () {
   document.getElementById('videoDownloadToggle').style.display =
     this.files.length > 0 ? 'block' : 'none';

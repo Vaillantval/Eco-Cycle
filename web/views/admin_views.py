@@ -757,6 +757,27 @@ class AdminAcademyLessonEditView(AdminRequiredMixin, View):
                 messages.error(request, 'Fichier ou URL requis.')
             return redirect('admin_academy_lesson_edit', course_pk=course_pk, lesson_pk=lesson_pk)
 
+        if action == 'update_video':
+            video = get_object_or_404(LessonVideo, pk=request.POST.get('video_id'), lesson=lesson)
+            video.title            = request.POST.get('video_title', '').strip()
+            video.order            = int(request.POST.get('video_order') or video.order)
+            video.duration_minutes = int(request.POST.get('video_duration') or 0)
+            video.allow_download   = request.POST.get('video_allow_download') == '1'
+            source = request.POST.get('video_source', 'url')
+            if source == 'file':
+                new_file = request.FILES.get('video_file')
+                if new_file:
+                    video.video_file = new_file
+                    video.video_url  = ''
+            else:
+                url_val = request.POST.get('video_url', '').strip()
+                video.video_url = url_val
+                if url_val and video.video_file:
+                    video.video_file = None
+            video.save()
+            messages.success(request, 'Vidéo mise à jour.')
+            return redirect('admin_academy_lesson_edit', course_pk=course_pk, lesson_pk=lesson_pk)
+
         if action == 'delete_video':
             video = get_object_or_404(LessonVideo, pk=request.POST.get('video_id'), lesson=lesson)
             video.delete()
