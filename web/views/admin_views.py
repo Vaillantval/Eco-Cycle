@@ -490,9 +490,8 @@ class AdminAcademyCourseCreateView(AdminRequiredMixin, View):
             title=title,
             description=description,
             level=request.POST.get('level', 'beginner'),
-            duration_minutes=request.POST.get('duration_minutes') or 0,
             is_published=bool(request.POST.get('is_published')),
-            is_free=bool(request.POST.get('is_free', True)),
+            is_free=bool(request.POST.get('is_free')),
         )
         if request.FILES.get('thumbnail'):
             course.thumbnail = request.FILES['thumbnail']
@@ -526,12 +525,11 @@ class AdminAcademyCourseDetailView(AdminRequiredMixin, View):
             if not title or not description:
                 messages.error(request, 'Titre et description requis.')
                 return redirect('admin_academy_course_detail', pk=pk)
-            course.title          = title
-            course.description    = description
-            course.level          = request.POST.get('level', 'beginner')
-            course.duration_minutes = request.POST.get('duration_minutes') or 0
-            course.is_published   = bool(request.POST.get('is_published'))
-            course.is_free        = bool(request.POST.get('is_free'))
+            course.title        = title
+            course.description  = description
+            course.level        = request.POST.get('level', 'beginner')
+            course.is_published = bool(request.POST.get('is_published'))
+            course.is_free      = bool(request.POST.get('is_free'))
             if request.FILES.get('thumbnail'):
                 course.thumbnail = request.FILES['thumbnail']
             course.save()

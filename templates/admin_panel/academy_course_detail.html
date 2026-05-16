@@ -126,9 +126,11 @@
               </select>
             </div>
             <div>
-              <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Durée (min)</label>
-              <input type="number" name="duration_minutes" value="{{ course.duration_minutes }}" min="0"
-                     style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
+              <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Durée totale</label>
+              <div style="padding:8px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;color:#334155;display:flex;justify-content:space-between;">
+                <span>{{ course.duration_minutes }} min</span>
+                <span style="font-size:0.72rem;color:#94a3b8;">auto-calculée</span>
+              </div>
             </div>
             <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;cursor:pointer;">
               <input type="checkbox" name="is_free" value="1" {% if course.is_free %}checked{% endif %} style="width:15px;height:15px;">
