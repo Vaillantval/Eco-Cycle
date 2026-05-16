@@ -47,15 +47,23 @@ class AdminDashboardView(AdminRequiredMixin, View):
 
 class AdminListingsView(AdminRequiredMixin, View):
     def get(self, request):
+        from django.core.paginator import Paginator
         user = self.get_current_user(request)
         status_filter = request.GET.get('status', '')
+        search = request.GET.get('q', '').strip()
         listings = WasteListing.objects.select_related('user', 'category').order_by('-created_at')
         if status_filter:
             listings = listings.filter(status=status_filter)
+        if search:
+            listings = listings.filter(title__icontains=search) | listings.filter(user__email__icontains=search)
+            listings = listings.distinct()
+        paginator = Paginator(listings, 25)
+        page = paginator.get_page(request.GET.get('page', 1))
         return render(request, 'admin_panel/listings.html', {
             'user': user,
-            'listings': listings,
+            'listings': page,
             'status_filter': status_filter,
+            'search': search,
             'status_choices': WasteListing.STATUS_CHOICES,
         })
 
@@ -159,17 +167,81 @@ class AdminUsersView(AdminRequiredMixin, View):
         return redirect('admin_users')
 
 
-class AdminOrdersView(AdminRequiredMixin, View):
+class AdminAuctionsView(AdminRequiredMixin, View):
     def get(self, request):
+        from django.core.paginator import Paginator
         user = self.get_current_user(request)
         status_filter = request.GET.get('status', '')
+        search = request.GET.get('q', '').strip()
+        auctions = Auction.objects.select_related(
+            'listing', 'listing__category', 'seller', 'winner'
+        ).order_by('-created_at')
+        if status_filter:
+            auctions = auctions.filter(status=status_filter)
+        if search:
+            auctions = auctions.filter(listing__title__icontains=search)
+        paginator = Paginator(auctions, 20)
+        page = paginator.get_page(request.GET.get('page', 1))
+        return render(request, 'admin_panel/auctions.html', {
+            'user': user,
+            'auctions': page,
+            'status_filter': status_filter,
+            'search': search,
+            'status_choices': Auction.STATUS_CHOICES,
+            'count_active': Auction.objects.filter(status='active').count(),
+            'count_sold':   Auction.objects.filter(status='sold').count(),
+        })
+
+
+class AdminAuctionDetailView(AdminRequiredMixin, View):
+    def get(self, request, pk):
+        user = self.get_current_user(request)
+        auction = get_object_or_404(
+            Auction.objects.select_related('listing', 'listing__category', 'seller', 'winner'),
+            pk=pk,
+        )
+        bids  = auction.bids.select_related('bidder').order_by('-amount')
+        order = getattr(auction, 'order', None)
+        return render(request, 'admin_panel/auction_detail.html', {
+            'user': user,
+            'auction': auction,
+            'bids': bids,
+            'order': order,
+        })
+
+    def post(self, request, pk):
+        auction = get_object_or_404(Auction, pk=pk)
+        action  = request.POST.get('action')
+        if action == 'cancel' and auction.status == 'active':
+            auction.status = 'cancelled'
+            auction.save(update_fields=['status', 'updated_at'])
+            messages.success(request, 'Enchère annulée.')
+        elif action == 'close' and auction.status == 'active':
+            auction.status = 'closed'
+            auction.save(update_fields=['status', 'updated_at'])
+            messages.success(request, 'Enchère clôturée manuellement.')
+        return redirect('admin_auction_detail', pk=pk)
+
+
+class AdminOrdersView(AdminRequiredMixin, View):
+    def get(self, request):
+        from django.core.paginator import Paginator
+        user = self.get_current_user(request)
+        status_filter = request.GET.get('status', '')
+        search = request.GET.get('q', '').strip()
         orders = Order.objects.select_related('buyer', 'seller', 'auction__listing').order_by('-created_at')
         if status_filter:
             orders = orders.filter(status=status_filter)
+        if search:
+            orders = orders.filter(buyer__email__icontains=search) | orders.filter(auction__listing__title__icontains=search)
+            orders = orders.distinct()
+        paginator = Paginator(orders, 25)
+        page = paginator.get_page(request.GET.get('page', 1))
         return render(request, 'admin_panel/orders.html', {
             'user': user,
-            'orders': orders,
+            'orders': page,
             'status_filter': status_filter,
+            'search': search,
             'status_choices': Order.STATUS_CHOICES,
         })
 
@@ -258,15 +330,22 @@ class AdminOrderDetailView(AdminRequiredMixin, View):
         })
 
     def post(self, request, pk):
-        order = get_object_or_404(Order, pk=pk)
-        new_status = request.POST.get('new_status')
-        valid = [s for s, _ in Order.STATUS_CHOICES]
-        if new_status in valid:
-            order.status = new_status
-            if new_status == 'completed':
-                order.completed_at = timezone.now()
-            order.save()
-            messages.success(request, f'Commande mise à jour : {new_status}.')
+        order  = get_object_or_404(Order, pk=pk)
+        action = request.POST.get('action', 'change_status')
+
+        if action == 'save_notes':
+            order.notes = request.POST.get('notes', '').strip()
+            order.save(update_fields=['notes', 'updated_at'])
+            messages.success(request, 'Notes sauvegardées.')
+        else:
+            new_status = request.POST.get('new_status')
+            valid = [s for s, _ in Order.STATUS_CHOICES]
+            if new_status in valid:
+                order.status = new_status
+                if new_status == 'completed':
+                    order.completed_at = timezone.now()
+                order.save()
+                messages.success(request, f'Commande mise à jour : {new_status}.')
         return redirect('admin_order_detail', pk=pk)
 
 
@@ -452,9 +531,9 @@ class AdminAcademyView(AdminRequiredMixin, View):
         elif published_filter == '0':
             courses = courses.filter(is_published=False)
         if free_filter == '1':
-            courses = courses.filter(is_free=True)
+            courses = courses.filter(price=0)
         elif free_filter == '0':
-            courses = courses.filter(is_free=False)
+            courses = courses.filter(price__gt=0)
         if search:
             courses = courses.filter(title__icontains=search)
         return render(request, 'admin_panel/academy.html', {
@@ -501,12 +580,16 @@ class AdminAcademyCourseCreateView(AdminRequiredMixin, View):
             return render(request, 'admin_panel/academy_course_form.html', {
                 'user': admin, 'course': None, 'level_choices': Course.LEVEL_CHOICES,
             })
+        try:
+            price_val = abs(float(request.POST.get('price', 0) or 0))
+        except (ValueError, TypeError):
+            price_val = 0
         course = Course(
             title=title,
             description=description,
             level=request.POST.get('level', 'beginner'),
             is_published=bool(request.POST.get('is_published')),
-            is_free=bool(request.POST.get('is_free')),
+            price=price_val,
         )
         if request.FILES.get('thumbnail'):
             course.thumbnail = request.FILES['thumbnail']
@@ -540,11 +623,15 @@ class AdminAcademyCourseDetailView(AdminRequiredMixin, View):
             if not title or not description:
                 messages.error(request, 'Titre et description requis.')
                 return redirect('admin_academy_course_detail', pk=pk)
+            try:
+                price_val = abs(float(request.POST.get('price', 0) or 0))
+            except (ValueError, TypeError):
+                price_val = 0
             course.title        = title
             course.description  = description
             course.level        = request.POST.get('level', 'beginner')
             course.is_published = bool(request.POST.get('is_published'))
-            course.is_free      = bool(request.POST.get('is_free'))
+            course.price        = price_val
             if request.FILES.get('thumbnail'):
                 course.thumbnail = request.FILES['thumbnail']
             course.save()

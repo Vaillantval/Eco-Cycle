@@ -4,6 +4,7 @@ from django.urls import path, include, re_path
 from django.conf import settings
 from django.views.static import serve
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
+from web.views.payment_views import StripeWebhookView, PlopPlopWebhookView
 
 handler404 = 'web.error_views.page_not_found'
 handler500 = 'web.error_views.server_error'
@@ -38,6 +39,10 @@ urlpatterns = [
     path('api/blog/', include('apps.blog.urls')),
     path('api/contact/', include('apps.core.urls')),
     path('api/newsletter/', include('apps.core.newsletter_urls')),
+
+    # Webhooks paiement (CSRF-exempt, signature validée dans la vue)
+    path('api/payments/stripe/webhook/',   StripeWebhookView.as_view(),   name='stripe_webhook'),
+    path('api/payments/plopplop/webhook/', PlopPlopWebhookView.as_view(), name='plopplop_webhook'),
 ]
 
 # Serve media files — django.conf.urls.static.static() returns [] when DEBUG=False

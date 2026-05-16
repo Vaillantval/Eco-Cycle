@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Inscription à {{ course.title }} — EcoCycle Academy{% endblock %}
+
+{% block extra_css %}
+<style>
+.main-nav { background: white !important; box-shadow: 0 2px 12px rgba(0,0,0,0.08) !important; }
+.main-nav .nav-logo, .main-nav .nav-link, .main-nav .nav-cta { color: var(--charcoal) !important; }
+
+.checkout-page { padding: 88px 0 60px; min-height: 100vh; background: #f8fafc; }
+.checkout-wrap { max-width: 560px; margin: 0 auto; padding: 0 20px; }
+
+.course-summary {
+  background: white; border-radius: 16px; padding: 24px 28px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.07); margin-bottom: 20px;
+  display: flex; gap: 18px; align-items: center;
+}
+.course-thumb {
+  width: 72px; height: 72px; border-radius: 10px; object-fit: cover; flex-shrink: 0;
+}
+.course-thumb-placeholder {
+  width: 72px; height: 72px; border-radius: 10px; flex-shrink: 0;
+  background: linear-gradient(135deg, #0f2d20, #0d7a45);
+  display: flex; align-items: center; justify-content: center; font-size: 2rem;
+}
+
+.methods-card { background: white; border-radius: 16px; padding: 28px; box-shadow: 0 4px 20px rgba(0,0,0,0.07); }
+.methods-title { font-family: var(--font-display); font-size: 1.15rem; font-weight: 700; color: var(--charcoal); margin: 0 0 20px; }
+
+.pay-btn {
+  display: flex; align-items: center; gap: 14px; width: 100%; padding: 15px 20px;
+  border: 2px solid #e2e8f0; border-radius: 12px; background: white; cursor: pointer;
+  text-align: left; transition: border-color 0.18s, background 0.18s; margin-bottom: 12px;
+  text-decoration: none; color: var(--charcoal);
+}
+.pay-btn:hover { border-color: var(--green); background: #f0fdf4; }
+.pay-btn-icon { font-size: 1.6rem; flex-shrink: 0; }
+.pay-btn-label { font-weight: 700; font-size: 0.9rem; }
+.pay-btn-sub { font-size: 0.78rem; color: #94a3b8; }
+
+.stripe-btn { border-color: #635bff; }
+.stripe-btn:hover { background: #f5f4ff; border-color: #635bff; }
+
+.divider { text-align: center; font-size: 0.78rem; color: #94a3b8; margin: 16px 0; position: relative; }
+.divider::before { content:''; position:absolute; left:0; right:0; top:50%; height:1px; background:#f1f5f9; z-index:0; }
+.divider span { background: white; padding: 0 12px; position: relative; z-index:1; }
+
+.amount-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 16px; background: #f0fdf4; border: 2px solid #bbf7d0;
+  border-radius: 20px; font-weight: 800; color: var(--green); font-size: 1.05rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="checkout-page">
+  <div class="checkout-wrap">
+
+    <!-- Résumé cours -->
+    <div class="course-summary">
+      {% if course.thumbnail %}
+      <img src="{{ course.thumbnail.url }}" class="course-thumb" alt="{{ course.title }}">
+      {% else %}
+      <div class="course-thumb-placeholder">🎓</div>
+      {% endif %}
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:0.72rem;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">
+          EcoCycle Academy
+        </div>
+        <div style="font-family:var(--font-display);font-size:1rem;font-weight:700;color:var(--charcoal);line-height:1.3;margin-bottom:8px;">
+          {{ course.title|truncatechars:60 }}
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <span class="amount-chip">{{ course.price }} HTG</span>
+          <span style="font-size:0.78rem;color:#94a3b8;">{{ course.lessons.count }} leçon{{ course.lessons.count|pluralize }} · {{ course.get_level_display }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Choix du mode de paiement -->
+    <div class="methods-card">
+      <p class="methods-title">Choisir un mode de paiement</p>
+      <p style="font-size:0.85rem;color:#64748b;margin:-8px 0 20px;">
+        Référence : <code style="font-size:0.82rem;background:#f1f5f9;padding:2px 6px;border-radius:4px;">{{ transaction.transaction_number }}</code>
+      </p>
+
+      <!-- Stripe -->
+      <button id="stripe-btn" class="pay-btn stripe-btn" type="button">
+        <div class="pay-btn-icon">💳</div>
+        <div>
+          <div class="pay-btn-label">Carte bancaire</div>
+          <div class="pay-btn-sub">Visa, Mastercard — sécurisé par Stripe</div>
+        </div>
+        <span id="stripe-spinner" style="margin-left:auto;display:none;">⏳</span>
+      </button>
+
+      <div class="divider"><span>ou payer avec</span></div>
+
+      <!-- PlopPlop -->
+      <form method="post" action="{% url 'course_plopplop_init' course.slug %}">
+        {% csrf_token %}
+        <button type="submit" name="method" value="moncash" class="pay-btn">
+          <div class="pay-btn-icon">📱</div>
+          <div>
+            <div class="pay-btn-label">MonCash</div>
+            <div class="pay-btn-sub">Paiement mobile Digicel</div>
+          </div>
+        </button>
+        <button type="submit" name="method" value="natcash" class="pay-btn">
+          <div class="pay-btn-icon">📲</div>
+          <div>
+            <div class="pay-btn-label">NatCash</div>
+            <div class="pay-btn-sub">Paiement mobile Natcom</div>
+          </div>
+        </button>
+        <button type="submit" name="method" value="kashpaw" class="pay-btn">
+          <div class="pay-btn-icon">💰</div>
+          <div>
+            <div class="pay-btn-label">Kashpaw</div>
+            <div class="pay-btn-sub">Portefeuille mobile haïtien</div>
+          </div>
+        </button>
+      </form>
+
+    </div>
+
+    <a href="{% url 'course_detail' course.slug %}" style="display:block;text-align:center;margin-top:16px;font-size:0.82rem;color:#94a3b8;text-decoration:none;">
+      ← Retour au cours
+    </a>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('stripe-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('stripe-btn');
+  const spinner = document.getElementById('stripe-spinner');
+  btn.disabled = true;
+  spinner.style.display = 'inline';
+
+  try {
+    const res = await fetch("{% url 'course_stripe_init' course.slug %}", {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': '{{ csrf_token }}',
+      },
+      body: JSON.stringify({}),
+    });
+    const data = await res.json();
+    if (data.success) {
+      window.location.href = "{% url 'course_stripe_checkout' course.slug %}";
+    } else {
+      alert(data.error || 'Erreur lors de l\'initialisation du paiement.');
+      btn.disabled = false;
+      spinner.style.display = 'none';
+    }
+  } catch (e) {
+    alert('Erreur réseau. Réessayez.');
+    btn.disabled = false;
+    spinner.style.display = 'none';
+  }
+});
+</script>
+{% endblock %}

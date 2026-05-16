@@ -117,6 +117,52 @@ def notify_order_created(order_id: str):
     )
 
 
+@shared_task(name='notifications.notify_order_paid')
+def notify_order_paid(order_id: str):
+    """Déclenché quand le paiement est confirmé — notifie acheteur + vendeur + crée l'impact record."""
+    from apps.marketplace.models import Order
+    from apps.notifications.email_service import EmailService
+    from .fcm_service import FCMService
+    order = Order.objects.select_related('buyer', 'seller', 'auction__listing').get(id=order_id)
+
+    # Notification in-app acheteur
+    _create_notification(
+        order.buyer, 'order_paid',
+        'Paiement confirmé !',
+        f'Votre paiement pour "{order.auction.listing.title}" a été reçu — {order.amount} HTG.',
+        {'order_id': str(order.id)},
+    )
+    # Notification in-app vendeur
+    _create_notification(
+        order.seller, 'order_paid',
+        'Votre article a été vendu !',
+        f'"{order.auction.listing.title}" — vous recevrez {order.seller_payout} HTG.',
+        {'order_id': str(order.id)},
+    )
+    # Push acheteur
+    FCMService.send_to_user(
+        order.buyer,
+        '✅ Paiement confirmé !',
+        f'{order.auction.listing.title} — {order.amount} HTG',
+        {'type': 'order_paid', 'order_id': str(order.id)},
+    )
+    # Push vendeur
+    FCMService.send_to_user(
+        order.seller,
+        '💰 Article vendu !',
+        f'{order.auction.listing.title} — {order.seller_payout} HTG vous seront versés.',
+        {'type': 'order_sold', 'order_id': str(order.id)},
+    )
+    # Email vendeur
+    try:
+        EmailService.send_order_paid_seller(order)
+    except Exception:
+        pass
+    # Impact record (maintenant que le paiement est réel)
+    from apps.impact.tasks import create_impact_record
+    create_impact_record.delay(str(order.id))
+
+
 @shared_task(name='notifications.notify_admin_new_pickup')
 def notify_admin_new_pickup(pickup_id: str):
     from apps.collections.models import PickupRequest

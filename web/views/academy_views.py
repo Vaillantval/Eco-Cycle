@@ -1,8 +1,12 @@
+import logging
 from django.views.generic import View
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.http import JsonResponse
 from web.mixins import LoginRequiredMixin
 from apps.academy.models import Course, Lesson, LessonVideo, Enrollment, Certificate
+
+logger = logging.getLogger(__name__)
 
 
 class AcademyListView(View):
@@ -69,7 +73,15 @@ class EnrollCourseView(LoginRequiredMixin, View):
     def post(self, request, slug):
         user = self.get_current_user(request)
         course = get_object_or_404(Course, slug=slug, is_published=True)
-        _, created = Enrollment.objects.get_or_create(user=user, course=course)
+
+        if not course.is_free:
+            # Cours payant — rediriger vers le checkout
+            return redirect('course_checkout', slug=slug)
+
+        _, created = Enrollment.objects.get_or_create(
+            user=user, course=course,
+            defaults={'payment_status': 'free'},
+        )
         if created:
             messages.success(request, f'Inscrit au cours « {course.title} » !')
         else:
@@ -107,6 +119,11 @@ class LessonDetailView(LoginRequiredMixin, View):
             Enrollment.objects.prefetch_related('completed_lessons'),
             user=user, course=course,
         )
+
+        # Cours payant : bloquer si paiement non complété
+        if not course.is_free and enrollment.payment_status != 'paid':
+            messages.error(request, 'Finalisez le paiement pour accéder aux leçons.')
+            return redirect('course_checkout', slug=slug)
         lesson = get_object_or_404(Lesson, id=lesson_id, course=course)
 
         lessons = list(course.lessons.all())  # already prefetched, no extra query
@@ -131,3 +148,155 @@ class LessonDetailView(LoginRequiredMixin, View):
             'is_done': is_done,
             'completed_ids': completed_ids,
         })
+
+
+# ─────────────────────────────────────────────────────────
+#  Paiement des cours payants
+# ─────────────────────────────────────────────────────────
+
+class CourseCheckoutView(LoginRequiredMixin, View):
+    """GET /academy/<slug>/pay/ — choisir le mode de paiement pour un cours payant."""
+
+    def get(self, request, slug):
+        from apps.payments.models import Transaction
+        user   = self.get_current_user(request)
+        course = get_object_or_404(Course, slug=slug, is_published=True)
+
+        if course.is_free:
+            return redirect('enroll_course', slug=slug)
+
+        enrollment, _ = Enrollment.objects.get_or_create(
+            user=user, course=course,
+            defaults={'payment_status': 'pending'},
+        )
+
+        if enrollment.payment_status == 'paid':
+            messages.info(request, 'Vous êtes déjà inscrit à ce cours.')
+            return redirect('course_detail', slug=slug)
+
+        if enrollment.payment_status == 'free':
+            enrollment.payment_status = 'pending'
+            enrollment.save(update_fields=['payment_status'])
+
+        transaction, _ = Transaction.objects.get_or_create(
+            enrollment=enrollment,
+            defaults={'amount': course.price, 'currency': 'HTG'},
+        )
+
+        return render(request, 'payments/course_checkout.html', {
+            'course':      course,
+            'enrollment':  enrollment,
+            'transaction': transaction,
+        })
+
+
+class CourseStripeInitView(LoginRequiredMixin, View):
+    """POST /academy/<slug>/pay/stripe/init/ — crée le PaymentIntent pour un cours."""
+
+    def post(self, request, slug):
+        from apps.payments.models import Transaction
+        from apps.payments.stripe_service import StripeService
+        user   = self.get_current_user(request)
+        course = get_object_or_404(Course, slug=slug, is_published=True)
+        enrollment = get_object_or_404(Enrollment, user=user, course=course)
+
+        if enrollment.payment_status == 'paid':
+            return JsonResponse({'error': 'Déjà payé.'}, status=400)
+
+        transaction, _ = Transaction.objects.get_or_create(
+            enrollment=enrollment,
+            defaults={'amount': course.price, 'currency': 'HTG'},
+        )
+
+        if transaction.status == 'completed':
+            return JsonResponse({'error': 'Déjà payé.'}, status=400)
+
+        existing_pi = transaction.meta_data.get('stripe_payment_intent_id')
+        if existing_pi:
+            svc    = StripeService()
+            result = svc.retrieve_payment_intent(existing_pi)
+            if result['success'] and result['status'] not in ('canceled', 'requires_payment_method'):
+                return JsonResponse({
+                    'success':            True,
+                    'client_secret':      transaction.meta_data.get('stripe_client_secret'),
+                    'transaction_number': transaction.transaction_number,
+                })
+
+        svc    = StripeService()
+        result = svc.create_payment_intent(
+            amount_htg=float(course.price),
+            transaction_number=transaction.transaction_number,
+            metadata={'enrollment_id': str(enrollment.id), 'course_slug': slug},
+        )
+
+        if not result['success']:
+            return JsonResponse({'error': result.get('error', 'Erreur Stripe')}, status=502)
+
+        transaction.meta_data['stripe_payment_intent_id'] = result['payment_intent_id']
+        transaction.meta_data['stripe_client_secret']     = result['client_secret']
+        transaction.payment_method = 'credit_card'
+        transaction.save(update_fields=['meta_data', 'payment_method', 'updated_at'])
+
+        return JsonResponse({
+            'success':            True,
+            'client_secret':      result['client_secret'],
+            'transaction_number': transaction.transaction_number,
+        })
+
+
+class CourseStripeCheckoutView(LoginRequiredMixin, View):
+    """GET /academy/<slug>/pay/stripe/ — page Stripe Elements pour un cours."""
+
+    def get(self, request, slug):
+        from django.conf import settings
+        from apps.payments.models import Transaction
+        user   = self.get_current_user(request)
+        course = get_object_or_404(Course, slug=slug, is_published=True)
+        enrollment = get_object_or_404(Enrollment, user=user, course=course)
+        transaction = get_object_or_404(Transaction, enrollment=enrollment)
+
+        return render(request, 'payments/course_stripe_checkout.html', {
+            'course':           course,
+            'enrollment':       enrollment,
+            'transaction':      transaction,
+            'stripe_public_key': settings.STRIPE['PUBLIC_KEY'],
+        })
+
+
+class CoursePlopPlopInitView(LoginRequiredMixin, View):
+    """POST /academy/<slug>/pay/plopplop/ — initie PlopPlop pour un cours."""
+
+    def post(self, request, slug):
+        from apps.payments.models import Transaction
+        from apps.payments.plopplop_service import PlopPlopService
+        user   = self.get_current_user(request)
+        course = get_object_or_404(Course, slug=slug, is_published=True)
+        enrollment = get_object_or_404(Enrollment, user=user, course=course)
+        method = request.POST.get('method', 'all')
+
+        transaction, _ = Transaction.objects.get_or_create(
+            enrollment=enrollment,
+            defaults={'amount': course.price, 'currency': 'HTG'},
+        )
+
+        if transaction.status == 'completed':
+            messages.info(request, 'Ce cours est déjà payé.')
+            return redirect('course_detail', slug=slug)
+
+        svc    = PlopPlopService()
+        result = svc.create_payment(
+            reference_id=transaction.transaction_number,
+            montant=float(course.price),
+            payment_method=method,
+        )
+
+        if not result['success']:
+            messages.error(request, f'Erreur PlopPlop : {result.get("error", "Réessayez.")}')
+            return redirect('course_checkout', slug=slug)
+
+        transaction.payment_method = method if method != 'all' else 'moncash'
+        transaction.meta_data['plopplop_url']            = result['url']
+        transaction.meta_data['plopplop_transaction_id'] = result.get('transaction_id', '')
+        transaction.save(update_fields=['payment_method', 'meta_data', 'updated_at'])
+
+        return redirect(result['url'])

@@ -74,6 +74,31 @@ class CreateAuctionSerializer(serializers.ModelSerializer):
         except WasteListing.DoesNotExist:
             raise serializers.ValidationError('Listing invalide ou non approuvé.')
 
+    def validate(self, data):
+        from django.utils import timezone
+
+        auction_type = data.get('auction_type', 'both')
+        buy_now_price = data.get('buy_now_price')
+        starts_at = data.get('starts_at')
+        ends_at = data.get('ends_at')
+
+        if auction_type in ('buy_now', 'both') and not buy_now_price:
+            raise serializers.ValidationError(
+                {'buy_now_price': "Le prix d'achat immédiat est requis pour ce type d'enchère."}
+            )
+
+        if starts_at and ends_at:
+            if ends_at <= starts_at:
+                raise serializers.ValidationError(
+                    {'ends_at': "La date de fin doit être postérieure à la date de début."}
+                )
+            if starts_at < timezone.now():
+                raise serializers.ValidationError(
+                    {'starts_at': "La date de début ne peut pas être dans le passé."}
+                )
+
+        return data
+
     def create(self, validated_data):
         from apps.waste.models import WasteListing
         listing = WasteListing.objects.get(id=validated_data.pop('listing_id'))

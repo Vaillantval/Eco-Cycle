@@ -1,0 +1,48 @@
+{% extends "emails/base_email.html" %}
+{% block subject %}Paiement confirmé — EcoCycle Haiti{% endblock %}
+{% block content %}
+<h2>✅ Paiement confirmé !</h2>
+
+<p>Bonjour {{ user.first_name }},</p>
+<p>Votre paiement a bien été reçu. Voici le récapitulatif de votre commande :</p>
+
+<div class="info-box">
+  <table style="width:100%;border-collapse:collapse;font-size:0.9rem;">
+    <tr>
+      <td style="padding:6px 0;color:#64748b;">Référence</td>
+      <td style="padding:6px 0;font-weight:700;text-align:right;">{{ transaction.transaction_number }}</td>
+    </tr>
+    <tr>
+      <td style="padding:6px 0;color:#64748b;">Article</td>
+      <td style="padding:6px 0;font-weight:600;text-align:right;">{{ order.auction.listing.title }}</td>
+    </tr>
+    <tr>
+      <td style="padding:6px 0;color:#64748b;">Vendeur</td>
+      <td style="padding:6px 0;text-align:right;">{{ order.seller.full_name }}</td>
+    </tr>
+    <tr>
+      <td style="padding:6px 0;color:#64748b;">Montant payé</td>
+      <td style="padding:6px 0;font-weight:800;color:#16a34a;text-align:right;font-size:1.1rem;">{{ order.amount }} HTG</td>
+    </tr>
+    <tr>
+      <td style="padding:6px 0;color:#64748b;">Mode de paiement</td>
+      <td style="padding:6px 0;text-align:right;">{{ transaction.get_payment_method_display }}</td>
+    </tr>
+    <tr>
+      <td style="padding:6px 0;color:#64748b;">Date</td>
+      <td style="padding:6px 0;text-align:right;">{{ transaction.completed_at|date:"d/m/Y à H:i" }}</td>
+    </tr>
+  </table>
+</div>
+
+<p>Votre commande est maintenant en traitement. Vous serez contacté(e) pour organiser la livraison ou le ramassage.</p>
+
+<p style="text-align:center;">
+  <a href="{{ frontend_url }}/dashboard/orders/" class="btn">Voir mes commandes</a>
+</p>
+
+<hr class="divider">
+<p style="font-size:0.85rem;color:#94a3b8;">
+  Commission plateforme (10%) : {{ order.platform_fee }} HTG — Versement vendeur : {{ order.seller_payout }} HTG
+</p>
+{% endblock %}

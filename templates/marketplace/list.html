@@ -7,21 +7,31 @@
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
 <style>
-.marketplace-page { padding: 100px 0 60px; }
-.page-header { text-align: center; margin-bottom: 40px; }
+/* Navbar blanche sur fond clair */
+.main-nav { background: white !important; box-shadow: 0 2px 12px rgba(0,0,0,0.08) !important; }
+.main-nav .nav-logo, .main-nav .nav-link, .main-nav .nav-cta { color: var(--charcoal) !important; }
+.main-nav .nav-link:hover { color: var(--green) !important; }
+
+.marketplace-page { padding: 88px 0 60px; }
+.page-header { text-align: center; margin-bottom: 32px; }
 .page-header h1 { font-family: var(--font-display); font-size: 2.4rem; font-weight: 800; color: var(--charcoal); margin-bottom: 8px; }
 .page-header p  { color: var(--gray); font-size: 1rem; }
+.page-header-stats { display: flex; justify-content: center; gap: 24px; margin-top: 12px; flex-wrap: wrap; }
+.stat-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 14px; background: #f0fdf4; border: 1.5px solid #bbf7d0; border-radius: 20px; font-size: 0.82rem; font-weight: 600; color: var(--green-dark); }
 
 .filters-bar  { background: white; border-radius: 16px; padding: 20px 24px; margin-bottom: 32px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
 .filters-form { display: flex; flex-direction: column; gap: 14px; }
 .category-filters { display: flex; gap: 8px; flex-wrap: wrap; }
-.sort-filters { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-.sort-filters input, .sort-filters select { padding: 9px 14px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 0.88rem; outline: none; }
-.sort-filters input:focus, .sort-filters select:focus { border-color: var(--green); }
+.sort-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.sort-row input, .sort-row select { padding: 9px 14px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 0.88rem; outline: none; background: white; }
+.sort-row input:focus, .sort-row select:focus { border-color: var(--green); }
 
 .filter-btn { display: inline-flex; align-items: center; gap: 5px; padding: 7px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: 500; background: #f3f4f6; color: var(--charcoal); text-decoration: none; transition: all 0.18s; border: 2px solid transparent; }
 .filter-btn:hover  { background: #e8f5ee; color: var(--green); }
 .filter-btn.active { background: var(--green); color: white; border-color: var(--green); }
+
+/* Grid */
+.auctions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; }
 
 .auction-card { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.07); transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column; }
 .auction-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
@@ -29,6 +39,11 @@
 .auction-img img { width: 100%; height: 100%; object-fit: cover; }
 .img-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; background: linear-gradient(135deg, #e8f5ee, #d1fae5); }
 .category-badge { position: absolute; top: 12px; left: 12px; background: rgba(0,0,0,0.6); color: white; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; backdrop-filter: blur(4px); }
+.type-badge { position: absolute; top: 12px; right: 12px; padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; }
+.type-badge.auction { background: #dbeafe; color: #1d4ed8; }
+.type-badge.buy_now { background: #fef3c7; color: #92400e; }
+.type-badge.both    { background: #f0fdf4; color: #166534; }
+
 .auction-body { padding: 18px 20px; flex: 1; display: flex; flex-direction: column; gap: 8px; }
 .auction-body h3 { font-family: var(--font-display); font-size: 1rem; font-weight: 700; color: var(--charcoal); line-height: 1.3; margin: 0; }
 .auction-city, .auction-weight { color: var(--gray); font-size: 0.82rem; margin: 0; }
@@ -45,6 +60,12 @@
 .pagination { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 40px; }
 .page-btn { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: white; color: var(--charcoal); text-decoration: none; box-shadow: 0 2px 8px rgba(0,0,0,0.08); font-weight: 700; transition: all 0.18s; }
 .page-btn:hover { background: var(--green); color: white; }
+
+@media (max-width: 640px) {
+  .marketplace-page { padding: 72px 0 40px; }
+  .page-header h1 { font-size: 1.8rem; }
+  .auctions-grid { grid-template-columns: 1fr; }
+}
 </style>
 {% endblock %}
 
@@ -55,6 +76,11 @@
     <div class="page-header">
       <h1>🏪 Marketplace EcoCycle</h1>
       <p>Achetez et enchérissez sur des matériaux recyclables en Haïti</p>
+      {% if auctions.paginator.count %}
+      <div class="page-header-stats">
+        <span class="stat-chip">♻️ {{ auctions.paginator.count }} annonce{{ auctions.paginator.count|pluralize }} active{{ auctions.paginator.count|pluralize }}</span>
+      </div>
+      {% endif %}
     </div>
 
     <!-- FILTRES -->
@@ -72,7 +98,7 @@
           </a>
           {% endfor %}
         </div>
-        <div class="sort-filters">
+        <div class="sort-row">
           <input type="text" name="city" value="{{ city_filter }}"
                  placeholder="🔍 Filtrer par ville...">
           {% if active_category %}<input type="hidden" name="category" value="{{ active_category }}">{% endif %}
@@ -98,6 +124,13 @@
             <div class="img-placeholder">{{ auction.listing.category.icon|default:'♻' }}</div>
           {% endif %}
           <span class="category-badge">{{ auction.listing.category.name|default:'Autre' }}</span>
+          {% if auction.auction_type == 'buy_now' %}
+            <span class="type-badge buy_now">⚡ Achat immédiat</span>
+          {% elif auction.auction_type == 'auction' %}
+            <span class="type-badge auction">🔨 Enchère</span>
+          {% else %}
+            <span class="type-badge both">🔨⚡ Enchère + Achat</span>
+          {% endif %}
         </div>
         <div class="auction-body">
           <h3>{{ auction.listing.title }}</h3>
@@ -105,18 +138,27 @@
           <p class="auction-weight">⚖️ {{ auction.listing.quantity_kg }} kg</p>
           <div class="auction-price-row">
             <div>
-              <span class="price-label">Prix actuel</span>
-              <span class="price">{{ auction.current_price }} HTG</span>
+              {% if auction.auction_type == 'buy_now' %}
+                <span class="price-label">Prix fixe</span>
+                <span class="price">{{ auction.buy_now_price }} HTG</span>
+              {% else %}
+                <span class="price-label">Prix actuel</span>
+                <span class="price">{{ auction.current_price }} HTG</span>
+              {% endif %}
             </div>
-            <span class="bids-count">{{ auction.total_bids }} enchère{{ auction.total_bids|pluralize }}</span>
+            {% if auction.auction_type != 'buy_now' %}
+              <span class="bids-count">{{ auction.total_bids }} enchère{{ auction.total_bids|pluralize }}</span>
+            {% endif %}
           </div>
+          {% if auction.auction_type != 'buy_now' %}
           <div class="countdown" data-ends-at="{{ auction.ends_at|date:'c' }}">Calcul...</div>
+          {% endif %}
           <a href="{% url 'auction_detail' auction.id %}" class="btn btn-primary btn-full" style="margin-top:4px;">
-            Voir l'enchère →
+            {% if auction.auction_type == 'buy_now' %}Acheter maintenant →{% else %}Voir l'enchère →{% endif %}
           </a>
-          {% if auction.buy_now_price %}
+          {% if auction.buy_now_price and auction.auction_type == 'both' %}
           <a href="{% url 'auction_detail' auction.id %}" class="btn btn-outline btn-full btn-sm">
-            Acheter — {{ auction.buy_now_price }} HTG
+            ⚡ Acheter — {{ auction.buy_now_price }} HTG
           </a>
           {% endif %}
         </div>
@@ -124,7 +166,7 @@
       {% empty %}
       <div class="empty-state">
         <div style="font-size:3rem;margin-bottom:16px;">♻️</div>
-        <p>Aucune enchère active pour le moment.</p>
+        <p>Aucune annonce active pour le moment.</p>
         {% if request.session.user_id %}
           <a href="{% url 'submit_waste' %}" class="btn btn-primary">Soumettre un déchet</a>
         {% else %}
@@ -151,4 +193,32 @@
 
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function formatCountdown(endsAt) {
+  const now  = new Date();
+  const end  = new Date(endsAt);
+  const diff = Math.max(0, Math.floor((end - now) / 1000));
+  if (diff === 0) return { text: 'Terminée', expired: true };
+  const d = Math.floor(diff / 86400);
+  const h = Math.floor((diff % 86400) / 3600);
+  const m = Math.floor((diff % 3600) / 60);
+  const s = diff % 60;
+  if (d > 0) return { text: `${d}j ${h}h restants`, expired: false };
+  if (h > 0) return { text: `${h}h ${m}m restants`, expired: false };
+  return { text: `${m}m ${s}s restants`, expired: false };
+}
+
+function tickAll() {
+  document.querySelectorAll('.countdown[data-ends-at]').forEach(el => {
+    const { text, expired } = formatCountdown(el.dataset.endsAt);
+    el.textContent = text;
+    el.classList.toggle('expired', expired);
+  });
+}
+tickAll();
+setInterval(tickAll, 1000);
+</script>
 {% endblock %}

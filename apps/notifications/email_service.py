@@ -128,6 +128,33 @@ class EmailService:
         cls._send(user.email, 'EcoCycle est de retour ! — Le site est à nouveau disponible', html)
 
     @classmethod
+    def send_order_confirmation(cls, order, transaction):
+        html = render_to_string('emails/order_confirmation.html', {
+            'user':        order.buyer,
+            'order':       order,
+            'transaction': transaction,
+            'frontend_url': settings.FRONTEND_URL,
+        })
+        cls._send(
+            order.buyer.email,
+            f'✅ Paiement confirmé — Commande #{str(order.id)[:8]} — EcoCycle Haiti',
+            html,
+        )
+
+    @classmethod
+    def send_order_paid_seller(cls, order):
+        html = render_to_string('emails/order_paid_seller.html', {
+            'user':       order.seller,
+            'order':      order,
+            'frontend_url': settings.FRONTEND_URL,
+        })
+        cls._send(
+            order.seller.email,
+            f'💰 Votre article a été vendu — EcoCycle Haiti',
+            html,
+        )
+
+    @classmethod
     def send_admin_course_completed(cls, admin, user, course, certificate):
         html = render_to_string('emails/admin_course_completed.html', {
             'admin': admin,
@@ -140,5 +167,21 @@ class EmailService:
         cls._send(
             admin.email,
             f'[EcoCycle] {user.full_name} a complété « {course.title} »',
+            html,
+        )
+
+    @classmethod
+    def send_course_enrollment_confirmation(cls, enrollment, transaction):
+        course = enrollment.course
+        user   = enrollment.user
+        html = render_to_string('emails/course_enrollment_confirmation.html', {
+            'user':        user,
+            'course':      course,
+            'transaction': transaction,
+            'frontend_url': settings.FRONTEND_URL,
+        })
+        cls._send(
+            user.email,
+            f'Inscription confirmée — {course.title}',
             html,
         )

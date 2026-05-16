@@ -3,6 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.db import transaction
 from .models import Auction, Bid, Order
 from .serializers import (
     AuctionSerializer, CreateAuctionSerializer,
@@ -42,36 +43,46 @@ class AuctionDetailView(generics.RetrieveAPIView):
 class CreateAuctionView(generics.CreateAPIView):
     """POST /api/marketplace/auctions/create/"""
     serializer_class = CreateAuctionSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
 
 class PlaceBidView(APIView):
     """POST /api/marketplace/auctions/<id>/bid/"""
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
-        auction = get_object_or_404(Auction, pk=pk)
-
-        if not auction.is_active:
-            return Response(
-                {'error': 'Cette enchère est clôturée.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        if auction.seller == request.user:
-            return Response(
-                {'error': 'Vous ne pouvez pas enchérir sur votre propre listing.'},
-                status=status.HTTP_400_BAD_REQUEST,
+        with transaction.atomic():
+            auction = get_object_or_404(
+                Auction.objects.select_for_update(), pk=pk
             )
 
-        serializer = PlaceBidSerializer(data=request.data, context={'auction': auction})
-        serializer.is_valid(raise_exception=True)
-        amount = serializer.validated_data['amount']
+            if not auction.is_active:
+                return Response(
+                    {'error': 'Cette enchère est clôturée.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if auction.auction_type == 'buy_now':
+                return Response(
+                    {'error': 'Cette annonce est en achat immédiat uniquement.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if auction.seller == request.user:
+                return Response(
+                    {'error': 'Vous ne pouvez pas enchérir sur votre propre listing.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
-        auction.bids.filter(is_winning=True).update(is_winning=False)
-        bid = Bid.objects.create(
-            auction=auction, bidder=request.user, amount=amount, is_winning=True
-        )
-        auction.current_price = amount
-        auction.total_bids += 1
-        auction.save()
+            serializer = PlaceBidSerializer(data=request.data, context={'auction': auction})
+            serializer.is_valid(raise_exception=True)
+            amount = serializer.validated_data['amount']
+
+            auction.bids.filter(is_winning=True).update(is_winning=False)
+            bid = Bid.objects.create(
+                auction=auction, bidder=request.user, amount=amount, is_winning=True
+            )
+            auction.current_price = amount
+            auction.total_bids += 1
+            auction.save(update_fields=['current_price', 'total_bids', 'updated_at'])
 
         from apps.notifications.tasks import notify_new_bid
         notify_new_bid.delay(str(bid.id))
@@ -81,36 +92,45 @@ class PlaceBidView(APIView):
 
 class BuyNowView(APIView):
     """POST /api/marketplace/auctions/<id>/buy-now/"""
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
-        auction = get_object_or_404(Auction, pk=pk)
-
-        if not auction.is_active:
-            return Response(
-                {'error': "Cette enchère n'est plus disponible."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        if not auction.buy_now_price:
-            return Response(
-                {'error': 'Achat immédiat non disponible.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        if auction.seller == request.user:
-            return Response(
-                {'error': 'Vous ne pouvez pas acheter votre propre listing.'},
-                status=status.HTTP_400_BAD_REQUEST,
+        with transaction.atomic():
+            auction = get_object_or_404(
+                Auction.objects.select_for_update(), pk=pk
             )
 
-        auction.status = 'sold'
-        auction.winner = request.user
-        auction.save()
+            if not auction.is_active:
+                return Response(
+                    {'error': "Cette enchère n'est plus disponible."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if auction.auction_type == 'auction':
+                return Response(
+                    {'error': "L'achat immédiat n'est pas disponible pour cette enchère."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if not auction.buy_now_price:
+                return Response(
+                    {'error': 'Achat immédiat non disponible.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if auction.seller == request.user:
+                return Response(
+                    {'error': 'Vous ne pouvez pas acheter votre propre listing.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
-        order = Order.objects.create(
-            auction=auction,
-            buyer=request.user,
-            seller=auction.seller,
-            amount=auction.buy_now_price,
-        )
+            auction.status = 'sold'
+            auction.winner = request.user
+            auction.save(update_fields=['status', 'winner', 'updated_at'])
+
+            order = Order.objects.create(
+                auction=auction,
+                buyer=request.user,
+                seller=auction.seller,
+                amount=auction.buy_now_price,
+            )
 
         from apps.notifications.tasks import notify_order_created
         from apps.impact.tasks import create_impact_record
@@ -123,6 +143,7 @@ class BuyNowView(APIView):
 class MyOrdersView(generics.ListAPIView):
     """GET /api/marketplace/orders/my/"""
     serializer_class = OrderSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         return Order.objects.filter(buyer=self.request.user).select_related('auction', 'seller')
@@ -131,6 +152,7 @@ class MyOrdersView(generics.ListAPIView):
 class MySalesView(generics.ListAPIView):
     """GET /api/marketplace/orders/sales/"""
     serializer_class = OrderSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         return Order.objects.filter(seller=self.request.user).select_related('auction', 'buyer')

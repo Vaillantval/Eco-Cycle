@@ -17,6 +17,7 @@ from .views.admin_views import (
     AdminDashboardView, AdminListingsView, AdminReviewListingView,
     AdminPickupsView, AdminUsersView, AdminOrdersView,
     AdminUserDetailView, AdminPickupDetailView, AdminOrderDetailView,
+    AdminAuctionsView, AdminAuctionDetailView,
     AdminBlogView, AdminBlogCreateView, AdminBlogEditView, AdminBlogCategoriesView,
     AdminAcademyView, AdminAcademyCourseCreateView, AdminAcademyCourseDetailView,
     AdminAcademyLessonCreateView, AdminAcademyLessonEditView,
@@ -29,8 +30,15 @@ from .views.collector_views import (
     CollectorPickupDetailView, CollectorProfileView,
 )
 from .views.blog_views import BlogListView, BlogDetailView
-from .views.academy_views import AcademyListView, CourseDetailView, EnrollCourseView, CompleteLessonView, LessonDetailView
+from .views.academy_views import (
+    AcademyListView, CourseDetailView, EnrollCourseView, CompleteLessonView, LessonDetailView,
+    CourseCheckoutView, CourseStripeInitView, CourseStripeCheckoutView, CoursePlopPlopInitView,
+)
 from apps.core.views import NewsletterSubscribeView, NewsletterConfirmView
+from .views.payment_views import (
+    PaymentCheckoutView, StripeInitView, StripeCheckoutView, StripeSuccessView,
+    PlopPlopInitiateView, PlopPlopReturnView,
+)
 from .views.page_views import (
     CommentCaMarcheView, FonctionnalitesView, NotreImpactView,
     FaqView, ContactPageView,
@@ -91,6 +99,20 @@ urlpatterns = [
          PlaceBidWebView.as_view(), name='place_bid'),
     path('marketplace/<uuid:pk>/buy-now/',
          BuyNowWebView.as_view(), name='buy_now'),
+
+    # Paiement
+    path('payment/<uuid:order_id>/',
+         PaymentCheckoutView.as_view(), name='payment_checkout'),
+    path('payment/<uuid:order_id>/stripe/init/',
+         StripeInitView.as_view(), name='payment_stripe_init'),
+    path('payment/<uuid:order_id>/stripe/checkout/',
+         StripeCheckoutView.as_view(), name='payment_stripe_checkout'),
+    path('payment/stripe/success/',
+         StripeSuccessView.as_view(), name='payment_stripe_success'),
+    path('payment/<uuid:order_id>/plopplop/',
+         PlopPlopInitiateView.as_view(), name='payment_plopplop_init'),
+    path('payment/plopplop/retour/',
+         PlopPlopReturnView.as_view(), name='payment_plopplop_return'),
     # Blog W8
     path('blog/',
          BlogListView.as_view(), name='blog_list'),
@@ -104,6 +126,14 @@ urlpatterns = [
          CourseDetailView.as_view(), name='course_detail'),
     path('academy/<slug:slug>/enroll/',
          EnrollCourseView.as_view(), name='enroll_course'),
+    path('academy/<slug:slug>/pay/',
+         CourseCheckoutView.as_view(), name='course_checkout'),
+    path('academy/<slug:slug>/pay/stripe/init/',
+         CourseStripeInitView.as_view(), name='course_stripe_init'),
+    path('academy/<slug:slug>/pay/stripe/',
+         CourseStripeCheckoutView.as_view(), name='course_stripe_checkout'),
+    path('academy/<slug:slug>/pay/plopplop/',
+         CoursePlopPlopInitView.as_view(), name='course_plopplop_init'),
     path('academy/<slug:slug>/lessons/<uuid:lesson_id>/',
          LessonDetailView.as_view(), name='lesson_detail'),
     path('academy/<slug:slug>/lessons/<uuid:lesson_id>/complete/',
@@ -139,6 +169,10 @@ urlpatterns = [
          AdminUsersView.as_view(), name='admin_users'),
     path('panel/users/<uuid:pk>/',
          AdminUserDetailView.as_view(), name='admin_user_detail'),
+    path('panel/auctions/',
+         AdminAuctionsView.as_view(), name='admin_auctions'),
+    path('panel/auctions/<uuid:pk>/',
+         AdminAuctionDetailView.as_view(), name='admin_auction_detail'),
     path('panel/orders/',
          AdminOrdersView.as_view(), name='admin_orders'),
     path('panel/orders/<uuid:pk>/',

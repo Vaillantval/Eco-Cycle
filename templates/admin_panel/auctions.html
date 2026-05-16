@@ -1,0 +1,133 @@
+{% extends 'admin_panel/base_admin.html' %}
+
+{% block title %}Enchères — Admin EcoCycle{% endblock %}
+{% block page_title %}Enchères{% endblock %}
+
+{% block topbar_actions %}
+<div style="display:flex;gap:8px;align-items:center;">
+  <span style="font-size:0.82rem;color:#64748b;">
+    {{ count_active }} active{{ count_active|pluralize }} · {{ count_sold }} vendue{{ count_sold|pluralize }}
+  </span>
+</div>
+{% endblock %}
+
+{% block admin_content %}
+
+<!-- STATS -->
+<div class="admin-stat-grid" style="margin-bottom:20px;">
+  <div class="admin-stat">
+    <div class="admin-stat-label">Actives</div>
+    <div class="admin-stat-value" style="color:#16a34a;">{{ count_active }}</div>
+  </div>
+  <div class="admin-stat">
+    <div class="admin-stat-label">Vendues</div>
+    <div class="admin-stat-value">{{ count_sold }}</div>
+  </div>
+</div>
+
+<!-- FILTRES + RECHERCHE -->
+<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px;">
+  <div class="filter-bar" style="margin:0;">
+    <a href="{% url 'admin_auctions' %}{% if search %}?q={{ search }}{% endif %}"
+       class="filter-btn {% if not status_filter %}active{% endif %}">Toutes</a>
+    {% for value, label in status_choices %}
+    <a href="{% url 'admin_auctions' %}?status={{ value }}{% if search %}&q={{ search }}{% endif %}"
+       class="filter-btn {% if status_filter == value %}active{% endif %}">{{ label }}</a>
+    {% endfor %}
+  </div>
+  <form method="GET" style="display:flex;gap:6px;margin-left:auto;">
+    {% if status_filter %}<input type="hidden" name="status" value="{{ status_filter }}">{% endif %}
+    <input type="text" name="q" value="{{ search }}"
+           placeholder="Rechercher un listing..."
+           style="padding:6px 12px;border:1px solid #e2e8f0;border-radius:6px;font-size:0.82rem;outline:none;">
+    <button type="submit" class="btn-admin-sm btn-admin-primary">Chercher</button>
+  </form>
+</div>
+
+<div class="admin-card">
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>Listing</th>
+        <th>Vendeur</th>
+        <th>Type</th>
+        <th>Prix actuel</th>
+        <th>Enchères</th>
+        <th>Fin</th>
+        <th>Statut</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for auction in auctions %}
+      <tr>
+        <td>
+          <div style="font-weight:600;font-size:0.84rem;color:#0f172a;">
+            {{ auction.listing.title|truncatechars:34 }}
+          </div>
+          <div style="font-size:0.72rem;color:#94a3b8;">
+            {{ auction.listing.category.name|default:'—' }} · {{ auction.listing.quantity_kg }} kg
+          </div>
+        </td>
+        <td>
+          <div style="font-size:0.82rem;font-weight:500;">{{ auction.seller.full_name }}</div>
+          <div style="font-size:0.72rem;color:#94a3b8;">{{ auction.seller.email }}</div>
+        </td>
+        <td>
+          {% if auction.auction_type == 'buy_now' %}
+            <span style="padding:2px 8px;border-radius:10px;font-size:0.72rem;font-weight:700;background:#fef3c7;color:#92400e;">⚡ Fixe</span>
+          {% elif auction.auction_type == 'auction' %}
+            <span style="padding:2px 8px;border-radius:10px;font-size:0.72rem;font-weight:700;background:#dbeafe;color:#1d4ed8;">🔨 Enchère</span>
+          {% else %}
+            <span style="padding:2px 8px;border-radius:10px;font-size:0.72rem;font-weight:700;background:#f0fdf4;color:#166534;">🔨⚡ Les deux</span>
+          {% endif %}
+        </td>
+        <td style="font-weight:700;color:#0f172a;font-size:0.88rem;">
+          {{ auction.current_price|default:auction.starting_price }} HTG
+        </td>
+        <td style="font-size:0.82rem;color:#64748b;text-align:center;">{{ auction.total_bids }}</td>
+        <td style="font-size:0.78rem;color:#64748b;">
+          {{ auction.ends_at|date:"d/m/Y H:i" }}
+          {% if auction.status == 'active' %}
+            <div style="font-size:0.7rem;color:#f07c1a;font-weight:600;">
+              {% now "c" as now_iso %}
+              En cours
+            </div>
+          {% endif %}
+        </td>
+        <td>
+          <span class="status-badge status-{{ auction.status }}">{{ auction.get_status_display }}</span>
+        </td>
+        <td>
+          <a href="{% url 'admin_auction_detail' auction.id %}" class="btn-admin-sm btn-view">Détail →</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="8" style="text-align:center;padding:48px;color:#94a3b8;">
+          Aucune enchère{% if status_filter %} avec ce statut{% endif %}{% if search %} pour « {{ search }} »{% endif %}.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- PAGINATION -->
+{% if auctions.has_other_pages %}
+<div style="display:flex;justify-content:center;gap:8px;margin-top:16px;">
+  {% if auctions.has_previous %}
+    <a href="?page={{ auctions.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if search %}&q={{ search }}{% endif %}"
+       class="btn-admin-sm btn-view">← Préc.</a>
+  {% endif %}
+  <span style="padding:4px 12px;font-size:0.82rem;color:#64748b;align-self:center;">
+    Page {{ auctions.number }}/{{ auctions.paginator.num_pages }}
+  </span>
+  {% if auctions.has_next %}
+    <a href="?page={{ auctions.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if search %}&q={{ search }}{% endif %}"
+       class="btn-admin-sm btn-view">Suiv. →</a>
+  {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

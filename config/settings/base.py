@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'apps.academy',
     'apps.blog',
     'apps.core',
+    'apps.payments',
     'web',
 ]
 
@@ -185,6 +186,23 @@ ANTHROPIC_API_KEY = config('ANTHROPIC_API_KEY', default='')
 FIREBASE_CREDENTIALS_PATH = config('FIREBASE_CREDENTIALS_PATH', default='firebase-credentials.json')
 FIREBASE_CREDENTIALS_B64 = config('FIREBASE_CREDENTIALS_B64', default='')
 FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:8000')
+
+# ── Stripe ────────────────────────────────────────────────────────────────────
+STRIPE = {
+    'PUBLIC_KEY':      config('STRIPE_PUBLIC_KEY', default=''),
+    'SECRET_KEY':      config('STRIPE_SECRET_KEY', default=''),
+    'WEBHOOK_SECRET':  config('STRIPE_WEBHOOK_SECRET', default=''),
+}
+
+# ── PlopPlop (MonCash / NatCash / Kashpaw) ────────────────────────────────────
+PLOPPLOP = {
+    'CLIENT_ID':  config('PLOPPLOP_CLIENT_ID', default=''),
+    'BASE_URL':   'https://plopplop.solutionip.app',
+    'RETURN_URL': config(
+        'PLOPPLOP_RETURN_URL',
+        default='http://localhost:8000/payment/plopplop/retour/',
+    ),
+}
 ADMIN_EMAIL = config('ADMIN_EMAIL', default='admin@ecocycle.ht')
 
 LOGGING = {

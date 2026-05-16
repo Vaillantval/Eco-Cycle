@@ -4,18 +4,28 @@
 {% block page_title %}Listings{% endblock %}
 
 {% block topbar_actions %}
-<span style="font-size:0.82rem;color:#64748b;">{{ listings|length }} listing{{ listings|length|pluralize }}</span>
+<span style="font-size:0.82rem;color:#64748b;">{{ listings.paginator.count }} listing{{ listings.paginator.count|pluralize }}</span>
 {% endblock %}
 
 {% block admin_content %}
 
-<!-- FILTRES -->
-<div class="filter-bar">
-  <a href="{% url 'admin_listings' %}" class="filter-btn {% if not status_filter %}active{% endif %}">Tous</a>
-  {% for value, label in status_choices %}
-  <a href="{% url 'admin_listings' %}?status={{ value }}"
-     class="filter-btn {% if status_filter == value %}active{% endif %}">{{ label }}</a>
-  {% endfor %}
+<!-- FILTRES + RECHERCHE -->
+<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px;">
+  <div class="filter-bar" style="margin:0;">
+    <a href="{% url 'admin_listings' %}{% if search %}?q={{ search }}{% endif %}"
+       class="filter-btn {% if not status_filter %}active{% endif %}">Tous</a>
+    {% for value, label in status_choices %}
+    <a href="{% url 'admin_listings' %}?status={{ value }}{% if search %}&q={{ search }}{% endif %}"
+       class="filter-btn {% if status_filter == value %}active{% endif %}">{{ label }}</a>
+    {% endfor %}
+  </div>
+  <form method="GET" style="display:flex;gap:6px;margin-left:auto;">
+    {% if status_filter %}<input type="hidden" name="status" value="{{ status_filter }}">{% endif %}
+    <input type="text" name="q" value="{{ search }}"
+           placeholder="Titre ou email..."
+           style="padding:6px 12px;border:1px solid #e2e8f0;border-radius:6px;font-size:0.82rem;outline:none;">
+    <button type="submit" class="btn-admin-sm btn-admin-primary">Chercher</button>
+  </form>
 </div>
 
 <div class="admin-card">
@@ -66,11 +76,29 @@
       {% empty %}
       <tr>
         <td colspan="8" style="text-align:center;padding:48px;color:#94a3b8;">
-          Aucun listing{% if status_filter %} avec ce statut{% endif %}.
+          Aucun listing{% if status_filter %} avec ce statut{% endif %}{% if search %} pour « {{ search }} »{% endif %}.
         </td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
+
+<!-- PAGINATION -->
+{% if listings.has_other_pages %}
+<div style="display:flex;justify-content:center;gap:8px;margin-top:16px;">
+  {% if listings.has_previous %}
+    <a href="?page={{ listings.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if search %}&q={{ search }}{% endif %}"
+       class="btn-admin-sm btn-view">← Préc.</a>
+  {% endif %}
+  <span style="padding:4px 12px;font-size:0.82rem;color:#64748b;align-self:center;">
+    Page {{ listings.number }}/{{ listings.paginator.num_pages }}
+  </span>
+  {% if listings.has_next %}
+    <a href="?page={{ listings.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if search %}&q={{ search }}{% endif %}"
+       class="btn-admin-sm btn-view">Suiv. →</a>
+  {% endif %}
+</div>
+{% endif %}
+
 {% endblock %}

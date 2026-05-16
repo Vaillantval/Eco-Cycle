@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Paiement — {{ course.title }} — EcoCycle Academy{% endblock %}
+
+{% block extra_css %}
+<style>
+.main-nav { background: white !important; box-shadow: 0 2px 12px rgba(0,0,0,0.08) !important; }
+.main-nav .nav-logo, .main-nav .nav-link, .main-nav .nav-cta { color: var(--charcoal) !important; }
+
+.stripe-page { padding: 88px 0 60px; min-height: 100vh; background: #f8fafc; }
+.stripe-wrap { max-width: 520px; margin: 0 auto; padding: 0 20px; }
+.stripe-card { background: white; border-radius: 16px; padding: 32px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+
+.stripe-header { text-align: center; margin-bottom: 28px; }
+.stripe-header h1 { font-family: var(--font-display); font-size: 1.4rem; font-weight: 800; color: var(--charcoal); }
+.stripe-header p { color: var(--gray); font-size: 0.88rem; margin-top: 6px; }
+
+.amount-chip { display: inline-flex; align-items: center; gap: 8px; padding: 8px 20px; background: #f0fdf4; border: 2px solid #bbf7d0; border-radius: 30px; font-family: var(--font-display); font-size: 1.4rem; font-weight: 800; color: var(--green); margin: 0 auto 24px; }
+
+#payment-element { margin-bottom: 20px; }
+
+#submit-btn { width: 100%; padding: 14px; background: #635bff; color: white; border: none; border-radius: 10px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: opacity 0.18s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+#submit-btn:hover { opacity: 0.9; }
+#submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+#payment-message { color: #ef4444; font-size: 0.85rem; margin-top: 10px; text-align: center; display: none; }
+
+.back-link { display: block; text-align: center; margin-top: 16px; font-size: 0.85rem; color: var(--gray); text-decoration: none; }
+.back-link:hover { color: var(--green); }
+.secure-note { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.75rem; color: var(--gray); margin-top: 16px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="stripe-page">
+  <div class="stripe-wrap">
+    <div class="stripe-card">
+
+      <div class="stripe-header">
+        <div style="font-size:2.5rem;margin-bottom:8px;">🎓</div>
+        <h1>Paiement par carte</h1>
+        <p>{{ course.title|truncatechars:50 }}</p>
+        <div style="text-align:center;margin-top:14px;">
+          <span class="amount-chip">{{ course.price }} HTG</span>
+        </div>
+      </div>
+
+      <form id="payment-form">
+        <div id="payment-element"></div>
+        <button id="submit-btn" type="submit">
+          <span id="btn-text">🔒 Payer {{ course.price }} HTG</span>
+          <span id="btn-spinner" style="display:none;">⏳ Traitement...</span>
+        </button>
+        <div id="payment-message"></div>
+      </form>
+
+      <a href="{% url 'course_checkout' course.slug %}" class="back-link">← Changer de mode de paiement</a>
+      <div class="secure-note">🔒 Sécurisé par Stripe · vos données de carte ne transitent pas par nos serveurs</div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+const stripe = Stripe('{{ stripe_public_key }}');
+const clientSecret = '{{ transaction.meta_data.stripe_client_secret }}';
+const returnUrl = '{{ request.scheme }}://{{ request.get_host }}{% url "payment_stripe_success" %}';
+
+let elements;
+
+async function init() {
+  elements = stripe.elements({ clientSecret });
+  const payEl = elements.create('payment');
+  payEl.mount('#payment-element');
+}
+init();
+
+document.getElementById('payment-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  setLoading(true);
+
+  const { error } = await stripe.confirmPayment({
+    elements,
+    confirmParams: { return_url: returnUrl },
+  });
+
+  if (error) {
+    const msg = document.getElementById('payment-message');
+    msg.textContent = error.message;
+    msg.style.display = 'block';
+  }
+  setLoading(false);
+});
+
+function setLoading(isLoading) {
+  document.getElementById('submit-btn').disabled = isLoading;
+  document.getElementById('btn-text').style.display    = isLoading ? 'none' : 'flex';
+  document.getElementById('btn-spinner').style.display = isLoading ? 'flex' : 'none';
+}
+</script>
+{% endblock %}

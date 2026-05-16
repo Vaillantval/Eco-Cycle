@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.utils import timezone
 from django.http import JsonResponse
 from django.core.paginator import Paginator
+from django.db import transaction
 from web.mixins import LoginRequiredMixin
 from apps.marketplace.models import Auction, Bid, Order
 from apps.waste.models import WasteCategory
@@ -71,10 +72,8 @@ class AuctionDetailView(View):
 class PlaceBidWebView(LoginRequiredMixin, View):
     """AJAX POST — retourne JSON."""
     def post(self, request, pk):
-        auction = get_object_or_404(Auction, pk=pk)
-        user    = self.get_current_user(request)
+        user = self.get_current_user(request)
 
-        # Accepte JSON ou form-data
         if request.content_type and 'application/json' in request.content_type:
             try:
                 payload = json.loads(request.body)
@@ -87,20 +86,25 @@ class PlaceBidWebView(LoginRequiredMixin, View):
             except ValueError:
                 return JsonResponse({'error': 'Montant invalide.'}, status=400)
 
-        if not auction.is_active:
-            return JsonResponse({'error': 'Enchère clôturée.'}, status=400)
-        if auction.seller == user:
-            return JsonResponse({'error': 'Vous ne pouvez pas enchérir sur votre propre listing.'}, status=400)
+        with transaction.atomic():
+            auction = get_object_or_404(Auction.objects.select_for_update(), pk=pk)
 
-        min_bid = float(auction.current_price or auction.starting_price) + 10
-        if amount < min_bid:
-            return JsonResponse({'error': f'Enchère minimum : {min_bid:.0f} HTG.'}, status=400)
+            if not auction.is_active:
+                return JsonResponse({'error': 'Enchère clôturée.'}, status=400)
+            if auction.auction_type == 'buy_now':
+                return JsonResponse({'error': 'Cette annonce est en achat immédiat uniquement.'}, status=400)
+            if auction.seller == user:
+                return JsonResponse({'error': 'Vous ne pouvez pas enchérir sur votre propre listing.'}, status=400)
 
-        auction.bids.filter(is_winning=True).update(is_winning=False)
-        bid = Bid.objects.create(auction=auction, bidder=user, amount=amount, is_winning=True)
-        auction.current_price = amount
-        auction.total_bids   += 1
-        auction.save()
+            min_bid = float(auction.current_price or auction.starting_price) + 10
+            if amount < min_bid:
+                return JsonResponse({'error': f'Enchère minimum : {min_bid:.0f} HTG.'}, status=400)
+
+            auction.bids.filter(is_winning=True).update(is_winning=False)
+            bid = Bid.objects.create(auction=auction, bidder=user, amount=amount, is_winning=True)
+            auction.current_price = amount
+            auction.total_bids   += 1
+            auction.save(update_fields=['current_price', 'total_bids', 'updated_at'])
 
         from apps.notifications.tasks import notify_new_bid
         notify_new_bid.delay(str(bid.id))
@@ -114,30 +118,36 @@ class PlaceBidWebView(LoginRequiredMixin, View):
 
 class BuyNowWebView(LoginRequiredMixin, View):
     def post(self, request, pk):
-        auction = get_object_or_404(Auction, pk=pk)
-        user    = self.get_current_user(request)
+        user = self.get_current_user(request)
 
-        if not auction.is_active or not auction.buy_now_price:
-            messages.error(request, 'Achat immédiat non disponible.')
-            return redirect('auction_detail', pk=pk)
-        if auction.seller == user:
-            messages.error(request, 'Vous ne pouvez pas acheter votre propre listing.')
-            return redirect('auction_detail', pk=pk)
+        with transaction.atomic():
+            auction = get_object_or_404(Auction.objects.select_for_update(), pk=pk)
 
-        auction.status = 'sold'
-        auction.winner = user
-        auction.save()
+            if not auction.is_active:
+                messages.error(request, "Cette enchère n'est plus disponible.")
+                return redirect('auction_detail', pk=pk)
+            if auction.auction_type == 'auction':
+                messages.error(request, "L'achat immédiat n'est pas disponible pour cette enchère.")
+                return redirect('auction_detail', pk=pk)
+            if not auction.buy_now_price:
+                messages.error(request, 'Achat immédiat non disponible.')
+                return redirect('auction_detail', pk=pk)
+            if auction.seller == user:
+                messages.error(request, 'Vous ne pouvez pas acheter votre propre listing.')
+                return redirect('auction_detail', pk=pk)
 
-        order = Order.objects.create(
-            auction=auction,
-            buyer=user,
-            seller=auction.seller,
-            amount=auction.buy_now_price,
-        )
+            auction.status = 'sold'
+            auction.winner = user
+            auction.save(update_fields=['status', 'winner', 'updated_at'])
+
+            order = Order.objects.create(
+                auction=auction,
+                buyer=user,
+                seller=auction.seller,
+                amount=auction.buy_now_price,
+            )
+
         from apps.notifications.tasks import notify_order_created
-        from apps.impact.tasks import create_impact_record
         notify_order_created.delay(str(order.id))
-        create_impact_record.delay(str(order.id))
 
-        messages.success(request, f'Achat confirmé ! Commande #{str(order.id)[:8]}')
-        return redirect('my_orders')
+        return redirect('payment_checkout', order_id=order.id)

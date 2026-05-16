@@ -6,36 +6,65 @@
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
 <style>
-.detail-page { padding: 100px 0 60px; }
+/* Navbar blanche */
+.main-nav { background: white !important; box-shadow: 0 2px 12px rgba(0,0,0,0.08) !important; }
+.main-nav .nav-logo, .main-nav .nav-link, .main-nav .nav-cta { color: var(--charcoal) !important; }
+.main-nav .nav-link:hover { color: var(--green) !important; }
+
+.detail-page { padding: 88px 0 60px; }
 .detail-grid { display: grid; grid-template-columns: 1fr 380px; gap: 32px; align-items: start; }
+
 .detail-img { width: 100%; border-radius: 16px; overflow: hidden; background: #f0f0ee; aspect-ratio: 4/3; }
 .detail-img img { width: 100%; height: 100%; object-fit: cover; }
 .detail-img-placeholder { width: 100%; height: 100%; min-height: 300px; display: flex; align-items: center; justify-content: center; font-size: 5rem; background: linear-gradient(135deg, #e8f5ee, #d1fae5); }
-.detail-meta { display: flex; gap: 12px; flex-wrap: wrap; margin: 16px 0; }
+
+.detail-meta { display: flex; gap: 10px; flex-wrap: wrap; margin: 16px 0; }
 .detail-meta-tag { display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px; background: #f3f4f6; border-radius: 20px; font-size: 0.82rem; color: var(--charcoal); }
+.type-tag { font-weight: 700; }
+.type-tag.auction { background: #dbeafe; color: #1d4ed8; }
+.type-tag.buy_now { background: #fef3c7; color: #92400e; }
+.type-tag.both    { background: #f0fdf4; color: #166534; }
+
 .ai-card { background: linear-gradient(135deg, #f0fdf4, #dcfce7); border: 1.5px solid var(--green); border-radius: 12px; padding: 18px 20px; margin-top: 20px; }
 .ai-card h4 { font-family: var(--font-display); font-weight: 700; color: var(--green-dark); margin-bottom: 12px; }
 .ai-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .ai-item label { font-size: 0.7rem; color: var(--gray); text-transform: uppercase; letter-spacing: 0.5px; display: block; }
 .ai-item span { font-weight: 700; color: var(--charcoal); }
 
-.bid-card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); position: sticky; top: 90px; }
+/* Bid card */
+.bid-card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); position: sticky; top: 88px; }
 .bid-current-price { font-family: var(--font-display); font-size: 2.4rem; font-weight: 800; color: var(--green); line-height: 1; }
 .bid-price-label { font-size: 0.78rem; color: var(--gray); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
 .bid-countdown { font-size: 1.1rem; font-weight: 700; color: var(--orange); background: #fef3c7; padding: 8px 16px; border-radius: 8px; text-align: center; margin: 16px 0; }
+.bid-countdown.expired { color: #6b7280; background: #f3f4f6; }
+.reserve-note { font-size: 0.78rem; color: var(--gray); background: #f9fafb; border-radius: 6px; padding: 6px 10px; margin-bottom: 8px; }
+
 .bid-form { margin-top: 16px; }
 .bid-input { display: flex; gap: 8px; }
 .bid-input input { flex: 1; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: 10px; font-size: 1rem; font-weight: 600; outline: none; }
 .bid-input input:focus { border-color: var(--green); }
-.bid-error { color: #ef4444; font-size: 0.82rem; margin-top: 6px; display: none; }
+.bid-error   { color: #ef4444; font-size: 0.82rem; margin-top: 6px; display: none; }
 .bid-success { color: var(--green); font-size: 0.82rem; margin-top: 6px; display: none; }
+
+.buynow-btn { width: 100%; padding: 13px; background: var(--orange); color: white; border: none; border-radius: 10px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: opacity 0.18s; margin-top: 12px; }
+.buynow-btn:hover { opacity: 0.9; }
+
 .seller-card { background: #f9fafb; border-radius: 12px; padding: 16px; margin-top: 16px; }
 .seller-card h5 { font-family: var(--font-display); font-weight: 700; font-size: 0.85rem; color: var(--gray); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
-.bids-history { margin-top: 24px; }
+
+.bids-history { margin-top: 28px; }
 .bids-history h4 { font-family: var(--font-display); font-weight: 700; color: var(--charcoal); margin-bottom: 12px; }
 .bid-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f5f2ed; font-size: 0.88rem; }
 .bid-row:last-child { border-bottom: none; }
 .bid-row.winning { color: var(--green); font-weight: 700; }
+
+.divider { border: none; border-top: 1px solid #f0ede8; margin: 24px 0; }
+
+@media (max-width: 900px) {
+  .detail-grid { grid-template-columns: 1fr; }
+  .bid-card { position: static; }
+  .detail-page { padding: 72px 0 40px; }
+}
 </style>
 {% endblock %}
 
@@ -56,7 +85,6 @@
 
       <!-- COLONNE GAUCHE -->
       <div>
-        <!-- IMAGE -->
         <div class="detail-img">
           {% if auction.listing.photo %}
             <img src="{{ auction.listing.photo.url }}" alt="{{ auction.listing.title }}">
@@ -65,16 +93,22 @@
           {% endif %}
         </div>
 
-        <!-- INFOS -->
         <h1 style="font-family:var(--font-display);font-size:1.8rem;font-weight:800;color:var(--charcoal);margin:20px 0 10px;">
           {{ auction.listing.title }}
         </h1>
 
         <div class="detail-meta">
+          {% if auction.auction_type == 'buy_now' %}
+            <span class="detail-meta-tag type-tag buy_now">⚡ Achat immédiat</span>
+          {% elif auction.auction_type == 'auction' %}
+            <span class="detail-meta-tag type-tag auction">🔨 Enchère</span>
+          {% else %}
+            <span class="detail-meta-tag type-tag both">🔨⚡ Enchère + Achat immédiat</span>
+          {% endif %}
           <span class="detail-meta-tag">{{ auction.listing.category.icon|default:'♻' }} {{ auction.listing.category.name|default:'Autre' }}</span>
           <span class="detail-meta-tag">⚖️ {{ auction.listing.quantity_kg }} kg</span>
           <span class="detail-meta-tag">📍 {{ auction.listing.city|default:'Haïti' }}</span>
-          <span class="detail-meta-tag">👁 {{ auction.views_count }} vues</span>
+          <span class="detail-meta-tag">👁 {{ auction.views_count }} vue{{ auction.views_count|pluralize }}</span>
         </div>
 
         {% if auction.listing.description %}
@@ -134,22 +168,41 @@
       <!-- COLONNE DROITE — BID CARD -->
       <div>
         <div class="bid-card">
-          <p class="bid-price-label">Prix actuel</p>
-          <div class="bid-current-price" id="current-price">{{ auction.current_price }} HTG</div>
-          <p style="font-size:0.82rem;color:var(--gray);margin-top:4px;">
-            {{ auction.total_bids }} enchère{{ auction.total_bids|pluralize }}
-          </p>
 
-          <div class="bid-countdown" id="detail-countdown" data-ends-at="{{ auction.ends_at|date:'c' }}">
-            Calcul...
-          </div>
+          {% if auction.auction_type == 'buy_now' %}
+            <!-- Prix fixe -->
+            <p class="bid-price-label">Prix fixe</p>
+            <div class="bid-current-price">{{ auction.buy_now_price }} HTG</div>
+
+          {% else %}
+            <!-- Enchère en cours -->
+            <p class="bid-price-label">Prix actuel</p>
+            <div class="bid-current-price" id="current-price">{{ auction.current_price }} HTG</div>
+            <p style="font-size:0.82rem;color:var(--gray);margin-top:4px;">
+              {{ auction.total_bids }} enchère{{ auction.total_bids|pluralize }}
+            </p>
+
+            <div class="bid-countdown {% if not auction.is_active %}expired{% endif %}"
+                 id="detail-countdown"
+                 data-ends-at="{{ auction.ends_at|date:'c' }}">
+              {% if not auction.is_active %}Terminée{% else %}Calcul...{% endif %}
+            </div>
+
+            {% if auction.reserve_price %}
+            <div class="reserve-note">
+              🔒 Prix de réserve : non communiqué
+            </div>
+            {% endif %}
+          {% endif %}
 
           {% if auction.is_active %}
             {% if request.session.user_id and not is_owner %}
-              <!-- FORMULAIRE ENCHÈRE -->
+
+              <!-- FORMULAIRE ENCHÈRE (si bidding autorisé) -->
+              {% if auction.auction_type != 'buy_now' %}
               <div class="bid-form">
                 <p style="font-size:0.82rem;color:var(--gray);margin-bottom:8px;">
-                  Enchère minimum : <strong style="color:var(--charcoal);">{{ auction.current_price|add:10 }} HTG</strong>
+                  Enchère minimum : <strong id="min-bid-label" style="color:var(--charcoal);">{{ auction.current_price|add:10 }} HTG</strong>
                 </p>
                 <div class="bid-input">
                   <input type="number" id="bid-amount"
@@ -157,24 +210,26 @@
                          placeholder="Votre offre en HTG">
                   <button onclick="placeBid()" class="btn btn-primary">Enchérir</button>
                 </div>
-                <div class="bid-error" id="bid-error"></div>
+                <div class="bid-error"   id="bid-error"></div>
                 <div class="bid-success" id="bid-success"></div>
               </div>
+              {% endif %}
 
               <!-- ACHAT IMMÉDIAT -->
-              {% if auction.buy_now_price %}
-              <form method="POST" action="{% url 'buy_now' auction.id %}" style="margin-top:12px;">
+              {% if auction.buy_now_price and auction.auction_type != 'auction' %}
+              <form method="POST" action="{% url 'buy_now' auction.id %}" style="margin-top:{% if auction.auction_type == 'buy_now' %}0{% else %}12px{% endif %};">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-outline btn-full"
+                <button type="submit" class="buynow-btn"
                         onclick="return confirm('Confirmer l\'achat à {{ auction.buy_now_price }} HTG ?')">
                   ⚡ Acheter maintenant — {{ auction.buy_now_price }} HTG
                 </button>
               </form>
               {% endif %}
 
-              {% if user_bid %}
+              {% if user_bid and auction.auction_type != 'buy_now' %}
               <p style="font-size:0.78rem;color:var(--gray);text-align:center;margin-top:10px;">
                 Votre enchère actuelle : <strong style="color:var(--green);">{{ user_bid.amount }} HTG</strong>
+                {% if user_bid.is_winning %}👑{% endif %}
               </p>
               {% endif %}
 
@@ -184,14 +239,22 @@
               </div>
             {% else %}
               <a href="{% url 'web_login' %}?next={{ request.path }}" class="btn btn-primary btn-full" style="margin-top:12px;">
-                🔑 Se connecter pour enchérir
+                🔑 Se connecter pour {% if auction.auction_type == 'buy_now' %}acheter{% else %}enchérir{% endif %}
               </a>
             {% endif %}
+
           {% else %}
             <div style="background:#f3f4f6;border-radius:8px;padding:12px;text-align:center;font-size:0.88rem;color:var(--gray);margin-top:12px;">
-              🔒 Enchère terminée
+              🔒 {% if auction.status == 'sold' %}Vendue{% else %}Enchère terminée{% endif %}
             </div>
+            {% if auction.winner %}
+            <p style="font-size:0.78rem;color:var(--gray);text-align:center;margin-top:8px;">
+              Gagnant : {{ auction.winner.first_name }} {{ auction.winner.last_name|slice:":1" }}.
+            </p>
+            {% endif %}
           {% endif %}
+
+          <hr class="divider">
 
           <!-- VENDEUR -->
           <div class="seller-card">
@@ -219,9 +282,38 @@
 {% block extra_js %}
 <script>
 const AUCTION_ID = '{{ auction.id }}';
-const CSRF_TOKEN = document.querySelector('[name=csrfmiddlewaretoken]') ?
-  document.querySelector('[name=csrfmiddlewaretoken]').value : '';
+{% if request.session.user_id %}
+const CSRF_TOKEN = '{{ csrf_token }}';
+{% endif %}
 
+/* Countdown */
+function formatCountdown(endsAt) {
+  const now  = new Date();
+  const end  = new Date(endsAt);
+  const diff = Math.max(0, Math.floor((end - now) / 1000));
+  if (diff === 0) return { text: 'Terminée', expired: true };
+  const d = Math.floor(diff / 86400);
+  const h = Math.floor((diff % 86400) / 3600);
+  const m = Math.floor((diff % 3600) / 60);
+  const s = diff % 60;
+  if (d > 0) return { text: `${d}j ${h}h ${m}m restants`, expired: false };
+  if (h > 0) return { text: `${h}h ${m}m ${s}s restants`, expired: false };
+  return { text: `${m}m ${s}s restants`, expired: false };
+}
+
+const cdEl = document.getElementById('detail-countdown');
+if (cdEl && cdEl.dataset.endsAt) {
+  function tickDetail() {
+    const { text, expired } = formatCountdown(cdEl.dataset.endsAt);
+    cdEl.textContent = text;
+    cdEl.classList.toggle('expired', expired);
+    if (expired) clearInterval(cdTimer);
+  }
+  tickDetail();
+  const cdTimer = setInterval(tickDetail, 1000);
+}
+
+/* Place bid */
 async function placeBid() {
   const amount = parseFloat(document.getElementById('bid-amount').value);
   const errEl  = document.getElementById('bid-error');
@@ -238,21 +330,23 @@ async function placeBid() {
   try {
     const res = await fetch(`/marketplace/${AUCTION_ID}/bid/`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': CSRF_TOKEN,
-      },
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
       body: JSON.stringify({ amount }),
     });
     const data = await res.json();
 
     if (data.success) {
-      document.getElementById('current-price').textContent = data.new_price + ' HTG';
-      okEl.textContent    = `✅ Enchère placée ! Nouveau prix : ${data.new_price} HTG`;
-      okEl.style.display  = 'block';
+      const newPrice = parseFloat(data.new_price);
+      document.getElementById('current-price').textContent = newPrice.toLocaleString('fr') + ' HTG';
+      const minBid = newPrice + 10;
+      document.getElementById('bid-amount').min   = minBid;
       document.getElementById('bid-amount').value = '';
+      const minLabel = document.getElementById('min-bid-label');
+      if (minLabel) minLabel.textContent = minBid.toLocaleString('fr') + ' HTG';
+      okEl.textContent   = `✅ Enchère placée ! Nouveau prix : ${newPrice.toLocaleString('fr')} HTG`;
+      okEl.style.display = 'block';
     } else {
-      errEl.textContent   = data.error || 'Erreur lors de l\'enchère.';
+      errEl.textContent   = data.error || "Erreur lors de l'enchère.";
       errEl.style.display = 'block';
     }
   } catch (e) {

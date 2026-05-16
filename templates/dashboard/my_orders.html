@@ -2,12 +2,26 @@
 
 {% block title %}Mes commandes — EcoCycle Haiti{% endblock %}
 
+{% block extra_css %}
+<style>
+.order-status { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; white-space: nowrap; }
+.order-status.pending_payment { background: #fef3c7; color: #92400e; }
+.order-status.paid            { background: #dbeafe; color: #1d4ed8; }
+.order-status.processing      { background: #ede9fe; color: #6d28d9; }
+.order-status.pickup_scheduled{ background: #d1fae5; color: #065f46; }
+.order-status.completed       { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+.order-status.cancelled       { background: #fee2e2; color: #991b1b; }
+.order-status.refunded        { background: #f3f4f6; color: #374151; }
+</style>
+{% endblock %}
+
 {% block dashboard_content %}
 <div class="dashboard-header">
   <div>
     <h1 class="dashboard-title">🛒 Mes commandes</h1>
     <p class="dashboard-subtitle">Historique de vos achats sur le marketplace</p>
   </div>
+  <a href="{% url 'marketplace' %}" class="btn btn-outline btn-sm">Explorer le marketplace →</a>
 </div>
 
 <div class="data-card">
@@ -21,6 +35,7 @@
           <th>Montant</th>
           <th>Statut</th>
           <th>Date</th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
@@ -30,14 +45,24 @@
             #{{ order.id|stringformat:"s"|slice:":8" }}
           </td>
           <td style="font-weight:600;">
-            {{ order.auction.listing.title|truncatechars:32 }}
+            <a href="{% url 'auction_detail' order.auction.id %}"
+               style="color:var(--charcoal);text-decoration:none;"
+               title="Voir l'enchère">
+              {{ order.auction.listing.title|truncatechars:30 }}
+            </a>
           </td>
           <td style="color:var(--gray);">{{ order.seller.full_name }}</td>
           <td style="font-weight:700;color:var(--green);">{{ order.amount }} HTG</td>
           <td>
-            <span class="status-badge status-{{ order.status }}">{{ order.get_status_display }}</span>
+            <span class="order-status {{ order.status }}">{{ order.get_status_display }}</span>
           </td>
           <td style="color:var(--gray);font-size:0.82rem;">{{ order.created_at|date:"d/m/Y" }}</td>
+          <td>
+            <a href="{% url 'auction_detail' order.auction.id %}"
+               style="font-size:0.78rem;color:var(--green);text-decoration:none;font-weight:600;">
+              Voir →
+            </a>
+          </td>
         </tr>
         {% endfor %}
       </tbody>

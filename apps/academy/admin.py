@@ -18,8 +18,8 @@ class LessonInline(admin.TabularInline):
 
 @admin.register(Course)
 class CourseAdmin(admin.ModelAdmin):
-    list_display = ['title', 'level', 'duration_minutes', 'is_published', 'is_free', 'created_at']
-    list_filter = ['level', 'is_published', 'is_free']
+    list_display = ['title', 'level', 'duration_minutes', 'is_published', 'price', 'created_at']
+    list_filter = ['level', 'is_published']
     search_fields = ['title', 'description']
     prepopulated_fields = {'slug': ('title',)}
     readonly_fields = ['id', 'created_at']

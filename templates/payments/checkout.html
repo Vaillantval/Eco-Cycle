@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Paiement — EcoCycle Haiti{% endblock %}
+
+{% block extra_css %}
+<style>
+.main-nav { background: white !important; box-shadow: 0 2px 12px rgba(0,0,0,0.08) !important; }
+.main-nav .nav-logo, .main-nav .nav-link, .main-nav .nav-cta { color: var(--charcoal) !important; }
+
+.payment-page { padding: 88px 0 60px; min-height: 100vh; background: #f8fafc; }
+.payment-wrap { max-width: 860px; margin: 0 auto; padding: 0 20px; }
+
+.payment-grid { display: grid; grid-template-columns: 1fr 400px; gap: 28px; align-items: start; }
+
+.order-card { background: white; border-radius: 16px; padding: 28px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+.order-card h2 { font-family: var(--font-display); font-size: 1.2rem; font-weight: 800; color: var(--charcoal); margin-bottom: 20px; }
+
+.order-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f1f5f9; font-size: 0.88rem; }
+.order-row:last-child { border-bottom: none; }
+.order-total { background: #f0fdf4; border-radius: 10px; padding: 14px 16px; margin-top: 16px; display: flex; justify-content: space-between; align-items: center; }
+.order-total-label { font-size: 0.9rem; font-weight: 600; color: var(--charcoal); }
+.order-total-amount { font-family: var(--font-display); font-size: 1.6rem; font-weight: 800; color: var(--green); }
+
+.methods-card { background: white; border-radius: 16px; padding: 28px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+.methods-card h2 { font-family: var(--font-display); font-size: 1.1rem; font-weight: 800; color: var(--charcoal); margin-bottom: 20px; }
+
+.method-section { margin-bottom: 24px; }
+.method-section-title { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; color: var(--gray); font-weight: 700; margin-bottom: 10px; }
+
+.pay-btn { display: flex; align-items: center; gap: 14px; width: 100%; padding: 16px 20px; border: 2px solid #e5e7eb; border-radius: 12px; background: white; cursor: pointer; text-decoration: none; transition: all 0.18s; margin-bottom: 10px; }
+.pay-btn:hover { border-color: var(--green); box-shadow: 0 4px 16px rgba(0,0,0,0.08); transform: translateY(-1px); }
+.pay-btn .pay-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; flex-shrink: 0; }
+.pay-btn .pay-label { font-weight: 700; font-size: 0.95rem; color: var(--charcoal); }
+.pay-btn .pay-sub { font-size: 0.78rem; color: var(--gray); }
+.pay-btn .pay-arrow { margin-left: auto; color: var(--gray); font-size: 1rem; }
+
+.stripe-icon { background: #635bff22; }
+.moncash-icon { background: #e8173322; }
+.natcash-icon { background: #0057b722; }
+.kashpaw-icon { background: #f07c1a22; }
+
+.secure-note { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--gray); margin-top: 16px; justify-content: center; }
+
+@media (max-width: 720px) {
+  .payment-grid { grid-template-columns: 1fr; }
+  .payment-page { padding: 72px 0 40px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="payment-page">
+  <div class="payment-wrap">
+
+    <div style="margin-bottom:28px;">
+      <h1 style="font-family:var(--font-display);font-size:1.8rem;font-weight:800;color:var(--charcoal);">
+        💳 Paiement sécurisé
+      </h1>
+      <p style="color:var(--gray);">Choisissez votre mode de paiement pour finaliser votre achat.</p>
+    </div>
+
+    <div class="payment-grid">
+
+      <!-- RÉSUMÉ COMMANDE -->
+      <div class="order-card">
+        <h2>📦 Récapitulatif</h2>
+
+        {% if order.auction.listing.photo %}
+        <img src="{{ order.auction.listing.photo.url }}"
+             style="width:100%;height:180px;object-fit:cover;border-radius:10px;margin-bottom:20px;" alt="">
+        {% endif %}
+
+        <div class="order-row">
+          <span style="color:var(--gray);">Article</span>
+          <span style="font-weight:600;max-width:200px;text-align:right;">{{ order.auction.listing.title|truncatechars:40 }}</span>
+        </div>
+        <div class="order-row">
+          <span style="color:var(--gray);">Poids</span>
+          <span>{{ order.auction.listing.quantity_kg }} kg</span>
+        </div>
+        <div class="order-row">
+          <span style="color:var(--gray);">Vendeur</span>
+          <span>{{ order.seller.full_name }}</span>
+        </div>
+        <div class="order-row">
+          <span style="color:var(--gray);">Réf. commande</span>
+          <span style="font-family:monospace;font-size:0.82rem;color:var(--gray);">#{{ order.id|stringformat:"s"|slice:":8" }}</span>
+        </div>
+        <div class="order-row">
+          <span style="color:var(--gray);">Réf. transaction</span>
+          <span style="font-family:monospace;font-size:0.78rem;color:var(--gray);">{{ transaction.transaction_number }}</span>
+        </div>
+
+        <div class="order-total">
+          <span class="order-total-label">Total à payer</span>
+          <span class="order-total-amount">{{ order.amount }} HTG</span>
+        </div>
+      </div>
+
+      <!-- MÉTHODES DE PAIEMENT -->
+      <div class="methods-card">
+        <h2>Choisir un mode de paiement</h2>
+
+        <!-- Carte bancaire -->
+        <div class="method-section">
+          <div class="method-section-title">💳 Carte bancaire (international)</div>
+
+          <a href="{% url 'payment_stripe_checkout' order.id %}"
+             id="stripe-btn"
+             class="pay-btn"
+             onclick="initStripe(event)">
+            <div class="pay-icon stripe-icon">💳</div>
+            <div>
+              <div class="pay-label">Payer par carte</div>
+              <div class="pay-sub">Visa, Mastercard, American Express</div>
+            </div>
+            <span class="pay-arrow">→</span>
+          </a>
+        </div>
+
+        <!-- Mobile money haïtien -->
+        <div class="method-section">
+          <div class="method-section-title">📱 Mobile money (Haïti)</div>
+
+          <form method="POST" action="{% url 'payment_plopplop_init' order.id %}">
+            {% csrf_token %}
+            <input type="hidden" name="method" value="moncash">
+            <button type="submit" class="pay-btn">
+              <div class="pay-icon moncash-icon">🔴</div>
+              <div>
+                <div class="pay-label">MonCash</div>
+                <div class="pay-sub">Payer avec votre compte MonCash</div>
+              </div>
+              <span class="pay-arrow">→</span>
+            </button>
+          </form>
+
+          <form method="POST" action="{% url 'payment_plopplop_init' order.id %}">
+            {% csrf_token %}
+            <input type="hidden" name="method" value="natcash">
+            <button type="submit" class="pay-btn">
+              <div class="pay-icon natcash-icon">🔵</div>
+              <div>
+                <div class="pay-label">NatCash</div>
+                <div class="pay-sub">Payer avec votre compte NatCash</div>
+              </div>
+              <span class="pay-arrow">→</span>
+            </button>
+          </form>
+
+          <form method="POST" action="{% url 'payment_plopplop_init' order.id %}">
+            {% csrf_token %}
+            <input type="hidden" name="method" value="kashpaw">
+            <button type="submit" class="pay-btn">
+              <div class="pay-icon kashpaw-icon">🟠</div>
+              <div>
+                <div class="pay-label">Kashpaw</div>
+                <div class="pay-sub">Payer avec votre compte Kashpaw</div>
+              </div>
+              <span class="pay-arrow">→</span>
+            </button>
+          </form>
+        </div>
+
+        <div class="secure-note">
+          🔒 Paiement 100% sécurisé — vos données ne sont jamais stockées
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function initStripe(e) {
+  e.preventDefault();
+  const btn = document.getElementById('stripe-btn');
+  btn.style.opacity = '0.6';
+  btn.style.pointerEvents = 'none';
+
+  try {
+    const res = await fetch('{% url "payment_stripe_init" order.id %}', {
+      method: 'POST',
+      headers: { 'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/json' },
+    });
+    const data = await res.json();
+    if (data.success) {
+      window.location.href = '{% url "payment_stripe_checkout" order.id %}';
+    } else {
+      alert('Erreur : ' + (data.error || 'Réessayez.'));
+      btn.style.opacity = '1';
+      btn.style.pointerEvents = '';
+    }
+  } catch {
+    alert('Erreur réseau. Réessayez.');
+    btn.style.opacity = '1';
+    btn.style.pointerEvents = '';
+  }
+}
+</script>
+{% endblock %}

@@ -21,8 +21,12 @@ class Course(models.Model):
     level = models.CharField(max_length=20, choices=LEVEL_CHOICES, default='beginner')
     duration_minutes = models.PositiveIntegerField(default=0)
     is_published = models.BooleanField(default=False)
-    is_free = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    price        = models.DecimalField(max_digits=8, decimal_places=2, default=0)
+    created_at   = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def is_free(self):
+        return self.price == 0
 
     class Meta:
         db_table = 'courses'
@@ -147,6 +151,12 @@ class LessonVideo(models.Model):
 
 
 class Enrollment(models.Model):
+    PAYMENT_STATUS_CHOICES = [
+        ('free',    'Gratuit'),
+        ('pending', 'En attente de paiement'),
+        ('paid',    'Payé'),
+    ]
+
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='enrollments'
     )
@@ -154,8 +164,13 @@ class Enrollment(models.Model):
     completed_lessons = models.ManyToManyField(Lesson, blank=True)
     progress_percent = models.PositiveIntegerField(default=0)
     is_completed = models.BooleanField(default=False)
+    payment_status = models.CharField(max_length=10, choices=PAYMENT_STATUS_CHOICES, default='free')
     enrolled_at = models.DateTimeField(auto_now_add=True)
     completed_at = models.DateTimeField(null=True, blank=True)
+
+    @property
+    def is_paid_or_free(self):
+        return self.payment_status in ('paid', 'free')
 
     class Meta:
         db_table = 'enrollments'

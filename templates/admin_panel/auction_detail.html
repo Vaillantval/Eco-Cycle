@@ -1,0 +1,223 @@
+{% extends 'admin_panel/base_admin.html' %}
+
+{% block title %}Enchère — Admin EcoCycle{% endblock %}
+{% block page_title %}Détail enchère{% endblock %}
+
+{% block topbar_actions %}
+<a href="{% url 'admin_auctions' %}" class="btn-admin-sm btn-view">← Retour aux enchères</a>
+<a href="{% url 'auction_detail' auction.id %}" target="_blank" class="btn-admin-sm btn-view">Voir côté public ↗</a>
+{% endblock %}
+
+{% block admin_content %}
+
+<div style="display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start;">
+
+  <!-- COLONNE GAUCHE -->
+  <div>
+
+    <!-- INFOS LISTING -->
+    <div class="admin-card" style="margin-bottom:20px;">
+      <div class="admin-card-header">
+        <div class="admin-card-title">📦 {{ auction.listing.title }}</div>
+        <span class="status-badge status-{{ auction.status }}">{{ auction.get_status_display }}</span>
+      </div>
+      <div style="padding:20px;">
+        {% if auction.listing.photo %}
+        <img src="{{ auction.listing.photo.url }}"
+             style="width:100%;max-height:260px;object-fit:cover;border-radius:8px;margin-bottom:16px;" alt="">
+        {% elif auction.listing.photo_url %}
+        <img src="{{ auction.listing.photo_url }}"
+             style="width:100%;max-height:260px;object-fit:cover;border-radius:8px;margin-bottom:16px;" alt="">
+        {% endif %}
+
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;font-size:0.85rem;">
+          <div>
+            <div style="color:#64748b;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.5px;">Catégorie</div>
+            <div style="font-weight:600;margin-top:2px;">{{ auction.listing.category.name|default:'—' }}</div>
+          </div>
+          <div>
+            <div style="color:#64748b;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.5px;">Poids</div>
+            <div style="font-weight:600;margin-top:2px;">{{ auction.listing.quantity_kg }} kg</div>
+          </div>
+          <div>
+            <div style="color:#64748b;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.5px;">Ville</div>
+            <div style="font-weight:600;margin-top:2px;">{{ auction.listing.city|default:'—' }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DONNÉES ENCHÈRE -->
+    <div class="admin-card" style="margin-bottom:20px;">
+      <div class="admin-card-header">
+        <div class="admin-card-title">💰 Données financières</div>
+      </div>
+      <div style="padding:16px 20px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;font-size:0.85rem;">
+          <div style="background:#f8fafc;border-radius:8px;padding:12px;">
+            <div style="color:#64748b;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Type</div>
+            <div style="font-weight:700;">
+              {% if auction.auction_type == 'buy_now' %}⚡ Achat immédiat
+              {% elif auction.auction_type == 'auction' %}🔨 Enchère
+              {% else %}🔨⚡ Enchère + Achat immédiat{% endif %}
+            </div>
+          </div>
+          <div style="background:#f8fafc;border-radius:8px;padding:12px;">
+            <div style="color:#64748b;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Prix de départ</div>
+            <div style="font-weight:700;">{{ auction.starting_price }} HTG</div>
+          </div>
+          <div style="background:#f0fdf4;border-radius:8px;padding:12px;">
+            <div style="color:#64748b;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Prix actuel</div>
+            <div style="font-weight:800;font-size:1.1rem;color:#15803d;">{{ auction.current_price|default:auction.starting_price }} HTG</div>
+          </div>
+          {% if auction.buy_now_price %}
+          <div style="background:#fffbeb;border-radius:8px;padding:12px;">
+            <div style="color:#64748b;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Achat immédiat</div>
+            <div style="font-weight:700;color:#92400e;">{{ auction.buy_now_price }} HTG</div>
+          </div>
+          {% endif %}
+          {% if auction.reserve_price %}
+          <div style="background:#fef3c7;border-radius:8px;padding:12px;">
+            <div style="color:#64748b;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Prix de réserve</div>
+            <div style="font-weight:700;color:#92400e;">{{ auction.reserve_price }} HTG</div>
+          </div>
+          {% endif %}
+          <div style="background:#f8fafc;border-radius:8px;padding:12px;">
+            <div style="color:#64748b;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Enchères reçues</div>
+            <div style="font-weight:700;">{{ auction.total_bids }}</div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;font-size:0.82rem;margin-top:14px;color:#64748b;">
+          <div>🗓 Début : <strong>{{ auction.starts_at|date:"d/m/Y H:i" }}</strong></div>
+          <div>⏰ Fin : <strong>{{ auction.ends_at|date:"d/m/Y H:i" }}</strong></div>
+          <div>👁 Vues : <strong>{{ auction.views_count }}</strong></div>
+          {% if auction.winner %}
+          <div>🏆 Gagnant : <strong>{{ auction.winner.full_name }}</strong></div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTORIQUE ENCHÈRES -->
+    {% if bids %}
+    <div class="admin-card">
+      <div class="admin-card-header">
+        <div class="admin-card-title">📋 Enchères placées ({{ bids|length }})</div>
+      </div>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Enchérisseur</th>
+            <th>Montant</th>
+            <th>Date</th>
+            <th>Statut</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for bid in bids %}
+          <tr {% if bid.is_winning %}style="background:#f0fdf4;"{% endif %}>
+            <td>
+              <div style="font-weight:600;font-size:0.84rem;">{{ bid.bidder.full_name }}</div>
+              <div style="font-size:0.72rem;color:#94a3b8;">{{ bid.bidder.email }}</div>
+            </td>
+            <td style="font-weight:700;color:#0f172a;">{{ bid.amount }} HTG</td>
+            <td style="font-size:0.78rem;color:#64748b;">{{ bid.created_at|date:"d/m/Y H:i" }}</td>
+            <td>
+              {% if bid.is_winning %}
+                <span style="padding:2px 8px;border-radius:10px;font-size:0.72rem;font-weight:700;background:#dcfce7;color:#15803d;">👑 En tête</span>
+              {% else %}
+                <span style="font-size:0.78rem;color:#94a3b8;">Surenchérie</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="admin-card" style="padding:24px;text-align:center;color:#94a3b8;font-size:0.88rem;">
+      Aucune enchère placée sur cette annonce.
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- COLONNE DROITE -->
+  <div>
+
+    <!-- VENDEUR -->
+    <div class="admin-card" style="margin-bottom:16px;">
+      <div class="admin-card-header"><div class="admin-card-title">👤 Vendeur</div></div>
+      <div style="padding:16px 20px;font-size:0.85rem;">
+        <div style="font-weight:700;color:#0f172a;margin-bottom:2px;">{{ auction.seller.full_name }}</div>
+        <div style="color:#64748b;">{{ auction.seller.email }}</div>
+        {% if auction.seller.phone %}<div style="color:#64748b;">{{ auction.seller.phone }}</div>{% endif %}
+        <a href="{% url 'admin_user_detail' auction.seller.id %}"
+           class="btn-admin-sm btn-view" style="margin-top:10px;display:inline-flex;">
+          Voir le profil →
+        </a>
+      </div>
+    </div>
+
+    <!-- COMMANDE LIÉE -->
+    {% if order %}
+    <div class="admin-card" style="margin-bottom:16px;">
+      <div class="admin-card-header"><div class="admin-card-title">🛒 Commande liée</div></div>
+      <div style="padding:16px 20px;font-size:0.85rem;">
+        <div style="margin-bottom:6px;">
+          <span style="color:#64748b;">Réf.</span>
+          <strong>#{{ order.id|stringformat:"s"|slice:":8" }}</strong>
+        </div>
+        <div style="margin-bottom:4px;"><span style="color:#64748b;">Acheteur :</span> {{ order.buyer.full_name }}</div>
+        <div style="margin-bottom:4px;"><span style="color:#64748b;">Montant :</span> <strong style="color:#15803d;">{{ order.amount }} HTG</strong></div>
+        <div style="margin-bottom:10px;"><span style="color:#64748b;">Statut :</span> {{ order.get_status_display }}</div>
+        <a href="{% url 'admin_order_detail' order.id %}" class="btn-admin-sm btn-view">Gérer la commande →</a>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- ACTIONS -->
+    {% if auction.status == 'active' %}
+    <div class="admin-card">
+      <div class="admin-card-header"><div class="admin-card-title">⚡ Actions admin</div></div>
+      <div style="padding:16px 20px;display:flex;flex-direction:column;gap:10px;">
+
+        <form method="POST">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="close">
+          <button type="submit"
+                  onclick="return confirm('Clôturer cette enchère maintenant ?')"
+                  style="width:100%;padding:9px;background:#f59e0b;color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:0.85rem;">
+            🔒 Clôturer l'enchère
+          </button>
+        </form>
+
+        <form method="POST">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="cancel">
+          <button type="submit"
+                  onclick="return confirm('Annuler définitivement cette enchère ?')"
+                  style="width:100%;padding:9px;background:#dc2626;color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:0.85rem;">
+            ❌ Annuler l'enchère
+          </button>
+        </form>
+
+        <p style="font-size:0.72rem;color:#94a3b8;text-align:center;margin:0;">
+          La clôture déclenche la task Celery de traitement. L'annulation ne crée pas de commande.
+        </p>
+      </div>
+    </div>
+    {% else %}
+    <div class="admin-card">
+      <div class="admin-card-header"><div class="admin-card-title">📋 Résultat</div></div>
+      <div style="padding:16px 20px;font-size:0.85rem;color:#64748b;">
+        {% if auction.status == 'sold' %}✅ Enchère vendue{% elif auction.status == 'closed' %}🔒 Clôturée sans vente{% else %}❌ Annulée{% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+{% endblock %}

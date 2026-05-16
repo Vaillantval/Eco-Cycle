@@ -10,7 +10,13 @@ def close_expired_auctions():
     expired = Auction.objects.filter(status='active', ends_at__lte=timezone.now())
     for auction in expired:
         winning_bid = auction.bids.filter(is_winning=True).first()
-        if winning_bid:
+
+        reserve_met = (
+            not auction.reserve_price
+            or (winning_bid and winning_bid.amount >= auction.reserve_price)
+        )
+
+        if winning_bid and reserve_met:
             auction.status = 'sold'
             auction.winner = winning_bid.bidder
             auction.save()
