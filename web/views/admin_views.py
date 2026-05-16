@@ -776,7 +776,7 @@ class AdminSiteConfigView(AdminRequiredMixin, View):
             'site_name', 'tagline', 'hero_badge', 'hero_title_1', 'hero_title_2',
             'hero_subtitle', 'contact_email', 'contact_phone', 'whatsapp', 'address',
             'hours', 'facebook_url', 'instagram_url', 'twitter_url', 'youtube_url',
-            'linkedin_url', 'android_apk_url', 'ios_store_url', 'meta_description',
+            'linkedin_url', 'meta_description',
             'google_analytics_id', 'copyright_text', 'maintenance_message',
         ]
         for f in fields_text:
@@ -792,6 +792,8 @@ class AdminSiteConfigView(AdminRequiredMixin, View):
             config.favicon = request.FILES['favicon']
         if request.FILES.get('android_direct_apk'):
             config.android_direct_apk = request.FILES['android_direct_apk']
+        if request.FILES.get('ios_direct_ipa'):
+            config.ios_direct_ipa = request.FILES['ios_direct_ipa']
 
         config.save()
         messages.success(request, 'Configuration du site enregistrée.')

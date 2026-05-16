@@ -109,25 +109,22 @@
   </div>
 
   <!-- BANNIÈRE APPLICATION MOBILE -->
-  {% if site_config and site_config.android_apk_url or site_config.ios_store_url or site_config.android_direct_apk %}
+  {% if site_config and site_config.android_direct_apk or site_config.ios_direct_ipa %}
   <div class="app-banner" id="appBanner">
     <div class="app-banner-inner">
       <span class="app-banner-icon">📱</span>
       <span class="app-banner-text">L'application EcoCycle est disponible !</span>
       <div class="app-banner-btns">
-        {% if site_config.ios_store_url %}
-          <a href="{{ site_config.ios_store_url }}" target="_blank" class="app-banner-btn">
-            🍎 App Store
-          </a>
-        {% endif %}
-        {% if site_config.android_apk_url %}
-          <a href="{{ site_config.android_apk_url }}" target="_blank" class="app-banner-btn">
-            ▶ Google Play
-          </a>
-        {% endif %}
         {% if site_config.android_direct_apk %}
-          <a href="{{ site_config.android_direct_apk.url }}" download class="app-banner-btn app-banner-btn-outline">
-            ⬇ Télécharger APK
+          <a href="{{ site_config.android_direct_apk.url }}" download class="app-banner-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:4px;"><path d="M17.523 15.341a.87.87 0 0 1-.87-.87.87.87 0 0 1 .87-.87.87.87 0 0 1 .87.87.87.87 0 0 1-.87.87m-11.046 0a.87.87 0 0 1-.87-.87.87.87 0 0 1 .87-.87.87.87 0 0 1 .87.87.87.87 0 0 1-.87.87M17.78 9.77l1.745-3.022a.363.363 0 0 0-.133-.496.363.363 0 0 0-.496.133l-1.767 3.059A10.782 10.782 0 0 0 12 8.622c-1.82 0-3.535.46-5.129 1.422L5.104 6.985a.363.363 0 0 0-.496-.133.363.363 0 0 0-.133.496L6.22 9.77C3.535 11.376 1.74 14.253 1.5 17.6h21c-.24-3.347-2.035-6.224-4.72-7.83"/></svg>
+            Android
+          </a>
+        {% endif %}
+        {% if site_config.ios_direct_ipa %}
+          <a href="{{ site_config.ios_direct_ipa.url }}" download class="app-banner-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="16" viewBox="0 0 814 1000" fill="currentColor" style="vertical-align:middle;margin-right:4px;"><path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-57.8-155.5-127.4C46 790.7 0 663 0 541.8c0-207.5 135.4-317.3 269-317.3 70.1 0 128.4 46.4 172.5 46.4 42.8 0 109.6-49 192.5-49 31 0 108.2 2.6 168.7 75.5zm-174.6-123.8c-19.5-23.4-42.8-58.5-42.8-101.2 0-5.8.6-11.7 1.9-16.9C657.8 120 724 175 724 274.7c0 44.9-19.5 87.5-46.4 113.6-2.6 2.6-12.3 13-19.5 13h-.3c-37.7 0-84.5-50.8-84.5-50.8l.2-.4z"/></svg>
+            iOS
           </a>
         {% endif %}
       </div>

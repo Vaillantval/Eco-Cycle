@@ -33,9 +33,8 @@ class SiteConfiguration(models.Model):
     linkedin_url  = models.URLField(blank=True, verbose_name='LinkedIn URL')
 
     # Application mobile
-    android_apk_url    = models.URLField(blank=True, verbose_name='Google Play URL')
-    ios_store_url      = models.URLField(blank=True, verbose_name='App Store URL')
-    android_direct_apk = models.FileField(upload_to='android/', null=True, blank=True, verbose_name='APK direct (.apk)', help_text='Fichier .apk à télécharger directement')
+    android_direct_apk = models.FileField(upload_to='android/', null=True, blank=True, verbose_name='APK Android (.apk)')
+    ios_direct_ipa     = models.FileField(upload_to='ios/', null=True, blank=True, verbose_name='IPA iOS (.ipa)')
 
     # SEO & Footer
     meta_description    = models.TextField(blank=True, verbose_name='Meta description (SEO)', help_text='160 caractères max')
