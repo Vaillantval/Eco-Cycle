@@ -20,7 +20,9 @@
         <span class="status-badge status-{{ listing.status }}">{{ listing.get_status_display }}</span>
       </div>
       <div style="padding:20px;">
-        {% if listing.photo_url %}
+        {% if listing.photo %}
+        <img src="{{ listing.photo.url }}" style="width:100%;max-height:320px;object-fit:cover;border-radius:8px;margin-bottom:16px;" alt="">
+        {% elif listing.photo_url %}
         <img src="{{ listing.photo_url }}" style="width:100%;max-height:320px;object-fit:cover;border-radius:8px;margin-bottom:16px;" alt="">
         {% endif %}
 

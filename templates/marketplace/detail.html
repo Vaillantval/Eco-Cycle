@@ -399,6 +399,8 @@
         <div class="dp-img-wrap">
           {% if auction.listing.photo %}
             <img src="{{ auction.listing.photo.url }}" alt="{{ auction.listing.title }}">
+          {% elif auction.listing.photo_url %}
+            <img src="{{ auction.listing.photo_url }}" alt="{{ auction.listing.title }}">
           {% else %}
             <div class="dp-img-placeholder">{{ auction.listing.category.icon|default:'♻️' }}</div>
           {% endif %}

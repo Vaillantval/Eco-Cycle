@@ -422,6 +422,8 @@
         <div class="mp-card-img">
           {% if auction.listing.photo %}
             <img src="{{ auction.listing.photo.url }}" alt="{{ auction.listing.title }}" loading="lazy">
+          {% elif auction.listing.photo_url %}
+            <img src="{{ auction.listing.photo_url }}" alt="{{ auction.listing.title }}" loading="lazy">
           {% else %}
             <div class="mp-card-img-placeholder">{{ auction.listing.category.icon|default:'♻️' }}</div>
           {% endif %}

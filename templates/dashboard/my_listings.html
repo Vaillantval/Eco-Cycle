@@ -45,6 +45,8 @@
           <td>
             {% if listing.photo %}
               <img src="{{ listing.photo.url }}" class="listing-thumb" alt="">
+            {% elif listing.photo_url %}
+              <img src="{{ listing.photo_url }}" class="listing-thumb" alt="">
             {% else %}
               <div class="listing-thumb-placeholder">♻️</div>
             {% endif %}
