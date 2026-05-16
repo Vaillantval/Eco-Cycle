@@ -1,8 +1,8 @@
 from django.contrib import admin
 from django.http import JsonResponse
-from django.urls import path, include
+from django.urls import path, include, re_path
 from django.conf import settings
-from django.conf.urls.static import static
+from django.views.static import serve
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 
 handler404 = 'web.error_views.page_not_found'
@@ -40,4 +40,8 @@ urlpatterns = [
     path('api/newsletter/', include('apps.core.newsletter_urls')),
 ]
 
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Serve media files — django.conf.urls.static.static() returns [] when DEBUG=False
+# so we wire django.views.static.serve directly.
+urlpatterns += [
+    re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
+]
