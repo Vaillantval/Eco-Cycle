@@ -11,6 +11,27 @@ resend.api_key = settings.RESEND_API_KEY
 class EmailService:
 
     @staticmethod
+    def _logo_url() -> str:
+        """Retourne l'URL absolue du logo si configuré, sinon chaîne vide."""
+        try:
+            from apps.core.models import SiteConfiguration
+            config = SiteConfiguration.get_solo()
+            if config.logo:
+                return settings.FRONTEND_URL.rstrip('/') + config.logo.url
+        except Exception:
+            pass
+        return ''
+
+    @classmethod
+    def _render_email(cls, template: str, ctx: dict) -> str:
+        """render_to_string avec logo_url + frontend_url injectés automatiquement."""
+        base = {
+            'frontend_url': settings.FRONTEND_URL,
+            'logo_url': cls._logo_url(),
+        }
+        return render_to_string(template, {**base, **ctx})
+
+    @staticmethod
     def _send(to: str, subject: str, html: str):
         try:
             resend.Emails.send({
@@ -24,7 +45,7 @@ class EmailService:
 
     @classmethod
     def send_welcome(cls, user, verify_url: str):
-        html = render_to_string('emails/welcome.html', {
+        html = cls._render_email('emails/welcome.html', {
             'user': user,
             'verify_url': verify_url,
             'frontend_url': settings.FRONTEND_URL,
@@ -33,7 +54,7 @@ class EmailService:
 
     @classmethod
     def send_verification(cls, user, verify_url: str):
-        html = render_to_string('emails/verify_email.html', {
+        html = cls._render_email('emails/verify_email.html', {
             'user': user,
             'verify_url': verify_url,
         })
@@ -41,7 +62,7 @@ class EmailService:
 
     @classmethod
     def send_password_reset(cls, user, reset_url: str):
-        html = render_to_string('emails/reset_password.html', {
+        html = cls._render_email('emails/reset_password.html', {
             'user': user,
             'reset_url': reset_url,
         })
@@ -49,7 +70,7 @@ class EmailService:
 
     @classmethod
     def send_listing_approved(cls, listing):
-        html = render_to_string('emails/listing_approved.html', {
+        html = cls._render_email('emails/listing_approved.html', {
             'user': listing.user,
             'listing': listing,
             'marketplace_url': f'{settings.FRONTEND_URL}/marketplace',
@@ -58,7 +79,7 @@ class EmailService:
 
     @classmethod
     def send_listing_rejected(cls, listing):
-        html = render_to_string('emails/listing_approved.html', {
+        html = cls._render_email('emails/listing_approved.html', {
             'user': listing.user,
             'listing': listing,
             'reason': listing.rejection_reason,
@@ -68,7 +89,7 @@ class EmailService:
 
     @classmethod
     def send_auction_won(cls, order):
-        html = render_to_string('emails/auction_won.html', {
+        html = cls._render_email('emails/auction_won.html', {
             'user': order.buyer,
             'order': order,
             'listing': order.auction.listing,
@@ -78,7 +99,7 @@ class EmailService:
 
     @classmethod
     def send_pickup_confirmed(cls, pickup):
-        html = render_to_string('emails/pickup_confirmed.html', {
+        html = cls._render_email('emails/pickup_confirmed.html', {
             'user': pickup.user,
             'pickup': pickup,
         })
@@ -86,7 +107,7 @@ class EmailService:
 
     @classmethod
     def send_admin_new_listing(cls, admin, listing):
-        html = render_to_string('emails/listing_approved.html', {
+        html = cls._render_email('emails/listing_approved.html', {
             'admin': admin,
             'listing': listing,
             'review_url': f'{settings.FRONTEND_URL}/admin/listings/{listing.id}',
@@ -100,7 +121,7 @@ class EmailService:
 
     @classmethod
     def send_newsletter_confirmation(cls, subscriber):
-        html = render_to_string('emails/newsletter_confirm.html', {
+        html = cls._render_email('emails/newsletter_confirm.html', {
             'subscriber': subscriber,
             'confirm_url': f'{settings.FRONTEND_URL}/newsletter/confirm/{subscriber.token}',
         })
@@ -108,7 +129,7 @@ class EmailService:
 
     @classmethod
     def send_certificate_earned(cls, user, course, certificate):
-        html = render_to_string('emails/certificate_earned.html', {
+        html = cls._render_email('emails/certificate_earned.html', {
             'user': user,
             'course': course,
             'certificate': certificate,
@@ -120,7 +141,7 @@ class EmailService:
 
     @classmethod
     def send_maintenance_over(cls, user, message: str = ''):
-        html = render_to_string('emails/maintenance_over.html', {
+        html = cls._render_email('emails/maintenance_over.html', {
             'user': user,
             'message': message,
             'frontend_url': settings.FRONTEND_URL,
@@ -129,7 +150,7 @@ class EmailService:
 
     @classmethod
     def send_order_confirmation(cls, order, transaction):
-        html = render_to_string('emails/order_confirmation.html', {
+        html = cls._render_email('emails/order_confirmation.html', {
             'user':        order.buyer,
             'order':       order,
             'transaction': transaction,
@@ -143,7 +164,7 @@ class EmailService:
 
     @classmethod
     def send_order_paid_seller(cls, order):
-        html = render_to_string('emails/order_paid_seller.html', {
+        html = cls._render_email('emails/order_paid_seller.html', {
             'user':       order.seller,
             'order':      order,
             'frontend_url': settings.FRONTEND_URL,
@@ -156,7 +177,7 @@ class EmailService:
 
     @classmethod
     def send_admin_course_completed(cls, admin, user, course, certificate):
-        html = render_to_string('emails/admin_course_completed.html', {
+        html = cls._render_email('emails/admin_course_completed.html', {
             'admin': admin,
             'user': user,
             'course': course,
@@ -174,7 +195,7 @@ class EmailService:
     def send_course_enrollment_confirmation(cls, enrollment, transaction):
         course = enrollment.course
         user   = enrollment.user
-        html = render_to_string('emails/course_enrollment_confirmation.html', {
+        html = cls._render_email('emails/course_enrollment_confirmation.html', {
             'user':        user,
             'course':      course,
             'transaction': transaction,

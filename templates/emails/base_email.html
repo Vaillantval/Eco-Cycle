@@ -26,7 +26,12 @@
 <body>
   <div class="wrapper">
     <div class="header">
+      {% if logo_url %}
+      <img src="{{ logo_url }}" alt="EcoCycle Haiti"
+           style="height:48px;width:auto;object-fit:contain;margin-bottom:10px;display:block;margin-left:auto;margin-right:auto;">
+      {% else %}
       <h1>&#9850; EcoCycle Haiti</h1>
+      {% endif %}
       <p>Recyclez. Gagnez. Impactez.</p>
     </div>
     <div class="body">

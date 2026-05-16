@@ -32,6 +32,10 @@
     <div class="nav-inner">
 
       <a href="{% url 'home' %}" class="nav-logo">
+        {% if site_config and site_config.logo %}
+        <img src="{{ site_config.logo.url }}" alt="EcoCycle"
+             style="height:38px;width:auto;object-fit:contain;display:block;">
+        {% else %}
         <div class="nav-logo-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
             <path d="M7 16.5C4.2 15 2 12.3 2 9a7 7 0 0 1 14 0"/>
@@ -41,6 +45,7 @@
           </svg>
         </div>
         <span class="nav-logo-text">EcoCycle</span>
+        {% endif %}
       </a>
 
       <ul class="nav-links">
@@ -156,7 +161,11 @@
     <div class="container">
       <div class="footer-grid">
         <div class="footer-brand">
-          <div class="nav-logo" style="display:inline-flex; margin-bottom: 16px;">
+          <div style="display:inline-flex;margin-bottom:16px;align-items:center;">
+            {% if site_config and site_config.logo %}
+            <img src="{{ site_config.logo.url }}" alt="EcoCycle"
+                 style="height:36px;width:auto;object-fit:contain;filter:brightness(0) invert(1);">
+            {% else %}
             <div class="nav-logo-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
                 <path d="M7 16.5C4.2 15 2 12.3 2 9a7 7 0 0 1 14 0"/>
@@ -166,6 +175,7 @@
               </svg>
             </div>
             <span style="font-family:var(--font-display);font-weight:800;color:white;font-size:1.2rem;margin-left:10px;">EcoCycle</span>
+            {% endif %}
           </div>
           <p>Transformez vos déchets en ressources. Achetez et vendez des matériaux recyclables via notre marketplace d'enchères de confiance. Révolutionnons le recyclage en Haïti.</p>
           <div class="footer-social">

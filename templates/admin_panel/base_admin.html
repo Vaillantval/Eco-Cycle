@@ -313,11 +313,19 @@
   <!-- SIDEBAR -->
   <aside class="admin-sidebar">
     <div class="admin-sidebar-brand">
+      {% if site_config and site_config.logo %}
+      <img src="{{ site_config.logo.url }}" alt="EcoCycle"
+           style="height:32px;width:auto;object-fit:contain;filter:brightness(0) invert(1);flex-shrink:0;">
+      <div>
+        <small style="color:#94a3b8;">Admin Panel</small>
+      </div>
+      {% else %}
       <div class="brand-icon">♻️</div>
       <div>
         <span>EcoCycle</span>
         <small>Admin Panel</small>
       </div>
+      {% endif %}
     </div>
 
     <div class="admin-sidebar-user">
