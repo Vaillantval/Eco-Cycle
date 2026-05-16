@@ -20,7 +20,7 @@
     {% if videos %}
     <table class="admin-table">
       <thead><tr>
-        <th>Ordre</th><th>Titre</th><th>Type</th><th>Durée</th><th></th>
+        <th>Ordre</th><th>Titre</th><th>Type</th><th>Durée</th><th>Téléchargement</th><th></th>
       </tr></thead>
       <tbody>
       {% for v in videos %}
@@ -41,6 +41,22 @@
           {% endif %}
         </td>
         <td style="color:#64748b;">{{ v.duration_minutes }} min</td>
+        <td>
+          {% if v.video_file %}
+            <form method="POST" style="display:inline;">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="toggle_video_download">
+              <input type="hidden" name="video_id" value="{{ v.id }}">
+              <button type="submit"
+                style="border:none;cursor:pointer;font-size:0.78rem;font-weight:700;padding:3px 10px;border-radius:20px;
+                       {% if v.allow_download %}background:#f0fdf4;color:#15803d;{% else %}background:#f1f5f9;color:#94a3b8;{% endif %}">
+                {% if v.allow_download %}✅ Activé{% else %}🔒 Désactivé{% endif %}
+              </button>
+            </form>
+          {% else %}
+            <span style="font-size:0.72rem;color:#cbd5e1;font-style:italic;">N/A</span>
+          {% endif %}
+        </td>
         <td>
           <form method="POST" style="display:inline;" onsubmit="return confirm('Supprimer cette vidéo ?');">
             {% csrf_token %}
@@ -87,7 +103,7 @@
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
         <div>
           <label style="font-size:0.75rem;font-weight:600;color:#64748b;display:block;margin-bottom:5px;">📁 Fichier vidéo (MP4, WebM…)</label>
-          <input type="file" name="video_file" accept="video/*"
+          <input type="file" name="video_file" accept="video/*" id="videoFileInput"
                  style="width:100%;padding:7px 10px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.83rem;background:#fafafa;">
         </div>
         <div>
@@ -96,6 +112,19 @@
                  style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
         </div>
       </div>
+
+      <!-- Téléchargement vidéo — visible uniquement si fichier sélectionné -->
+      <div id="videoDownloadToggle" style="display:none;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 14px;margin-bottom:14px;">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+          <input type="checkbox" name="video_allow_download" value="1"
+                 style="width:16px;height:16px;accent-color:#0d7a45;flex-shrink:0;">
+          <span>
+            <span style="font-size:0.82rem;font-weight:700;color:#334155;">📥 Autoriser le téléchargement</span><br>
+            <span style="font-size:0.72rem;color:#94a3b8;">L'utilisateur pourra télécharger le fichier vidéo (fichiers uploadés uniquement)</span>
+          </span>
+        </label>
+      </div>
+
       {% if lesson %}
       <button type="submit" class="btn-admin-sm btn-admin-primary">➕ Ajouter la vidéo</button>
       {% endif %}
@@ -135,11 +164,25 @@
           <input type="file" name="pdf_file" accept=".pdf,application/pdf"
                  style="width:100%;padding:7px 10px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.82rem;background:#fafafa;margin-bottom:10px;">
           {% if lesson and lesson.content %}
-          <label style="display:flex;align-items:flex-start;gap:8px;font-size:0.78rem;color:#64748b;cursor:pointer;line-height:1.4;">
+          <label style="display:flex;align-items:flex-start;gap:8px;font-size:0.78rem;color:#64748b;cursor:pointer;line-height:1.4;margin-bottom:10px;">
             <input type="checkbox" name="replace_content" value="1" style="margin-top:2px;flex-shrink:0;">
             <span>Remplacer le contenu existant <span style="color:#94a3b8;">(par défaut : ajouter à la fin)</span></span>
           </label>
           {% endif %}
+
+          <!-- Autoriser le téléchargement du PDF -->
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 14px;{% if not lesson or not lesson.pdf_file %}opacity:0.55;{% endif %}">
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+              <input type="checkbox" name="pdf_allow_download" value="1"
+                     {% if lesson and lesson.pdf_allow_download %}checked{% endif %}
+                     style="width:16px;height:16px;accent-color:#0d7a45;flex-shrink:0;">
+              <span>
+                <span style="font-size:0.82rem;font-weight:700;color:#334155;">📥 Autoriser le téléchargement du PDF</span><br>
+                <span style="font-size:0.72rem;color:#94a3b8;">L'utilisateur pourra télécharger le fichier PDF original (en plus du texte extrait affiché)</span>
+              </span>
+            </label>
+          </div>
+
           {% if lesson and lesson.pdf_file %}
           <div style="margin-top:10px;font-size:0.75rem;color:#64748b;display:flex;align-items:center;gap:6px;">
             <span>📎 PDF actuel :</span>
@@ -188,5 +231,13 @@
 
 </div>
 </form>
+
+<script>
+// Afficher le toggle "Autoriser le téléchargement" uniquement si un fichier vidéo est sélectionné
+document.getElementById('videoFileInput').addEventListener('change', function () {
+  const toggle = document.getElementById('videoDownloadToggle');
+  toggle.style.display = this.files.length > 0 ? 'block' : 'none';
+});
+</script>
 
 {% endblock %}

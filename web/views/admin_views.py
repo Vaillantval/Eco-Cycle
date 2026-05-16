@@ -595,11 +595,12 @@ class AdminAcademyLessonCreateView(AdminRequiredMixin, View):
                 messages.warning(request, 'PDF uploadé mais aucun texte n\'a pu être extrait.')
             pdf_file.seek(0)
         lesson = Lesson.objects.create(
-            course   = course,
-            title    = title,
-            content  = content,
-            pdf_file = pdf_file if pdf_file else None,
-            order    = request.POST.get('order') or course.lessons.count(),
+            course             = course,
+            title              = title,
+            content            = content,
+            pdf_file           = pdf_file if pdf_file else None,
+            pdf_allow_download = request.POST.get('pdf_allow_download') == '1',
+            order              = request.POST.get('order') or course.lessons.count(),
         )
         # Ajouter la première vidéo si fournie
         video_file = request.FILES.get('video_file')
@@ -610,6 +611,7 @@ class AdminAcademyLessonCreateView(AdminRequiredMixin, View):
                 title            = request.POST.get('video_title', '').strip(),
                 video_file       = video_file,
                 video_url        = video_url,
+                allow_download   = request.POST.get('video_allow_download') == '1',
                 order            = 1,
                 duration_minutes = request.POST.get('video_duration') or 0,
             )
@@ -641,11 +643,12 @@ class AdminAcademyLessonEditView(AdminRequiredMixin, View):
             video_url  = request.POST.get('video_url', '').strip()
             if video_file or video_url:
                 LessonVideo.objects.create(
-                    lesson         = lesson,
-                    title          = request.POST.get('video_title', '').strip(),
-                    video_file     = video_file,
-                    video_url      = video_url,
-                    order          = request.POST.get('video_order') or lesson.videos.count() + 1,
+                    lesson           = lesson,
+                    title            = request.POST.get('video_title', '').strip(),
+                    video_file       = video_file,
+                    video_url        = video_url,
+                    allow_download   = request.POST.get('video_allow_download') == '1',
+                    order            = request.POST.get('video_order') or lesson.videos.count() + 1,
                     duration_minutes = request.POST.get('video_duration') or 0,
                 )
                 messages.success(request, 'Vidéo ajoutée.')
@@ -659,11 +662,18 @@ class AdminAcademyLessonEditView(AdminRequiredMixin, View):
             messages.success(request, 'Vidéo supprimée.')
             return redirect('admin_academy_lesson_edit', course_pk=course_pk, lesson_pk=lesson_pk)
 
+        if action == 'toggle_video_download':
+            video = get_object_or_404(LessonVideo, pk=request.POST.get('video_id'), lesson=lesson)
+            video.allow_download = not video.allow_download
+            video.save(update_fields=['allow_download'])
+            return redirect('admin_academy_lesson_edit', course_pk=course_pk, lesson_pk=lesson_pk)
+
         # default: save_lesson
-        lesson.title  = request.POST.get('title', '').strip() or lesson.title
-        lesson.order  = request.POST.get('order') or lesson.order
-        pdf_file      = request.FILES.get('pdf_file')
-        replace_content = request.POST.get('replace_content') == '1'
+        lesson.title              = request.POST.get('title', '').strip() or lesson.title
+        lesson.order              = request.POST.get('order') or lesson.order
+        lesson.pdf_allow_download = request.POST.get('pdf_allow_download') == '1'
+        pdf_file                  = request.FILES.get('pdf_file')
+        replace_content           = request.POST.get('replace_content') == '1'
         if pdf_file:
             extracted = _extract_pdf_text(pdf_file)
             if extracted:

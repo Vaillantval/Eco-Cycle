@@ -4,19 +4,22 @@
 
 {% block extra_css %}
 <style>
+  /* Push content below fixed navbar (74px) */
+  main { padding-top: 74px; }
+
   .lesson-layout {
     display: grid;
     grid-template-columns: 1fr 320px;
     gap: 0;
-    min-height: calc(100vh - 70px);
+    min-height: calc(100vh - 126px); /* 74px navbar + 52px course bar */
     align-items: start;
   }
   .lesson-main { min-width: 0; }
   .lesson-sidebar {
     border-left: 1px solid #e2e8f0;
     position: sticky;
-    top: 70px;
-    max-height: calc(100vh - 70px);
+    top: 126px; /* 74px navbar + 52px course bar */
+    max-height: calc(100vh - 126px);
     overflow-y: auto;
     background: #fff;
   }
@@ -162,6 +165,7 @@
   .video-panel.active { display: block; }
 
   @media (max-width: 768px) {
+    main { padding-top: 62px; } /* smaller on mobile (nav scrolled height) */
     .lesson-layout { grid-template-columns: 1fr; }
     .lesson-sidebar { position: static; max-height: none; border-left: none; border-top: 1px solid #e2e8f0; }
   }
@@ -170,19 +174,18 @@
 
 {% block content %}
 
-<!-- BARRE DE COURS (sticky) -->
-<div style="background:#0f2d20;padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between;gap:16px;position:sticky;top:0;z-index:100;border-bottom:1px solid rgba(255,255,255,0.08);">
+<!-- BARRE DE COURS (sticky sous la navbar) -->
+<div style="background:#0f2d20;padding:0 20px;min-height:52px;display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:74px;z-index:100;border-bottom:1px solid rgba(255,255,255,0.08);flex-wrap:wrap;row-gap:0;">
   <a href="{% url 'course_detail' slug=course.slug %}"
-     style="color:rgba(255,255,255,0.7);text-decoration:none;font-size:0.82rem;font-weight:600;white-space:nowrap;display:flex;align-items:center;gap:6px;flex-shrink:0;">
-    ← <span style="display:none;" class="back-label">{{ course.title|truncatechars:32 }}</span>
-    <span>Retour au cours</span>
+     style="color:rgba(255,255,255,0.7);text-decoration:none;font-size:0.8rem;font-weight:600;white-space:nowrap;display:flex;align-items:center;gap:5px;flex-shrink:0;padding:14px 0;">
+    ← <span>Retour au cours</span>
   </a>
-  <div style="flex:1;min-width:0;text-align:center;">
-    <span style="font-size:0.78rem;color:rgba(255,255,255,0.5);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;">{{ course.title|truncatechars:50 }}</span>
+  <div style="flex:1;min-width:120px;text-align:center;overflow:hidden;">
+    <span style="font-size:0.75rem;color:rgba(255,255,255,0.5);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;">{{ course.title|truncatechars:44 }}</span>
   </div>
-  <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
-    <span style="font-size:0.75rem;color:rgba(255,255,255,0.6);font-weight:600;">{{ enrollment.progress_percent }}%</span>
-    <div style="width:80px;height:5px;background:rgba(255,255,255,0.15);border-radius:3px;">
+  <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;padding:14px 0;">
+    <span style="font-size:0.72rem;color:rgba(255,255,255,0.6);font-weight:700;">{{ enrollment.progress_percent }}%</span>
+    <div style="width:72px;height:5px;background:rgba(255,255,255,0.15);border-radius:3px;">
       <div style="height:100%;border-radius:3px;background:#4ade80;width:{{ enrollment.progress_percent }}%;transition:width 0.4s;"></div>
     </div>
   </div>
@@ -307,6 +310,46 @@
       <h3>Notes de la leçon</h3>
       <div class="lesson-prose-body">
         {{ lesson.content|linebreaks }}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- TÉLÉCHARGEMENTS (vidéos + PDF groupés) -->
+    {% if downloadable_videos or lesson.pdf_file and lesson.pdf_allow_download %}
+    <div style="padding:0 28px 28px;">
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px 20px;">
+        <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#94a3b8;margin-bottom:12px;">📥 Téléchargements disponibles</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          {% for video in downloadable_videos %}
+          <a href="{{ video.video_file.url }}" download
+             style="display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #e2e8f0;
+                    border-radius:8px;padding:10px 14px;color:#334155;text-decoration:none;
+                    transition:border-color 0.15s,box-shadow 0.15s;"
+             onmouseover="this.style.borderColor='#0d7a45';this.style.boxShadow='0 2px 8px rgba(13,122,69,0.1)'"
+             onmouseout="this.style.borderColor='#e2e8f0';this.style.boxShadow='none'">
+            <span style="font-size:1.1rem;">🎬</span>
+            <span style="flex:1;font-size:0.85rem;font-weight:600;">
+              {% if video.title %}{{ video.title }}{% else %}Vidéo {{ forloop.counter }}{% endif %}
+            </span>
+            {% if video.duration_minutes %}
+            <span style="font-size:0.72rem;color:#94a3b8;">{{ video.duration_minutes }} min</span>
+            {% endif %}
+            <span style="font-size:0.72rem;font-weight:700;color:#0d7a45;background:#f0fdf4;padding:2px 8px;border-radius:8px;">Télécharger</span>
+          </a>
+          {% endfor %}
+          {% if lesson.pdf_file and lesson.pdf_allow_download %}
+          <a href="{{ lesson.pdf_file.url }}" download
+             style="display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #e2e8f0;
+                    border-radius:8px;padding:10px 14px;color:#334155;text-decoration:none;
+                    transition:border-color 0.15s,box-shadow 0.15s;"
+             onmouseover="this.style.borderColor='#0d7a45';this.style.boxShadow='0 2px 8px rgba(13,122,69,0.1)'"
+             onmouseout="this.style.borderColor='#e2e8f0';this.style.boxShadow='none'">
+            <span style="font-size:1.1rem;">📄</span>
+            <span style="flex:1;font-size:0.85rem;font-weight:600;">Support de cours (PDF)</span>
+            <span style="font-size:0.72rem;font-weight:700;color:#0d7a45;background:#f0fdf4;padding:2px 8px;border-radius:8px;">Télécharger</span>
+          </a>
+          {% endif %}
+        </div>
       </div>
     </div>
     {% endif %}

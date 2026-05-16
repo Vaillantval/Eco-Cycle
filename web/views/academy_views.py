@@ -116,13 +116,15 @@ class LessonDetailView(LoginRequiredMixin, View):
 
         completed_ids = set(str(l.id) for l in enrollment.completed_lessons.all())  # prefetched
         is_done = str(lesson.id) in completed_ids
-        videos = [v for v in lesson.videos.all() if True]  # prefetched via lessons__videos
+        videos = list(lesson.videos.all())  # prefetched via lessons__videos
+        downloadable_videos = [v for v in videos if v.video_file and v.allow_download]
 
         return render(request, 'academy/lesson_detail.html', {
             'course': course,
             'lesson': lesson,
             'lessons': lessons,
             'videos': videos,
+            'downloadable_videos': downloadable_videos,
             'enrollment': enrollment,
             'prev_lesson': prev_lesson,
             'next_lesson': next_lesson,

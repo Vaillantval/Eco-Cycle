@@ -2,8 +2,24 @@
 
 {% block title %}Blog — EcoCycle Haiti{% endblock %}
 
+{% block extra_css %}
+<style>
+  .navbar {
+    background: rgba(255,255,255,0.97) !important;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.08) !important;
+    padding: 12px 0 !important;
+  }
+  .navbar .nav-logo-text,
+  .navbar .nav-links a,
+  .navbar .nav-login,
+  .navbar .nav-user-name { color: var(--charcoal) !important; }
+  .navbar .nav-dropdown-trigger { color: var(--charcoal) !important; }
+  .navbar .hamburger span { background: var(--black) !important; }
+</style>
+{% endblock %}
+
 {% block content %}
-<section style="padding:60px 0 80px;background:var(--cream);">
+<section style="padding:88px 0 80px;background:var(--cream);">
   <div class="container">
 
     <!-- EN-TÊTE -->

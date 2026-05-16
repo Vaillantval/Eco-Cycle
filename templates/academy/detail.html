@@ -4,6 +4,19 @@
 
 {% block extra_css %}
 <style>
+  /* Navbar toujours blanche sur cette page (fond clair, pas de hero) */
+  .navbar {
+    background: rgba(255,255,255,0.97) !important;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.08) !important;
+    padding: 12px 0 !important;
+  }
+  .navbar .nav-logo-text,
+  .navbar .nav-links a,
+  .navbar .nav-login,
+  .navbar .nav-user-name { color: var(--charcoal) !important; }
+  .navbar .nav-dropdown-trigger { color: var(--charcoal) !important; }
+  .navbar .hamburger span { background: var(--black) !important; }
+
   .lesson-row {
     display: flex;
     align-items: flex-start;
@@ -36,11 +49,11 @@
 {% endblock %}
 
 {% block content %}
-<section style="padding:48px 0 80px;background:var(--cream);">
+<section style="padding:88px 0 80px;background:var(--cream);">
   <div class="container">
 
     <!-- BREADCRUMB -->
-    <div style="margin-bottom:24px;font-size:0.82rem;color:#94a3b8;">
+    <div style="margin-bottom:28px;font-size:0.82rem;color:#94a3b8;">
       <a href="{% url 'academy_list' %}" style="color:#94a3b8;text-decoration:none;">Academy</a>
       <span style="margin:0 6px;">›</span>
       <span style="color:#334155;">{{ course.title|truncatechars:50 }}</span>
@@ -181,7 +194,7 @@
       </div>
 
       <!-- COLONNE DROITE (sticky) -->
-      <div style="position:sticky;top:24px;display:flex;flex-direction:column;gap:16px;">
+      <div style="position:sticky;top:78px;display:flex;flex-direction:column;gap:16px;">
 
         <div style="background:white;border-radius:16px;box-shadow:0 2px 16px rgba(0,0,0,0.07);overflow:hidden;">
 

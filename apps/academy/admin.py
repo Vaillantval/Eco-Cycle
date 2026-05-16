@@ -5,7 +5,7 @@ from .models import Course, Lesson, LessonVideo, Enrollment, Certificate
 class LessonVideoInline(admin.TabularInline):
     model = LessonVideo
     extra = 0
-    fields = ['title', 'order', 'duration_minutes', 'video_file', 'video_url']
+    fields = ['title', 'order', 'duration_minutes', 'video_file', 'video_url', 'allow_download']
     ordering = ['order']
 
 
@@ -28,10 +28,14 @@ class CourseAdmin(admin.ModelAdmin):
 
 @admin.register(Lesson)
 class LessonAdmin(admin.ModelAdmin):
-    list_display = ['title', 'course', 'order', 'duration_minutes']
-    list_filter = ['course']
+    list_display = ['title', 'course', 'order', 'duration_minutes', 'pdf_allow_download']
+    list_filter = ['course', 'pdf_allow_download']
     search_fields = ['title', 'course__title']
     ordering = ['course', 'order']
+    fieldsets = [
+        (None, {'fields': ['course', 'title', 'order', 'content']}),
+        ('PDF', {'fields': ['pdf_file', 'pdf_allow_download']}),
+    ]
     inlines = [LessonVideoInline]
 
 

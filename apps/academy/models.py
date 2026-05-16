@@ -52,6 +52,11 @@ class Lesson(models.Model):
         verbose_name='PDF de la leçon',
         help_text='Upload un PDF pour extraire automatiquement le texte'
     )
+    pdf_allow_download = models.BooleanField(
+        default=False,
+        verbose_name='Autoriser le téléchargement du PDF',
+        help_text='Si activé, l\'utilisateur peut télécharger le fichier PDF original'
+    )
     order = models.PositiveIntegerField(default=0)
     duration_minutes = models.PositiveIntegerField(default=0)
 
@@ -82,6 +87,11 @@ class LessonVideo(models.Model):
         blank=True,
         verbose_name='URL vidéo externe',
         help_text='YouTube, Vimeo, ou tout lien direct'
+    )
+    allow_download = models.BooleanField(
+        default=False,
+        verbose_name='Autoriser le téléchargement',
+        help_text='Si activé, l\'utilisateur peut télécharger le fichier vidéo (fichiers uploadés uniquement)'
     )
     order = models.PositiveIntegerField(default=0)
     duration_minutes = models.PositiveIntegerField(default=0)
