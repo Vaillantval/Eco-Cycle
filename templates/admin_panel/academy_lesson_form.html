@@ -9,85 +9,81 @@
 
 {% block admin_content %}
 
-{% if lesson %}
-
 <!-- ======= VIDÉOS ======= -->
 <div class="admin-card" style="margin-bottom:20px;">
   <div class="admin-card-header">
     <span class="admin-card-title">🎬 Vidéos de la leçon</span>
-    <span style="font-size:0.78rem;color:#94a3b8;">{{ videos|length }} vidéo{{ videos|length|pluralize }}</span>
+    {% if lesson %}<span style="font-size:0.78rem;color:#94a3b8;">{{ videos|length }} vidéo{{ videos|length|pluralize }}</span>{% endif %}
   </div>
 
-  {% if videos %}
-  <table class="admin-table">
-    <thead><tr>
-      <th>Ordre</th>
-      <th>Titre</th>
-      <th>Type</th>
-      <th>Durée</th>
-      <th></th>
-    </tr></thead>
-    <tbody>
-    {% for v in videos %}
-    <tr>
-      <td style="text-align:center;color:#64748b;font-weight:600;">{{ v.order }}</td>
-      <td style="font-weight:600;">
-        {% if v.title %}{{ v.title }}{% else %}<span style="color:#94a3b8;font-style:italic;">Sans titre</span>{% endif %}
-      </td>
-      <td>
-        {% if v.video_file %}
-          <span style="font-size:0.75rem;background:#f0fdf4;color:#15803d;padding:2px 8px;border-radius:8px;font-weight:700;">📁 Fichier</span>
-        {% elif v.is_youtube %}
-          <span style="font-size:0.75rem;background:#fef2f2;color:#dc2626;padding:2px 8px;border-radius:8px;font-weight:700;">▶ YouTube</span>
-        {% elif v.is_vimeo %}
-          <span style="font-size:0.75rem;background:#eff6ff;color:#2563eb;padding:2px 8px;border-radius:8px;font-weight:700;">▶ Vimeo</span>
-        {% elif v.video_url %}
-          <span style="font-size:0.75rem;background:#fafafa;color:#64748b;padding:2px 8px;border-radius:8px;font-weight:700;">🔗 URL</span>
-        {% endif %}
-      </td>
-      <td style="color:#64748b;">{{ v.duration_minutes }} min</td>
-      <td>
-        <form method="POST" style="display:inline;" onsubmit="return confirm('Supprimer cette vidéo ?');">
-          {% csrf_token %}
-          <input type="hidden" name="action" value="delete_video">
-          <input type="hidden" name="video_id" value="{{ v.id }}">
-          <button type="submit" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:0.82rem;font-weight:700;">🗑 Supprimer</button>
-        </form>
-      </td>
-    </tr>
-    {% endfor %}
-    </tbody>
-  </table>
-  {% else %}
-  <div style="padding:20px 24px;color:#94a3b8;font-size:0.88rem;">Aucune vidéo pour l'instant.</div>
+  {% if lesson %}
+    {% if videos %}
+    <table class="admin-table">
+      <thead><tr>
+        <th>Ordre</th><th>Titre</th><th>Type</th><th>Durée</th><th></th>
+      </tr></thead>
+      <tbody>
+      {% for v in videos %}
+      <tr>
+        <td style="text-align:center;color:#64748b;font-weight:600;">{{ v.order }}</td>
+        <td style="font-weight:600;">
+          {% if v.title %}{{ v.title }}{% else %}<span style="color:#94a3b8;font-style:italic;">Sans titre</span>{% endif %}
+        </td>
+        <td>
+          {% if v.video_file %}
+            <span style="font-size:0.75rem;background:#f0fdf4;color:#15803d;padding:2px 8px;border-radius:8px;font-weight:700;">📁 Fichier</span>
+          {% elif v.is_youtube %}
+            <span style="font-size:0.75rem;background:#fef2f2;color:#dc2626;padding:2px 8px;border-radius:8px;font-weight:700;">▶ YouTube</span>
+          {% elif v.is_vimeo %}
+            <span style="font-size:0.75rem;background:#eff6ff;color:#2563eb;padding:2px 8px;border-radius:8px;font-weight:700;">▶ Vimeo</span>
+          {% elif v.video_url %}
+            <span style="font-size:0.75rem;background:#fafafa;color:#64748b;padding:2px 8px;border-radius:8px;font-weight:700;">🔗 URL</span>
+          {% endif %}
+        </td>
+        <td style="color:#64748b;">{{ v.duration_minutes }} min</td>
+        <td>
+          <form method="POST" style="display:inline;" onsubmit="return confirm('Supprimer cette vidéo ?');">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="delete_video">
+            <input type="hidden" name="video_id" value="{{ v.id }}">
+            <button type="submit" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:0.82rem;font-weight:700;">🗑 Supprimer</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div style="padding:16px 24px;color:#94a3b8;font-size:0.88rem;">Aucune vidéo pour l'instant.</div>
+    {% endif %}
   {% endif %}
 
   <!-- Ajouter une vidéo -->
-  <div style="border-top:1px solid #f1f5f9;padding:20px 24px;">
-    <div style="font-size:0.82rem;font-weight:700;color:#334155;margin-bottom:14px;">➕ Ajouter une vidéo</div>
-    <form method="POST" enctype="multipart/form-data">
+  <div style="border-top:{% if lesson and videos %}1px solid #f1f5f9{% else %}0{% endif %};padding:20px 24px;">
+    {% if not lesson %}
+    <div style="display:flex;align-items:center;gap:8px;background:#fef9ec;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:0.8rem;color:#92400e;">
+      ℹ️ La vidéo sera ajoutée automatiquement à la création de la leçon.
+    </div>
+    {% endif %}
+    <div style="font-size:0.82rem;font-weight:700;color:#334155;margin-bottom:14px;">
+      {% if lesson %}➕ Ajouter une vidéo{% else %}🎬 Première vidéo (optionnel){% endif %}
+    </div>
+    <form method="POST" enctype="multipart/form-data"
+          {% if lesson %}action=""{% endif %}>
       {% csrf_token %}
-      <input type="hidden" name="action" value="add_video">
+      {% if lesson %}<input type="hidden" name="action" value="add_video">{% endif %}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
         <div>
           <label style="font-size:0.75rem;font-weight:600;color:#64748b;display:block;margin-bottom:5px;">Titre (optionnel)</label>
           <input type="text" name="video_title" placeholder="Introduction, Partie 1…"
                  style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-          <div>
-            <label style="font-size:0.75rem;font-weight:600;color:#64748b;display:block;margin-bottom:5px;">Ordre</label>
-            <input type="number" name="video_order" value="{{ videos|length|add:1 }}" min="0"
-                   style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
-          </div>
-          <div>
-            <label style="font-size:0.75rem;font-weight:600;color:#64748b;display:block;margin-bottom:5px;">Durée (min)</label>
-            <input type="number" name="video_duration" value="0" min="0"
-                   style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
-          </div>
+        <div>
+          <label style="font-size:0.75rem;font-weight:600;color:#64748b;display:block;margin-bottom:5px;">Durée (min)</label>
+          <input type="number" name="video_duration" value="0" min="0"
+                 style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
         </div>
       </div>
-
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
         <div>
           <label style="font-size:0.75rem;font-weight:600;color:#64748b;display:block;margin-bottom:5px;">📁 Fichier vidéo (MP4, WebM…)</label>
@@ -100,13 +96,12 @@
                  style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
         </div>
       </div>
-
+      {% if lesson %}
       <button type="submit" class="btn-admin-sm btn-admin-primary">➕ Ajouter la vidéo</button>
+      {% endif %}
     </form>
   </div>
 </div>
-
-{% endif %}
 
 <!-- ======= LEÇON ======= -->
 <form method="POST" enctype="multipart/form-data">

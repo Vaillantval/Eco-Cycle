@@ -584,11 +584,23 @@ class AdminAcademyLessonCreateView(AdminRequiredMixin, View):
             messages.error(request, 'Le titre est obligatoire.')
             return redirect('admin_academy_lesson_create', course_pk=course_pk)
         lesson = Lesson.objects.create(
-            course   = course,
-            title    = title,
-            content  = request.POST.get('content', ''),
-            order    = request.POST.get('order') or course.lessons.count(),
+            course  = course,
+            title   = title,
+            content = request.POST.get('content', ''),
+            order   = request.POST.get('order') or course.lessons.count(),
         )
+        # Ajouter la première vidéo si fournie
+        video_file = request.FILES.get('video_file')
+        video_url  = request.POST.get('video_url', '').strip()
+        if video_file or video_url:
+            LessonVideo.objects.create(
+                lesson           = lesson,
+                title            = request.POST.get('video_title', '').strip(),
+                video_file       = video_file,
+                video_url        = video_url,
+                order            = 1,
+                duration_minutes = request.POST.get('video_duration') or 0,
+            )
         messages.success(request, f'Leçon « {lesson.title} » créée.')
         return redirect('admin_academy_lesson_edit', course_pk=course_pk, lesson_pk=lesson.pk)
 
