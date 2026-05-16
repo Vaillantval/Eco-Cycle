@@ -1,11 +1,18 @@
 from django.contrib import admin
-from .models import Course, Lesson, Enrollment, Certificate
+from .models import Course, Lesson, LessonVideo, Enrollment, Certificate
+
+
+class LessonVideoInline(admin.TabularInline):
+    model = LessonVideo
+    extra = 0
+    fields = ['title', 'order', 'duration_minutes', 'video_file', 'video_url']
+    ordering = ['order']
 
 
 class LessonInline(admin.TabularInline):
     model = Lesson
     extra = 0
-    fields = ['title', 'order', 'duration_minutes', 'video_url']
+    fields = ['title', 'order', 'duration_minutes']
     ordering = ['order']
 
 
@@ -25,6 +32,7 @@ class LessonAdmin(admin.ModelAdmin):
     list_filter = ['course']
     search_fields = ['title', 'course__title']
     ordering = ['course', 'order']
+    inlines = [LessonVideoInline]
 
 
 @admin.register(Enrollment)
