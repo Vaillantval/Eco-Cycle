@@ -1,0 +1,72 @@
+{% extends 'collector/base_collector.html' %}
+
+{% block title %}Mes ramassages — Collecteur EcoCycle{% endblock %}
+{% block page_title %}Mes ramassages{% endblock %}
+
+{% block collector_content %}
+
+<!-- FILTRES -->
+<div class="filter-bar">
+  <a href="{% url 'collector_pickups' %}" class="filter-btn {% if not status_filter %}active{% endif %}">Tous</a>
+  {% for val, label in status_choices %}
+  <a href="{% url 'collector_pickups' %}?status={{ val }}"
+     class="filter-btn {% if status_filter == val %}active{% endif %}">
+    {{ label }}
+  </a>
+  {% endfor %}
+</div>
+
+<div class="col-card">
+  <div class="col-card-header">
+    <span class="col-card-title">🚚 Ramassages assignés</span>
+    <span style="font-size:0.8rem;color:#64748b;">{{ pickups|length }} résultat{{ pickups|length|pluralize }}</span>
+  </div>
+
+  {% if pickups %}
+  <table class="col-table">
+    <thead>
+      <tr>
+        <th>Client</th>
+        <th>Adresse</th>
+        <th>Date</th>
+        <th>Créneau</th>
+        <th>Matériau</th>
+        <th>Statut</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in pickups %}
+      <tr>
+        <td>
+          <strong>{{ p.user.full_name }}</strong><br>
+          <span style="font-size:0.75rem;color:#64748b;">{{ p.user.phone }}</span>
+        </td>
+        <td>
+          {{ p.address|truncatechars:35 }}<br>
+          <span style="font-size:0.75rem;color:#64748b;">{{ p.city }}</span>
+        </td>
+        <td>{{ p.preferred_date|date:"d/m/Y" }}</td>
+        <td>{{ p.get_preferred_slot_display }}</td>
+        <td>
+          {% if p.listing %}
+            {{ p.listing.title|truncatechars:25 }}
+          {% else %}
+            <span style="color:#94a3b8;">—</span>
+          {% endif %}
+        </td>
+        <td><span class="badge-status s-{{ p.status }}">{{ p.get_status_display }}</span></td>
+        <td><a href="{% url 'collector_pickup_detail' pk=p.id %}" class="btn-col btn-col-view">Gérer →</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div style="padding:40px;text-align:center;color:#64748b;">
+    <div style="font-size:2.5rem;margin-bottom:10px;">📭</div>
+    <p>Aucun ramassage trouvé{% if status_filter %} pour ce statut{% endif %}.</p>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

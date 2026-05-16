@@ -1,0 +1,72 @@
+{% extends 'admin_panel/base_admin.html' %}
+
+{% block title %}Academy — Admin EcoCycle{% endblock %}
+{% block page_title %}Gestion de l'Academy{% endblock %}
+
+{% block topbar_actions %}
+<a href="/admin/academy/course/add/" target="_blank" class="btn-admin-sm btn-admin-primary">+ Nouveau cours</a>
+{% endblock %}
+
+{% block admin_content %}
+
+<div class="admin-card">
+  <div class="admin-card-header">
+    <span class="admin-card-title">🎓 Cours ({{ courses|length }})</span>
+  </div>
+
+  {% if courses %}
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>Titre</th>
+        <th>Niveau</th>
+        <th>Leçons</th>
+        <th>Inscrits</th>
+        <th>Durée</th>
+        <th>Gratuit</th>
+        <th>Statut</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for course in courses %}
+      <tr>
+        <td><strong>{{ course.title|truncatechars:45 }}</strong></td>
+        <td>{{ course.get_level_display }}</td>
+        <td style="text-align:center;">{{ course.lessons.count }}</td>
+        <td style="text-align:center;">{{ course.enrollments.count }}</td>
+        <td>{{ course.duration_minutes }} min</td>
+        <td style="text-align:center;">{% if course.is_free %}✅{% else %}💰{% endif %}</td>
+        <td>
+          <span style="padding:2px 10px;border-radius:12px;font-size:0.72rem;font-weight:700;
+            {% if course.is_published %}background:#dcfce7;color:#15803d;
+            {% else %}background:#f1f5f9;color:#64748b;{% endif %}">
+            {% if course.is_published %}Publié{% else %}Brouillon{% endif %}
+          </span>
+        </td>
+        <td>
+          <form method="POST" style="display:inline;">
+            {% csrf_token %}
+            <input type="hidden" name="course_id" value="{{ course.id }}">
+            <button name="action" value="toggle_publish" class="btn-admin-sm {% if course.is_published %}btn-view{% else %}btn-approve{% endif %}">
+              {% if course.is_published %}Dépublier{% else %}Publier{% endif %}
+            </button>
+          </form>
+          <a href="/admin/academy/course/{{ course.id }}/change/" target="_blank" class="btn-admin-sm btn-view">✏️</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div style="padding:40px;text-align:center;color:#94a3b8;">
+    <div style="font-size:2rem;margin-bottom:8px;">🎓</div>
+    <p>Aucun cours créé.</p>
+    <a href="/admin/academy/course/add/" target="_blank" class="btn-admin-sm btn-admin-primary" style="display:inline-flex;margin-top:12px;">
+      + Créer le premier cours
+    </a>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

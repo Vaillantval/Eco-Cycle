@@ -1,0 +1,155 @@
+{% extends 'admin_panel/base_admin.html' %}
+
+{% block title %}{{ target.full_name }} — Admin EcoCycle{% endblock %}
+{% block page_title %}Détail utilisateur{% endblock %}
+
+{% block topbar_actions %}
+<a href="{% url 'admin_users' %}" class="btn-admin-sm btn-view">← Retour</a>
+{% endblock %}
+
+{% block admin_content %}
+
+<div style="display:grid;grid-template-columns:300px 1fr;gap:20px;align-items:start;">
+
+  <!-- CARTE PROFIL -->
+  <div>
+    <div class="admin-card">
+      <div style="padding:24px;text-align:center;border-bottom:1px solid #f1f5f9;">
+        <div style="width:72px;height:72px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;font-size:1.6rem;color:white;margin:0 auto 12px;">
+          {% if target.avatar %}
+            <img src="{{ target.avatar.url }}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" alt="">
+          {% else %}
+            {{ target.first_name|slice:":1" }}{{ target.last_name|slice:":1" }}
+          {% endif %}
+        </div>
+        <div style="font-family:var(--font-display);font-weight:700;font-size:1.1rem;color:#0f172a;">{{ target.full_name }}</div>
+        <div style="font-size:0.82rem;color:#64748b;margin-top:4px;">{{ target.email }}</div>
+        <div style="margin-top:8px;">
+          <span style="display:inline-block;padding:2px 12px;border-radius:12px;font-size:0.72rem;font-weight:700;
+            {% if target.role == 'admin' %}background:#fef9c3;color:#a16207;
+            {% elif target.role == 'collector' %}background:#e0f2fe;color:#0369a1;
+            {% else %}background:#dcfce7;color:#15803d;{% endif %}">
+            {{ target.get_role_display }}
+          </span>
+          {% if not target.is_active %}
+          <span style="display:inline-block;padding:2px 10px;border-radius:12px;font-size:0.72rem;font-weight:700;background:#fee2e2;color:#dc2626;margin-left:4px;">
+            Désactivé
+          </span>
+          {% endif %}
+        </div>
+      </div>
+      <div style="padding:16px 20px;font-size:0.82rem;color:#334155;display:flex;flex-direction:column;gap:8px;">
+        <div>📞 {{ target.phone|default:"—" }}</div>
+        <div>📍 {{ target.city|default:"—" }}</div>
+        <div>📅 Inscrit le {{ target.created_at|date:"d/m/Y" }}</div>
+        <div>✅ Email {% if target.is_email_verified %}vérifié{% else %}non vérifié{% endif %}</div>
+      </div>
+    </div>
+
+    <!-- ACTIONS -->
+    <div class="admin-card" style="margin-top:16px;">
+      <div class="admin-card-header"><span class="admin-card-title">Actions</span></div>
+      <div style="padding:16px 20px;display:flex;flex-direction:column;gap:10px;">
+
+        <form method="POST">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="toggle_active">
+          <button type="submit" class="btn-admin-sm {% if target.is_active %}btn-reject{% else %}btn-approve{% endif %}"
+            style="width:100%;justify-content:center;padding:8px;"
+            {% if target == user %}disabled title="Vous ne pouvez pas désactiver votre propre compte"{% endif %}>
+            {% if target.is_active %}🔴 Désactiver le compte{% else %}🟢 Activer le compte{% endif %}
+          </button>
+        </form>
+
+        <form method="POST" style="display:flex;gap:8px;align-items:center;">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="change_role">
+          <select name="new_role" style="flex:1;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px;font-size:0.82rem;">
+            {% for val, label in role_choices %}
+            <option value="{{ val }}" {% if val == target.role %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+          <button type="submit" class="btn-admin-sm btn-admin-primary">OK</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACTIVITÉ -->
+  <div>
+    <!-- Listings -->
+    <div class="admin-card" style="margin-bottom:16px;">
+      <div class="admin-card-header">
+        <span class="admin-card-title">📦 Derniers listings ({{ listings|length }})</span>
+      </div>
+      {% if listings %}
+      <table class="admin-table">
+        <thead><tr><th>Titre</th><th>Catégorie</th><th>Poids</th><th>Statut</th><th>Date</th></tr></thead>
+        <tbody>
+          {% for l in listings %}
+          <tr>
+            <td>{{ l.title|truncatechars:40 }}</td>
+            <td>{{ l.category.name|default:"—" }}</td>
+            <td>{{ l.quantity_kg }} kg</td>
+            <td><span style="font-size:0.72rem;font-weight:600;padding:2px 8px;border-radius:8px;background:#f1f5f9;color:#334155;">{{ l.status }}</span></td>
+            <td style="color:#94a3b8;font-size:0.78rem;">{{ l.created_at|date:"d/m/Y" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div style="padding:24px;text-align:center;color:#94a3b8;font-size:0.85rem;">Aucun listing.</div>
+      {% endif %}
+    </div>
+
+    <!-- Pickups -->
+    <div class="admin-card" style="margin-bottom:16px;">
+      <div class="admin-card-header">
+        <span class="admin-card-title">🚚 Derniers ramassages ({{ pickups|length }})</span>
+      </div>
+      {% if pickups %}
+      <table class="admin-table">
+        <thead><tr><th>Adresse</th><th>Date</th><th>Collecteur</th><th>Statut</th></tr></thead>
+        <tbody>
+          {% for p in pickups %}
+          <tr>
+            <td>{{ p.city }}</td>
+            <td>{{ p.preferred_date|date:"d/m/Y" }}</td>
+            <td>{{ p.collector.full_name|default:"Non assigné" }}</td>
+            <td><span style="font-size:0.72rem;font-weight:600;padding:2px 8px;border-radius:8px;background:#f1f5f9;color:#334155;">{{ p.status }}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div style="padding:24px;text-align:center;color:#94a3b8;font-size:0.85rem;">Aucun ramassage.</div>
+      {% endif %}
+    </div>
+
+    <!-- Orders -->
+    <div class="admin-card">
+      <div class="admin-card-header">
+        <span class="admin-card-title">🛒 Dernières commandes ({{ orders|length }})</span>
+      </div>
+      {% if orders %}
+      <table class="admin-table">
+        <thead><tr><th>Enchère</th><th>Montant</th><th>Statut</th><th>Date</th></tr></thead>
+        <tbody>
+          {% for o in orders %}
+          <tr>
+            <td>{{ o.auction.listing.title|truncatechars:35 }}</td>
+            <td>{{ o.amount }} HTG</td>
+            <td><span style="font-size:0.72rem;font-weight:600;padding:2px 8px;border-radius:8px;background:#f1f5f9;color:#334155;">{{ o.status }}</span></td>
+            <td style="color:#94a3b8;font-size:0.78rem;">{{ o.created_at|date:"d/m/Y" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div style="padding:24px;text-align:center;color:#94a3b8;font-size:0.85rem;">Aucune commande.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% endblock %}

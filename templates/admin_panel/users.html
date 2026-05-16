@@ -68,6 +68,7 @@
         <td style="font-size:0.78rem;color:#94a3b8;">{{ u.created_at|date:"d/m/Y" }}</td>
         <td>
           <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            <a href="{% url 'admin_user_detail' pk=u.id %}" class="btn-admin-sm btn-view">Détail →</a>
             <!-- Toggle actif/inactif -->
             <form method="POST" action="{% url 'admin_users' %}" style="display:inline;">
               {% csrf_token %}
@@ -77,19 +78,6 @@
                       title="{% if u.is_active %}Désactiver{% else %}Activer{% endif %}">
                 {% if u.is_active %}Désactiver{% else %}Activer{% endif %}
               </button>
-            </form>
-
-            <!-- Changer rôle -->
-            <form method="POST" action="{% url 'admin_users' %}" style="display:flex;gap:4px;align-items:center;">
-              {% csrf_token %}
-              <input type="hidden" name="user_id" value="{{ u.id }}">
-              <input type="hidden" name="action" value="change_role">
-              <select name="new_role" style="font-size:0.72rem;padding:3px 6px;border:1px solid #e2e8f0;border-radius:5px;">
-                {% for value, label in role_choices %}
-                <option value="{{ value }}" {% if u.role == value %}selected{% endif %}>{{ label }}</option>
-                {% endfor %}
-              </select>
-              <button type="submit" class="btn-admin-sm btn-view">✓</button>
             </form>
           </div>
         </td>

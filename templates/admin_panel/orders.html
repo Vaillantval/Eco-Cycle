@@ -30,6 +30,7 @@
         <th>Commission</th>
         <th>Statut</th>
         <th>Date</th>
+        <th></th>
       </tr>
     </thead>
     <tbody>
@@ -58,6 +59,7 @@
         </td>
         <td><span class="status-badge status-{{ order.status }}">{{ order.get_status_display }}</span></td>
         <td style="font-size:0.78rem;color:#94a3b8;">{{ order.created_at|date:"d/m/Y" }}</td>
+        <td><a href="{% url 'admin_order_detail' pk=order.id %}" class="btn-admin-sm btn-view">Détail →</a></td>
       </tr>
       {% empty %}
       <tr>

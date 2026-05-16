@@ -1,5 +1,6 @@
 from apps.waste.models import WasteListing
 from apps.collections.models import PickupRequest
+from apps.core.models import ContactMessage
 
 
 def admin_badges(request):
@@ -8,4 +9,5 @@ def admin_badges(request):
     return {
         'pending_listings_count': WasteListing.objects.filter(status='pending_review').count(),
         'pending_pickups_count':  PickupRequest.objects.filter(status='requested').count(),
+        'unread_contacts_count':  ContactMessage.objects.filter(is_read=False).count(),
     }

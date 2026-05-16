@@ -49,9 +49,10 @@
             <span style="color:#ef4444;font-size:0.78rem;">Non assigné</span>
           {% endif %}
         </td>
-        <td>
+        <td style="white-space:nowrap;">
+          <a href="{% url 'admin_pickup_detail' pk=pickup.id %}" class="btn-admin-sm btn-view">Détail →</a>
           {% if pickup.status == 'requested' or pickup.status == 'assigned' %}
-          <form method="POST" action="{% url 'admin_pickups' %}" style="display:flex;gap:6px;align-items:center;">
+          <form method="POST" action="{% url 'admin_pickups' %}" style="display:inline-flex;gap:6px;align-items:center;margin-left:4px;">
             {% csrf_token %}
             <input type="hidden" name="pickup_id" value="{{ pickup.id }}">
             <select name="collector_id" style="font-size:0.75rem;padding:4px 8px;border:1px solid #e2e8f0;border-radius:6px;background:white;">
@@ -62,8 +63,6 @@
             </select>
             <button type="submit" class="btn-admin-sm btn-approve">Assigner</button>
           </form>
-          {% else %}
-          <span style="font-size:0.75rem;color:#94a3b8;">—</span>
           {% endif %}
         </td>
       </tr>

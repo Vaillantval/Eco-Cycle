@@ -39,9 +39,13 @@ class WebLoginView(View):
         messages.success(request, f'Bienvenue, {user.first_name} !')
 
         next_url = request.GET.get('next', '')
+        if next_url:
+            return redirect(next_url)
         if user.role == 'admin':
             return redirect('admin_panel')
-        return redirect(next_url) if next_url else redirect('dashboard')
+        if user.role == 'collector':
+            return redirect('collector_dashboard')
+        return redirect('dashboard')
 
 
 class WebRegisterView(View):

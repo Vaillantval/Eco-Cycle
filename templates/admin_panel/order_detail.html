@@ -1,0 +1,92 @@
+{% extends 'admin_panel/base_admin.html' %}
+
+{% block title %}Commande — Admin EcoCycle{% endblock %}
+{% block page_title %}Détail commande{% endblock %}
+
+{% block topbar_actions %}
+<a href="{% url 'admin_orders' %}" class="btn-admin-sm btn-view">← Retour</a>
+{% endblock %}
+
+{% block admin_content %}
+
+<div style="display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start;">
+
+  <div>
+    <div class="admin-card">
+      <div class="admin-card-header">
+        <span class="admin-card-title">🛒 Informations de la commande</span>
+        <span style="padding:3px 12px;border-radius:12px;font-size:0.72rem;font-weight:700;
+          {% if order.status == 'completed' %}background:#dcfce7;color:#15803d;
+          {% elif order.status == 'cancelled' or order.status == 'refunded' %}background:#fee2e2;color:#dc2626;
+          {% elif order.status == 'paid' %}background:#e0f2fe;color:#0369a1;
+          {% else %}background:#fef9c3;color:#a16207;{% endif %}">
+          {{ order.get_status_display }}
+        </span>
+      </div>
+      <div style="padding:20px;display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+        <div>
+          <div style="font-size:0.72rem;color:#64748b;text-transform:uppercase;margin-bottom:4px;">Acheteur</div>
+          <div style="font-weight:600;">{{ order.buyer.full_name }}</div>
+          <div style="font-size:0.82rem;color:#64748b;">{{ order.buyer.email }}</div>
+        </div>
+        <div>
+          <div style="font-size:0.72rem;color:#64748b;text-transform:uppercase;margin-bottom:4px;">Vendeur</div>
+          <div style="font-weight:600;">{{ order.seller.full_name }}</div>
+          <div style="font-size:0.82rem;color:#64748b;">{{ order.seller.email }}</div>
+        </div>
+        <div>
+          <div style="font-size:0.72rem;color:#64748b;text-transform:uppercase;margin-bottom:4px;">Article</div>
+          <div style="font-weight:600;">{{ order.auction.listing.title }}</div>
+          <div style="font-size:0.82rem;color:#64748b;">{{ order.auction.listing.category.name }}</div>
+        </div>
+        <div>
+          <div style="font-size:0.72rem;color:#64748b;text-transform:uppercase;margin-bottom:4px;">Date</div>
+          <div style="font-weight:600;">{{ order.created_at|date:"d/m/Y H:i" }}</div>
+          {% if order.completed_at %}
+          <div style="font-size:0.82rem;color:#64748b;">Complété le {{ order.completed_at|date:"d/m/Y" }}</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Montants -->
+      <div style="padding:0 20px 20px;">
+        <div style="background:#f8fafc;border-radius:10px;padding:16px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+            <span style="font-size:0.85rem;color:#64748b;">Montant total</span>
+            <span style="font-weight:700;color:#0f172a;">{{ order.amount }} HTG</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+            <span style="font-size:0.85rem;color:#64748b;">Commission plateforme (10%)</span>
+            <span style="font-weight:600;color:#ef4444;">- {{ order.platform_fee }} HTG</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;border-top:1px solid #e2e8f0;padding-top:8px;">
+            <span style="font-size:0.85rem;font-weight:700;color:#0f172a;">Versement vendeur</span>
+            <span style="font-weight:800;color:#15803d;font-size:1.05rem;">{{ order.seller_payout }} HTG</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Changer statut -->
+  <div class="admin-card">
+    <div class="admin-card-header"><span class="admin-card-title">🔄 Changer le statut</span></div>
+    <div style="padding:16px 20px;">
+      <form method="POST">
+        {% csrf_token %}
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          {% for val, label in status_choices %}
+          <button type="submit" name="new_status" value="{{ val }}"
+            style="padding:8px 14px;border-radius:8px;border:1px solid #e2e8f0;background:{% if val == order.status %}#0f172a{% else %}white{% endif %};
+                   color:{% if val == order.status %}white{% else %}#334155{% endif %};font-size:0.82rem;cursor:pointer;text-align:left;font-weight:500;">
+            {% if val == order.status %}✓ {% endif %}{{ label }}
+          </button>
+          {% endfor %}
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

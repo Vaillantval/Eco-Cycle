@@ -1,0 +1,82 @@
+{% extends 'admin_panel/base_admin.html' %}
+
+{% block title %}Messages — Admin EcoCycle{% endblock %}
+{% block page_title %}Messages de contact{% endblock %}
+
+{% block admin_content %}
+
+<div class="admin-stat-grid">
+  <div class="admin-stat alert-stat">
+    <div class="admin-stat-label">Non lus</div>
+    <div class="admin-stat-value">{{ unread_count }}</div>
+  </div>
+  <div class="admin-stat">
+    <div class="admin-stat-label">Total</div>
+    <div class="admin-stat-value">{{ contacts|length }}</div>
+  </div>
+</div>
+
+<div class="filter-bar">
+  <a href="{% url 'admin_contacts' %}" class="filter-btn {% if not read_filter %}active{% endif %}">Tous</a>
+  <a href="{% url 'admin_contacts' %}?read=0" class="filter-btn {% if read_filter == '0' %}active{% endif %}">Non lus</a>
+  <a href="{% url 'admin_contacts' %}?read=1" class="filter-btn {% if read_filter == '1' %}active{% endif %}">Lus</a>
+</div>
+
+<div class="admin-card">
+  <div class="admin-card-header">
+    <span class="admin-card-title">💬 Messages ({{ contacts|length }})</span>
+  </div>
+  {% if contacts %}
+  <table class="admin-table">
+    <thead>
+      <tr><th>Nom</th><th>Email</th><th>Sujet</th><th>Message</th><th>Date</th><th>Statut</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+      {% for msg in contacts %}
+      <tr style="{% if not msg.is_read %}background:#fffbeb;{% endif %}">
+        <td>
+          <strong>{{ msg.first_name }} {{ msg.last_name }}</strong>
+          {% if not msg.is_read %}<span style="display:inline-block;width:8px;height:8px;background:#ef4444;border-radius:50%;margin-left:6px;"></span>{% endif %}
+        </td>
+        <td><a href="mailto:{{ msg.email }}" style="color:#0d7a45;">{{ msg.email }}</a></td>
+        <td>{{ msg.subject }}</td>
+        <td style="max-width:220px;">{{ msg.message|truncatechars:60 }}</td>
+        <td style="color:#94a3b8;font-size:0.78rem;">{{ msg.created_at|date:"d/m H:i" }}</td>
+        <td>
+          {% if msg.replied %}
+            <span style="padding:2px 8px;border-radius:10px;font-size:0.72rem;font-weight:700;background:#dcfce7;color:#15803d;">Répondu</span>
+          {% elif msg.is_read %}
+            <span style="padding:2px 8px;border-radius:10px;font-size:0.72rem;font-weight:700;background:#f1f5f9;color:#64748b;">Lu</span>
+          {% else %}
+            <span style="padding:2px 8px;border-radius:10px;font-size:0.72rem;font-weight:700;background:#fef9c3;color:#a16207;">Nouveau</span>
+          {% endif %}
+        </td>
+        <td style="white-space:nowrap;">
+          <form method="POST" style="display:inline-flex;gap:4px;">
+            {% csrf_token %}
+            <input type="hidden" name="msg_id" value="{{ msg.id }}">
+            {% if not msg.is_read %}
+              <button name="action" value="mark_read" class="btn-admin-sm btn-view">Lu</button>
+            {% endif %}
+            {% if not msg.replied %}
+              <a href="mailto:{{ msg.email }}?subject=Re: {{ msg.subject }}"
+                 class="btn-admin-sm btn-approve">Répondre</a>
+              <button name="action" value="mark_replied" class="btn-admin-sm btn-view">✓ Répondu</button>
+            {% endif %}
+            <button name="action" value="delete" class="btn-admin-sm btn-reject"
+              onclick="return confirm('Supprimer ce message ?')">🗑</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div style="padding:40px;text-align:center;color:#94a3b8;">
+    <div style="font-size:2rem;margin-bottom:8px;">💬</div>
+    <p>Aucun message de contact.</p>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

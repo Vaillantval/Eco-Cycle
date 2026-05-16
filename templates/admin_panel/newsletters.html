@@ -1,0 +1,67 @@
+{% extends 'admin_panel/base_admin.html' %}
+
+{% block title %}Newsletter — Admin EcoCycle{% endblock %}
+{% block page_title %}Abonnés Newsletter{% endblock %}
+
+{% block admin_content %}
+
+<div class="admin-stat-grid">
+  <div class="admin-stat highlight" style="border-left:3px solid #22c55e;">
+    <div class="admin-stat-label">Confirmés</div>
+    <div class="admin-stat-value">{{ total_confirmed }}</div>
+  </div>
+  <div class="admin-stat alert-stat">
+    <div class="admin-stat-label">En attente</div>
+    <div class="admin-stat-value">{{ total_pending }}</div>
+  </div>
+  <div class="admin-stat">
+    <div class="admin-stat-label">Total</div>
+    <div class="admin-stat-value">{{ total_confirmed|add:total_pending }}</div>
+  </div>
+</div>
+
+<div class="filter-bar">
+  <a href="{% url 'admin_newsletters' %}" class="filter-btn {% if not confirmed_filter %}active{% endif %}">Tous</a>
+  <a href="{% url 'admin_newsletters' %}?confirmed=1" class="filter-btn {% if confirmed_filter == '1' %}active{% endif %}">Confirmés</a>
+  <a href="{% url 'admin_newsletters' %}?confirmed=0" class="filter-btn {% if confirmed_filter == '0' %}active{% endif %}">En attente</a>
+</div>
+
+<div class="admin-card">
+  <div class="admin-card-header">
+    <span class="admin-card-title">📧 Abonnés ({{ subscribers|length }})</span>
+  </div>
+  {% if subscribers %}
+  <table class="admin-table">
+    <thead>
+      <tr><th>Email</th><th>Statut</th><th>Date d'inscription</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for sub in subscribers %}
+      <tr>
+        <td>{{ sub.email }}</td>
+        <td>
+          <span style="padding:2px 10px;border-radius:12px;font-size:0.72rem;font-weight:700;
+            {% if sub.is_confirmed %}background:#dcfce7;color:#15803d;
+            {% else %}background:#fef9c3;color:#a16207;{% endif %}">
+            {% if sub.is_confirmed %}Confirmé{% else %}En attente{% endif %}
+          </span>
+        </td>
+        <td style="color:#94a3b8;font-size:0.78rem;">{{ sub.subscribed_at|date:"d/m/Y H:i" }}</td>
+        <td>
+          <form method="POST" style="display:inline;">
+            {% csrf_token %}
+            <input type="hidden" name="sub_id" value="{{ sub.id }}">
+            <button name="action" value="delete" class="btn-admin-sm btn-reject"
+              onclick="return confirm('Supprimer cet abonné ?')">🗑</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div style="padding:40px;text-align:center;color:#94a3b8;">Aucun abonné trouvé.</div>
+  {% endif %}
+</div>
+
+{% endblock %}

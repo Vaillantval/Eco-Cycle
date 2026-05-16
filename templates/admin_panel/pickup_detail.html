@@ -1,0 +1,147 @@
+{% extends 'admin_panel/base_admin.html' %}
+
+{% block title %}Ramassage — Admin EcoCycle{% endblock %}
+{% block page_title %}Détail ramassage{% endblock %}
+
+{% block topbar_actions %}
+<a href="{% url 'admin_pickups' %}" class="btn-admin-sm btn-view">← Retour</a>
+{% endblock %}
+
+{% block admin_content %}
+
+<div style="display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start;">
+
+  <div>
+    <!-- INFOS -->
+    <div class="admin-card" style="margin-bottom:16px;">
+      <div class="admin-card-header">
+        <span class="admin-card-title">📋 Informations</span>
+        <span style="padding:3px 12px;border-radius:12px;font-size:0.72rem;font-weight:700;
+          {% if pickup.status == 'completed' %}background:#dcfce7;color:#15803d;
+          {% elif pickup.status == 'failed' %}background:#fee2e2;color:#dc2626;
+          {% elif pickup.status == 'assigned' %}background:#fef9c3;color:#a16207;
+          {% elif pickup.status == 'in_transit' %}background:#fff7ed;color:#c2410c;
+          {% elif pickup.status == 'arrived' %}background:#f3e8ff;color:#7e22ce;
+          {% else %}background:#f1f5f9;color:#64748b;{% endif %}">
+          {{ pickup.get_status_display }}
+        </span>
+      </div>
+      <div style="padding:20px;display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+        <div>
+          <div style="font-size:0.72rem;color:#64748b;text-transform:uppercase;margin-bottom:4px;">Client</div>
+          <div style="font-weight:600;">{{ pickup.user.full_name }}</div>
+          <div style="font-size:0.82rem;color:#64748b;">{{ pickup.user.email }}</div>
+          <div style="font-size:0.82rem;color:#64748b;">{{ pickup.user.phone }}</div>
+        </div>
+        <div>
+          <div style="font-size:0.72rem;color:#64748b;text-transform:uppercase;margin-bottom:4px;">Collecteur assigné</div>
+          {% if pickup.collector %}
+            <div style="font-weight:600;">{{ pickup.collector.full_name }}</div>
+            <div style="font-size:0.82rem;color:#64748b;">{{ pickup.collector.phone }}</div>
+          {% else %}
+            <div style="color:#ef4444;font-weight:600;">Non assigné</div>
+          {% endif %}
+        </div>
+        <div>
+          <div style="font-size:0.72rem;color:#64748b;text-transform:uppercase;margin-bottom:4px;">Adresse</div>
+          <div style="font-weight:600;">{{ pickup.address }}</div>
+          <div style="font-size:0.82rem;color:#64748b;">{{ pickup.city }}</div>
+        </div>
+        <div>
+          <div style="font-size:0.72rem;color:#64748b;text-transform:uppercase;margin-bottom:4px;">Date & créneau</div>
+          <div style="font-weight:600;">{{ pickup.preferred_date|date:"d/m/Y" }}</div>
+          <div style="font-size:0.82rem;color:#64748b;">{{ pickup.get_preferred_slot_display }}</div>
+        </div>
+        {% if pickup.actual_weight_kg %}
+        <div>
+          <div style="font-size:0.72rem;color:#64748b;text-transform:uppercase;margin-bottom:4px;">Poids réel</div>
+          <div style="font-weight:600;color:#15803d;">{{ pickup.actual_weight_kg }} kg</div>
+        </div>
+        {% endif %}
+        {% if pickup.collector_notes %}
+        <div>
+          <div style="font-size:0.72rem;color:#64748b;text-transform:uppercase;margin-bottom:4px;">Notes collecteur</div>
+          <div style="font-size:0.85rem;">{{ pickup.collector_notes }}</div>
+        </div>
+        {% endif %}
+      </div>
+      {% if pickup.special_instructions %}
+      <div style="padding:0 20px 20px;">
+        <div style="background:#fef9c3;border-radius:8px;padding:12px;border-left:3px solid #f59e0b;">
+          <div style="font-size:0.72rem;font-weight:600;color:#a16207;margin-bottom:4px;">INSTRUCTIONS SPÉCIALES</div>
+          <p style="font-size:0.85rem;color:#78350f;">{{ pickup.special_instructions }}</p>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- TIMELINE -->
+    <div class="admin-card">
+      <div class="admin-card-header"><span class="admin-card-title">📅 Historique des statuts</span></div>
+      <div style="padding:16px 20px;">
+        {% if pickup.status_history %}
+          {% for entry in pickup.status_history %}
+          <div style="display:flex;gap:12px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #f8fafc;">
+            <div style="width:8px;height:8px;border-radius:50%;background:#22c55e;flex-shrink:0;margin-top:5px;"></div>
+            <div>
+              <div style="font-size:0.82rem;font-weight:600;color:#0f172a;">{{ entry.status }}</div>
+              {% if entry.note %}<div style="font-size:0.78rem;color:#64748b;">{{ entry.note }}</div>{% endif %}
+              <div style="font-size:0.72rem;color:#94a3b8;">{{ entry.timestamp }}</div>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <p style="color:#94a3b8;font-size:0.85rem;">Aucun historique.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- ACTIONS -->
+  <div>
+    <!-- Assigner collecteur -->
+    <div class="admin-card" style="margin-bottom:16px;">
+      <div class="admin-card-header"><span class="admin-card-title">👷 Assigner un collecteur</span></div>
+      <div style="padding:16px 20px;">
+        <form method="POST">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="assign">
+          <select name="collector_id" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.85rem;margin-bottom:10px;">
+            <option value="">— Sélectionner —</option>
+            {% for c in collectors %}
+            <option value="{{ c.id }}" {% if pickup.collector and pickup.collector.id == c.id %}selected{% endif %}>
+              {{ c.full_name }} ({{ c.phone }})
+            </option>
+            {% endfor %}
+          </select>
+          <button type="submit" class="btn-admin-sm btn-admin-primary" style="width:100%;justify-content:center;padding:8px;">
+            ✅ Assigner
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Changer statut -->
+    <div class="admin-card">
+      <div class="admin-card-header"><span class="admin-card-title">🔄 Changer le statut</span></div>
+      <div style="padding:16px 20px;">
+        <form method="POST">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="change_status">
+          <select name="new_status" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.85rem;margin-bottom:8px;">
+            {% for val, label in status_choices %}
+            <option value="{{ val }}" {% if val == pickup.status %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+          <input type="text" name="note" placeholder="Note (optionnel)"
+            style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.85rem;margin-bottom:10px;">
+          <button type="submit" class="btn-admin-sm btn-admin-primary" style="width:100%;justify-content:center;padding:8px;">
+            Mettre à jour
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

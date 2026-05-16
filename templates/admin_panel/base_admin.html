@@ -331,26 +331,54 @@
         <span class="nav-icon">📊</span> Dashboard
       </a>
 
-      <div class="admin-nav-section">Contenu</div>
+      <div class="admin-nav-section">Marketplace</div>
       <a href="{% url 'admin_listings' %}"
-         class="{% if request.resolver_match.url_name == 'admin_listings' or request.resolver_match.url_name == 'admin_review_listing' %}active{% endif %}">
+         class="{% if 'admin_listings' in request.resolver_match.url_name or request.resolver_match.url_name == 'admin_review_listing' %}active{% endif %}">
         <span class="nav-icon">📦</span> Listings
         {% if pending_listings_count %}<span class="nav-badge">{{ pending_listings_count }}</span>{% endif %}
       </a>
       <a href="{% url 'admin_pickups' %}"
-         class="{% if request.resolver_match.url_name == 'admin_pickups' %}active{% endif %}">
+         class="{% if 'admin_pickup' in request.resolver_match.url_name %}active{% endif %}">
         <span class="nav-icon">🚚</span> Ramassages
         {% if pending_pickups_count %}<span class="nav-badge">{{ pending_pickups_count }}</span>{% endif %}
       </a>
       <a href="{% url 'admin_orders' %}"
-         class="{% if request.resolver_match.url_name == 'admin_orders' %}active{% endif %}">
+         class="{% if 'admin_order' in request.resolver_match.url_name %}active{% endif %}">
         <span class="nav-icon">🛒</span> Commandes
       </a>
 
       <div class="admin-nav-section">Utilisateurs</div>
       <a href="{% url 'admin_users' %}"
-         class="{% if request.resolver_match.url_name == 'admin_users' %}active{% endif %}">
+         class="{% if 'admin_user' in request.resolver_match.url_name %}active{% endif %}">
         <span class="nav-icon">👥</span> Utilisateurs
+      </a>
+
+      <div class="admin-nav-section">Contenu</div>
+      <a href="{% url 'admin_blog' %}"
+         class="{% if request.resolver_match.url_name == 'admin_blog' %}active{% endif %}">
+        <span class="nav-icon">📝</span> Blog
+      </a>
+      <a href="{% url 'admin_academy' %}"
+         class="{% if request.resolver_match.url_name == 'admin_academy' %}active{% endif %}">
+        <span class="nav-icon">🎓</span> Academy
+      </a>
+      <a href="{% url 'admin_newsletters' %}"
+         class="{% if request.resolver_match.url_name == 'admin_newsletters' %}active{% endif %}">
+        <span class="nav-icon">📧</span> Newsletter
+      </a>
+      <a href="{% url 'admin_contacts' %}"
+         class="{% if request.resolver_match.url_name == 'admin_contacts' %}active{% endif %}">
+        <span class="nav-icon">💬</span> Messages
+        {% if unread_contacts_count %}<span class="nav-badge">{{ unread_contacts_count }}</span>{% endif %}
+      </a>
+
+      <div class="admin-nav-section">Paramètres</div>
+      <a href="{% url 'admin_site_config' %}"
+         class="{% if request.resolver_match.url_name == 'admin_site_config' %}active{% endif %}">
+        <span class="nav-icon">⚙️</span> Config du site
+      </a>
+      <a href="/admin/" target="_blank">
+        <span class="nav-icon">🔧</span> Django Admin
       </a>
     </nav>
 

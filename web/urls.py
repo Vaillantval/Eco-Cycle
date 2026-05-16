@@ -16,6 +16,13 @@ from .views.collection_views import MyPickupsView, RequestPickupView, PickupDeta
 from .views.admin_views import (
     AdminDashboardView, AdminListingsView, AdminReviewListingView,
     AdminPickupsView, AdminUsersView, AdminOrdersView,
+    AdminUserDetailView, AdminPickupDetailView, AdminOrderDetailView,
+    AdminBlogView, AdminAcademyView, AdminNewslettersView,
+    AdminContactsView, AdminSiteConfigView,
+)
+from .views.collector_views import (
+    CollectorDashboardView, CollectorPickupsView,
+    CollectorPickupDetailView, CollectorProfileView,
 )
 from .views.blog_views import BlogListView, BlogDetailView
 from .views.academy_views import AcademyListView, CourseDetailView, EnrollCourseView, CompleteLessonView
@@ -97,6 +104,17 @@ urlpatterns = [
          RequestPickupView.as_view(), name='request_pickup'),
     path('dashboard/pickups/<uuid:pk>/',
          PickupDetailView.as_view(), name='pickup_detail'),
+    # Collector Dashboard
+    path('collector/',
+         CollectorDashboardView.as_view(), name='collector_dashboard'),
+    path('collector/pickups/',
+         CollectorPickupsView.as_view(), name='web_collector_pickups'),
+    path('collector/pickups/<uuid:pk>/',
+         CollectorPickupDetailView.as_view(), name='collector_pickup_detail'),
+    path('collector/profile/',
+         CollectorProfileView.as_view(), name='collector_profile'),
+
+    # Admin Panel
     path('panel/',
          AdminDashboardView.as_view(), name='admin_panel'),
     path('panel/listings/',
@@ -105,8 +123,24 @@ urlpatterns = [
          AdminReviewListingView.as_view(), name='admin_review_listing'),
     path('panel/pickups/',
          AdminPickupsView.as_view(), name='admin_pickups'),
+    path('panel/pickups/<uuid:pk>/',
+         AdminPickupDetailView.as_view(), name='admin_pickup_detail'),
     path('panel/users/',
          AdminUsersView.as_view(), name='admin_users'),
+    path('panel/users/<uuid:pk>/',
+         AdminUserDetailView.as_view(), name='admin_user_detail'),
     path('panel/orders/',
          AdminOrdersView.as_view(), name='admin_orders'),
+    path('panel/orders/<uuid:pk>/',
+         AdminOrderDetailView.as_view(), name='admin_order_detail'),
+    path('panel/blog/',
+         AdminBlogView.as_view(), name='admin_blog'),
+    path('panel/academy/',
+         AdminAcademyView.as_view(), name='admin_academy'),
+    path('panel/newsletters/',
+         AdminNewslettersView.as_view(), name='admin_newsletters'),
+    path('panel/contacts/',
+         AdminContactsView.as_view(), name='admin_contacts'),
+    path('panel/site-config/',
+         AdminSiteConfigView.as_view(), name='admin_site_config'),
 ]

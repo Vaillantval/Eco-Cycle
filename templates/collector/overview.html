@@ -1,0 +1,119 @@
+{% extends 'collector/base_collector.html' %}
+
+{% block title %}Vue d'ensemble — Collecteur EcoCycle{% endblock %}
+{% block page_title %}Vue d'ensemble{% endblock %}
+
+{% block collector_content %}
+
+<!-- STATS -->
+<div class="col-stat-grid">
+  <div class="col-stat urgent">
+    <div class="col-stat-label">Assignés</div>
+    <div class="col-stat-value">{{ count_assigned }}</div>
+    <div class="col-stat-sub">En attente de départ</div>
+  </div>
+  <div class="col-stat highlight">
+    <div class="col-stat-label">En transit</div>
+    <div class="col-stat-value">{{ count_in_transit }}</div>
+    <div class="col-stat-sub">En route</div>
+  </div>
+  <div class="col-stat" style="border-left:3px solid #a855f7;">
+    <div class="col-stat-label">Arrivés</div>
+    <div class="col-stat-value">{{ count_arrived }}</div>
+    <div class="col-stat-sub">Sur place</div>
+  </div>
+  <div class="col-stat">
+    <div class="col-stat-label">Complétés</div>
+    <div class="col-stat-value">{{ count_completed }}</div>
+    <div class="col-stat-sub">Total historique</div>
+  </div>
+  <div class="col-stat">
+    <div class="col-stat-label">Aujourd'hui</div>
+    <div class="col-stat-value">{{ count_today }}</div>
+    <div class="col-stat-sub">Prévus ce jour</div>
+  </div>
+</div>
+
+<!-- RAMASSAGES ACTIFS -->
+<div class="col-card">
+  <div class="col-card-header">
+    <span class="col-card-title">🚚 Ramassages actifs</span>
+    <a href="{% url 'web_collector_pickups' %}" class="btn-col btn-col-view" style="font-size:0.78rem;">Tout voir</a>
+  </div>
+
+  {% if active_pickups %}
+  <table class="col-table">
+    <thead>
+      <tr>
+        <th>Client</th>
+        <th>Adresse</th>
+        <th>Date souhaitée</th>
+        <th>Créneau</th>
+        <th>Statut</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in active_pickups %}
+      <tr>
+        <td>
+          <strong>{{ p.user.full_name }}</strong><br>
+          <span style="font-size:0.75rem;color:#64748b;">{{ p.user.phone }}</span>
+        </td>
+        <td>
+          {{ p.address|truncatechars:40 }}<br>
+          <span style="font-size:0.75rem;color:#64748b;">{{ p.city }}</span>
+        </td>
+        <td>{{ p.preferred_date|date:"d/m/Y" }}</td>
+        <td>{{ p.get_preferred_slot_display }}</td>
+        <td>
+          <span class="badge-status s-{{ p.status }}">
+            {{ p.get_status_display }}
+          </span>
+        </td>
+        <td>
+          <a href="{% url 'collector_pickup_detail' pk=p.id %}" class="btn-col btn-col-view">Gérer →</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div style="padding:32px;text-align:center;color:#64748b;">
+    <div style="font-size:2.5rem;margin-bottom:10px;">✅</div>
+    <p>Aucun ramassage actif pour le moment.</p>
+    <p style="font-size:0.85rem;margin-top:6px;">Les ramassages qui vous seront assignés apparaîtront ici.</p>
+  </div>
+  {% endif %}
+</div>
+
+<!-- DERNIERS COMPLÉTÉS -->
+{% if recent_completed %}
+<div class="col-card">
+  <div class="col-card-header">
+    <span class="col-card-title">✅ Derniers complétés</span>
+  </div>
+  <table class="col-table">
+    <thead>
+      <tr>
+        <th>Client</th>
+        <th>Adresse</th>
+        <th>Poids réel</th>
+        <th>Complété le</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in recent_completed %}
+      <tr>
+        <td>{{ p.user.full_name }}</td>
+        <td>{{ p.city }}</td>
+        <td>{% if p.actual_weight_kg %}{{ p.actual_weight_kg }} kg{% else %}—{% endif %}</td>
+        <td>{{ p.completed_at|date:"d/m/Y H:i" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% endblock %}

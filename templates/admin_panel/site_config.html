@@ -1,0 +1,196 @@
+{% extends 'admin_panel/base_admin.html' %}
+
+{% block title %}Configuration du site — Admin EcoCycle{% endblock %}
+{% block page_title %}Configuration du site{% endblock %}
+
+{% block admin_content %}
+
+<form method="POST" enctype="multipart/form-data">
+{% csrf_token %}
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+
+  <!-- IDENTITÉ -->
+  <div class="admin-card">
+    <div class="admin-card-header"><span class="admin-card-title">🏷️ Identité</span></div>
+    <div style="padding:20px;display:flex;flex-direction:column;gap:14px;">
+      <div>
+        <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Nom du site</label>
+        <input type="text" name="site_name" value="{{ config.site_name }}" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
+      </div>
+      <div>
+        <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Slogan</label>
+        <input type="text" name="tagline" value="{{ config.tagline }}" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
+      </div>
+      <div>
+        <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Logo (PNG transparent)</label>
+        {% if config.logo %}<img src="{{ config.logo.url }}" style="height:40px;margin-bottom:6px;display:block;">{% endif %}
+        <input type="file" name="logo" accept="image/*" style="font-size:0.82rem;">
+      </div>
+      <div>
+        <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Favicon (ICO/PNG 32×32)</label>
+        <input type="file" name="favicon" accept="image/*" style="font-size:0.82rem;">
+      </div>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <div class="admin-card">
+    <div class="admin-card-header"><span class="admin-card-title">🦸 Section Hero</span></div>
+    <div style="padding:20px;display:flex;flex-direction:column;gap:14px;">
+      <div>
+        <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Badge hero</label>
+        <input type="text" name="hero_badge" value="{{ config.hero_badge }}" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
+      </div>
+      <div>
+        <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Titre ligne 1</label>
+        <input type="text" name="hero_title_1" value="{{ config.hero_title_1 }}" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
+      </div>
+      <div>
+        <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Titre ligne 2 (mise en avant)</label>
+        <input type="text" name="hero_title_2" value="{{ config.hero_title_2 }}" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
+      </div>
+      <div>
+        <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Sous-titre</label>
+        <textarea name="hero_subtitle" rows="3" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;resize:vertical;">{{ config.hero_subtitle }}</textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTACT -->
+  <div class="admin-card">
+    <div class="admin-card-header"><span class="admin-card-title">📞 Contact</span></div>
+    <div style="padding:20px;display:flex;flex-direction:column;gap:14px;">
+      {% for fname, label in contact_fields %}
+      <div>
+        <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">{{ label }}</label>
+        <input type="text" name="{{ fname }}" value="{{ config|default:'' }}"
+               style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
+      </div>
+      {% endfor %}
+      <div>
+        <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Email</label>
+        <input type="email" name="contact_email" value="{{ config.contact_email }}" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
+      </div>
+      <div>
+        <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Téléphone</label>
+        <input type="text" name="contact_phone" value="{{ config.contact_phone }}" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
+      </div>
+      <div>
+        <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">WhatsApp (+509...)</label>
+        <input type="text" name="whatsapp" value="{{ config.whatsapp }}" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
+      </div>
+      <div>
+        <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Adresse</label>
+        <textarea name="address" rows="2" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">{{ config.address }}</textarea>
+      </div>
+      <div>
+        <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Horaires</label>
+        <input type="text" name="hours" value="{{ config.hours }}" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;" placeholder="Lun–Ven 8h–17h">
+      </div>
+    </div>
+  </div>
+
+  <!-- RÉSEAUX SOCIAUX -->
+  <div class="admin-card">
+    <div class="admin-card-header"><span class="admin-card-title">📱 Réseaux sociaux</span></div>
+    <div style="padding:20px;display:flex;flex-direction:column;gap:14px;">
+      {% for fname, emoji, label in social_fields %}
+      <div>
+        <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">{{ emoji }} {{ label }}</label>
+        <input type="url" name="{{ fname }}" value="{{ config|default:'' }}"
+               style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;" placeholder="https://...">
+      </div>
+      {% endfor %}
+      <div>
+        <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">📘 Facebook</label>
+        <input type="url" name="facebook_url" value="{{ config.facebook_url }}" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
+      </div>
+      <div>
+        <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">📸 Instagram</label>
+        <input type="url" name="instagram_url" value="{{ config.instagram_url }}" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
+      </div>
+      <div>
+        <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">🐦 Twitter / X</label>
+        <input type="url" name="twitter_url" value="{{ config.twitter_url }}" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
+      </div>
+      <div>
+        <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">▶️ YouTube</label>
+        <input type="url" name="youtube_url" value="{{ config.youtube_url }}" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
+      </div>
+      <div>
+        <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">💼 LinkedIn</label>
+        <input type="url" name="linkedin_url" value="{{ config.linkedin_url }}" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
+      </div>
+    </div>
+  </div>
+
+  <!-- APPLICATION MOBILE -->
+  <div class="admin-card">
+    <div class="admin-card-header"><span class="admin-card-title">📲 Application mobile</span></div>
+    <div style="padding:20px;display:flex;flex-direction:column;gap:14px;">
+      <div>
+        <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">🍎 App Store URL (iOS)</label>
+        <input type="url" name="ios_store_url" value="{{ config.ios_store_url }}" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;" placeholder="https://apps.apple.com/...">
+      </div>
+      <div>
+        <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">▶ Google Play URL</label>
+        <input type="url" name="android_apk_url" value="{{ config.android_apk_url }}" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;" placeholder="https://play.google.com/...">
+      </div>
+      <div>
+        <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">⬇ APK direct (.apk)</label>
+        {% if config.android_direct_apk %}
+          <div style="font-size:0.78rem;color:#15803d;margin-bottom:4px;">✅ Fichier déjà uploadé</div>
+        {% endif %}
+        <input type="file" name="android_direct_apk" accept=".apk" style="font-size:0.82rem;">
+      </div>
+    </div>
+  </div>
+
+  <!-- SEO & FOOTER -->
+  <div class="admin-card">
+    <div class="admin-card-header"><span class="admin-card-title">🔍 SEO & Footer</span></div>
+    <div style="padding:20px;display:flex;flex-direction:column;gap:14px;">
+      <div>
+        <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Meta description (SEO, ≤160 cars)</label>
+        <textarea name="meta_description" rows="3" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;resize:vertical;">{{ config.meta_description }}</textarea>
+      </div>
+      <div>
+        <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Google Analytics ID</label>
+        <input type="text" name="google_analytics_id" value="{{ config.google_analytics_id }}" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;" placeholder="G-XXXXXXXXXX">
+      </div>
+      <div>
+        <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Texte copyright</label>
+        <input type="text" name="copyright_text" value="{{ config.copyright_text }}" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- MAINTENANCE -->
+<div class="admin-card" style="margin-top:20px;border-left:3px solid #ef4444;">
+  <div class="admin-card-header"><span class="admin-card-title" style="color:#dc2626;">⚠️ Mode maintenance</span></div>
+  <div style="padding:20px;display:flex;gap:20px;align-items:flex-start;">
+    <label style="display:flex;align-items:center;gap:8px;font-size:0.88rem;font-weight:600;cursor:pointer;">
+      <input type="checkbox" name="maintenance_mode" {% if config.maintenance_mode %}checked{% endif %}
+             style="width:18px;height:18px;">
+      Activer le mode maintenance
+    </label>
+    <div style="flex:1;">
+      <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Message de maintenance</label>
+      <textarea name="maintenance_message" rows="2" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;resize:vertical;">{{ config.maintenance_message }}</textarea>
+    </div>
+  </div>
+</div>
+
+<!-- BOUTON SAUVEGARDER -->
+<div style="margin-top:20px;display:flex;justify-content:flex-end;">
+  <button type="submit" class="btn-admin-sm btn-admin-primary" style="padding:10px 28px;font-size:0.9rem;">
+    💾 Sauvegarder la configuration
+  </button>
+</div>
+
+</form>
+
+{% endblock %}

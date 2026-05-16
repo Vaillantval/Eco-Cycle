@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Espace Collecteur — EcoCycle{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/main.css">
+  <style>
+    :root {
+      --col-bg: #0f2d20;
+      --col-bg2: #163828;
+      --col-accent: #22c55e;
+      --col-accent-dim: #16a34a;
+      --col-text: #d1fae5;
+      --col-muted: #6ee7b7;
+      --col-border: #1a4a2e;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body { font-family: var(--font-body, 'DM Sans', sans-serif); background: #f0fdf4; }
+
+    .col-layout { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+
+    /* ── SIDEBAR ── */
+    .col-sidebar {
+      background: var(--col-bg);
+      color: var(--col-text);
+      padding: 0;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .col-brand {
+      padding: 20px 20px 16px;
+      border-bottom: 1px solid var(--col-border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .col-brand-icon {
+      width: 34px; height: 34px;
+      background: var(--col-accent);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+    }
+    .col-brand span {
+      font-family: var(--font-display, 'Syne', sans-serif);
+      font-weight: 700;
+      font-size: 1rem;
+      color: #f0fdf4;
+    }
+    .col-brand small {
+      display: block;
+      font-size: 0.65rem;
+      color: var(--col-accent);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 600;
+    }
+
+    .col-user {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--col-border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .col-avatar {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: var(--col-accent);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-display, 'Syne', sans-serif);
+      font-weight: 700;
+      color: #0f2d20;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+    .col-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .col-user .u-name { font-size: 0.82rem; font-weight: 600; color: #ecfdf5; }
+    .col-user .u-role { font-size: 0.68rem; color: var(--col-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .col-nav { padding: 10px 0; flex: 1; }
+    .col-nav-section {
+      padding: 8px 20px 4px;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #4b7a5f;
+      font-weight: 600;
+    }
+    .col-nav a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 20px;
+      color: #86efac;
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: all 0.15s;
+      border-left: 3px solid transparent;
+    }
+    .col-nav a:hover { background: var(--col-bg2); color: #ecfdf5; }
+    .col-nav a.active { background: var(--col-bg2); color: #fff; border-left-color: var(--col-accent); }
+    .col-nav a .ni { font-size: 1rem; width: 20px; text-align: center; }
+    .col-nav a .nbadge {
+      margin-left: auto;
+      background: #ef4444;
+      color: white;
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 10px;
+    }
+
+    .col-footer {
+      padding: 14px 20px;
+      border-top: 1px solid var(--col-border);
+      display: flex;
+      gap: 8px;
+    }
+    .col-footer a {
+      font-size: 0.78rem;
+      color: #4b7a5f;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .col-footer a:hover { color: #ecfdf5; }
+
+    /* ── CONTENT ── */
+    .col-content { background: #f0fdf4; min-height: 100vh; display: flex; flex-direction: column; }
+
+    .col-topbar {
+      background: white;
+      border-bottom: 1px solid #d1fae5;
+      padding: 14px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .col-topbar h1 {
+      font-family: var(--font-display, 'Syne', sans-serif);
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #0f2d20;
+      margin: 0;
+    }
+    .col-topbar-right { display: flex; align-items: center; gap: 12px; }
+
+    .col-main { padding: 24px 28px; flex: 1; }
+
+    /* ── CARDS ── */
+    .col-stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .col-stat {
+      background: white;
+      border-radius: 12px;
+      padding: 18px 20px;
+      border: 1px solid #d1fae5;
+    }
+    .col-stat-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; font-weight: 600; margin-bottom: 6px; }
+    .col-stat-value { font-family: var(--font-display, 'Syne', sans-serif); font-size: 1.8rem; font-weight: 800; color: #0f2d20; line-height: 1; }
+    .col-stat-sub { font-size: 0.72rem; color: #94a3b8; margin-top: 4px; }
+    .col-stat.highlight { border-left: 3px solid var(--col-accent); }
+    .col-stat.urgent { border-left: 3px solid #f59e0b; }
+    .col-stat.urgent .col-stat-value { color: #d97706; }
+
+    .col-card {
+      background: white;
+      border-radius: 12px;
+      border: 1px solid #d1fae5;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .col-card-header {
+      padding: 14px 20px;
+      border-bottom: 1px solid #f0fdf4;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .col-card-title { font-family: var(--font-display, 'Syne', sans-serif); font-weight: 700; font-size: 0.92rem; color: #0f2d20; }
+
+    .col-table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+    .col-table thead th {
+      text-align: left;
+      padding: 10px 16px;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #64748b;
+      font-weight: 600;
+      border-bottom: 1px solid #f0fdf4;
+      background: #f8fffe;
+    }
+    .col-table tbody td { padding: 12px 16px; border-bottom: 1px solid #f0fdf4; color: #334155; vertical-align: middle; }
+    .col-table tbody tr:hover { background: #f0fdf4; }
+    .col-table tbody tr:last-child td { border-bottom: none; }
+
+    .filter-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+    .filter-btn {
+      padding: 5px 14px;
+      border-radius: 20px;
+      border: 1px solid #d1fae5;
+      background: white;
+      font-size: 0.78rem;
+      color: #64748b;
+      cursor: pointer;
+      text-decoration: none;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+    .filter-btn:hover, .filter-btn.active { background: #0f2d20; color: white; border-color: #0f2d20; }
+
+    .btn-col {
+      padding: 5px 14px;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s;
+    }
+    .btn-col-primary { background: #0f2d20; color: white; }
+    .btn-col-primary:hover { background: #163828; }
+    .btn-col-green { background: #dcfce7; color: #15803d; }
+    .btn-col-green:hover { background: #bbf7d0; }
+    .btn-col-orange { background: #fff7ed; color: #c2410c; }
+    .btn-col-orange:hover { background: #fed7aa; }
+    .btn-col-red { background: #fee2e2; color: #dc2626; }
+    .btn-col-red:hover { background: #fecaca; }
+    .btn-col-view { background: #f1f5f9; color: #334155; }
+    .btn-col-view:hover { background: #e2e8f0; }
+
+    /* ── STATUS BADGES ── */
+    .badge-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+    .s-requested    { background: #e0f2fe; color: #0369a1; }
+    .s-assigned     { background: #fef9c3; color: #a16207; }
+    .s-in_transit   { background: #fff7ed; color: #c2410c; }
+    .s-arrived      { background: #f3e8ff; color: #7e22ce; }
+    .s-completed    { background: #dcfce7; color: #15803d; }
+    .s-failed       { background: #fee2e2; color: #dc2626; }
+    .s-cancelled    { background: #f1f5f9; color: #64748b; }
+
+    /* ── FLASH MESSAGES ── */
+    .col-messages { padding: 12px 28px 0; }
+    .col-alert {
+      padding: 10px 16px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+    .col-alert.success { background: #dcfce7; color: #15803d; }
+    .col-alert.warning { background: #fef9c3; color: #92400e; }
+    .col-alert.error   { background: #fee2e2; color: #dc2626; }
+    .col-alert.info    { background: #e0f2fe; color: #0369a1; }
+
+    /* ── FORM STYLES ── */
+    .col-form-group { margin-bottom: 18px; }
+    .col-form-group label { display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 6px; }
+    .col-form-group input, .col-form-group select, .col-form-group textarea {
+      width: 100%;
+      padding: 9px 14px;
+      border: 1px solid #d1fae5;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      color: #0f172a;
+      background: white;
+      outline: none;
+      font-family: inherit;
+      transition: border 0.15s;
+    }
+    .col-form-group input:focus, .col-form-group select:focus, .col-form-group textarea:focus {
+      border-color: var(--col-accent);
+    }
+    .col-form-group textarea { min-height: 100px; resize: vertical; }
+
+    @media (max-width: 768px) {
+      .col-layout { grid-template-columns: 1fr; }
+      .col-sidebar { display: none; }
+      .col-main { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="col-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="col-sidebar">
+    <div class="col-brand">
+      <div class="col-brand-icon">♻️</div>
+      <div>
+        <span>EcoCycle</span>
+        <small>Espace Collecteur</small>
+      </div>
+    </div>
+
+    <div class="col-user">
+      <div class="col-avatar">
+        {% if user.avatar %}
+          <img src="{{ user.avatar.url }}" alt="{{ user.full_name }}">
+        {% else %}
+          {{ user.first_name|slice:":1" }}{{ user.last_name|slice:":1" }}
+        {% endif %}
+      </div>
+      <div>
+        <div class="u-name">{{ user.first_name }}</div>
+        <div class="u-role">Collecteur</div>
+      </div>
+    </div>
+
+    <nav class="col-nav">
+      <div class="col-nav-section">Navigation</div>
+      <a href="{% url 'collector_dashboard' %}"
+         class="{% if request.resolver_match.url_name == 'collector_dashboard' %}active{% endif %}">
+        <span class="ni">📊</span> Vue d'ensemble
+      </a>
+      <a href="{% url 'web_collector_pickups' %}"
+         class="{% if 'collector_pickup' in request.resolver_match.url_name %}active{% endif %}">
+        <span class="ni">🚚</span> Mes ramassages
+      </a>
+      <div class="col-nav-section">Compte</div>
+      <a href="{% url 'collector_profile' %}"
+         class="{% if request.resolver_match.url_name == 'collector_profile' %}active{% endif %}">
+        <span class="ni">👤</span> Mon profil
+      </a>
+      <a href="{% url 'marketplace' %}">
+        <span class="ni">🏪</span> Marketplace
+      </a>
+    </nav>
+
+    <div class="col-footer">
+      <a href="{% url 'home' %}">🏠 Accueil</a>
+      <a href="{% url 'web_logout' %}" style="margin-left: auto;">🚪 Déconnexion</a>
+    </div>
+  </aside>
+
+  <!-- CONTENT -->
+  <div class="col-content">
+    <div class="col-topbar">
+      <h1>{% block page_title %}Tableau de bord{% endblock %}</h1>
+      <div class="col-topbar-right">
+        {% block topbar_actions %}{% endblock %}
+        <span style="font-size:0.8rem;color:#64748b;">{{ user.full_name }}</span>
+      </div>
+    </div>
+
+    {% if messages %}
+    <div class="col-messages">
+      {% for message in messages %}
+      <div class="col-alert {{ message.tags }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <main class="col-main">
+      {% block collector_content %}{% endblock %}
+    </main>
+  </div>
+
+</div>
+</body>
+</html>

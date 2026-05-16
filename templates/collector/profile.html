@@ -1,0 +1,132 @@
+{% extends 'collector/base_collector.html' %}
+
+{% block title %}Mon profil — Collecteur EcoCycle{% endblock %}
+{% block page_title %}Mon profil{% endblock %}
+
+{% block collector_content %}
+
+<!-- STATS RAPIDES -->
+<div class="col-stat-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:24px;">
+  <div class="col-stat highlight">
+    <div class="col-stat-label">Total</div>
+    <div class="col-stat-value">{{ stats.total }}</div>
+    <div class="col-stat-sub">Ramassages assignés</div>
+  </div>
+  <div class="col-stat">
+    <div class="col-stat-label">Complétés</div>
+    <div class="col-stat-value">{{ stats.completed }}</div>
+    <div class="col-stat-sub">Missions réussies</div>
+  </div>
+  <div class="col-stat urgent">
+    <div class="col-stat-label">En cours</div>
+    <div class="col-stat-value">{{ stats.in_progress }}</div>
+    <div class="col-stat-sub">Actives</div>
+  </div>
+  <div class="col-stat" style="border-left:3px solid #ef4444;">
+    <div class="col-stat-label">Échoués</div>
+    <div class="col-stat-value" style="color:#ef4444;">{{ stats.failed }}</div>
+    <div class="col-stat-sub">Non réalisés</div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+
+  <!-- MODIFIER PROFIL -->
+  <div class="col-card">
+    <div class="col-card-header"><span class="col-card-title">👤 Informations personnelles</span></div>
+    <div style="padding:20px;">
+      <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="update_profile">
+
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">
+          <div class="col-avatar" style="width:56px;height:56px;font-size:1.2rem;flex-shrink:0;">
+            {% if user.avatar %}
+              <img src="{{ user.avatar.url }}" alt="Avatar">
+            {% else %}
+              {{ user.first_name|slice:":1" }}{{ user.last_name|slice:":1" }}
+            {% endif %}
+          </div>
+          <div>
+            <label style="font-size:0.82rem;font-weight:600;color:#334155;display:block;margin-bottom:4px;">Photo de profil</label>
+            <input type="file" name="avatar" accept="image/*" style="font-size:0.8rem;">
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="col-form-group">
+            <label>Prénom</label>
+            <input type="text" name="first_name" value="{{ user.first_name }}" required>
+          </div>
+          <div class="col-form-group">
+            <label>Nom</label>
+            <input type="text" name="last_name" value="{{ user.last_name }}" required>
+          </div>
+        </div>
+        <div class="col-form-group">
+          <label>Téléphone</label>
+          <input type="tel" name="phone" value="{{ user.phone }}">
+        </div>
+        <div class="col-form-group">
+          <label>Ville</label>
+          <input type="text" name="city" value="{{ user.city }}">
+        </div>
+        <div class="col-form-group">
+          <label>Adresse</label>
+          <textarea name="address" rows="2">{{ user.address }}</textarea>
+        </div>
+        <div class="col-form-group">
+          <label>Bio</label>
+          <textarea name="bio" rows="3">{{ user.bio }}</textarea>
+        </div>
+        <button type="submit" class="btn-col btn-col-primary" style="width:100%;justify-content:center;padding:10px;">
+          💾 Sauvegarder
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- CHANGER MOT DE PASSE -->
+  <div class="col-card">
+    <div class="col-card-header"><span class="col-card-title">🔐 Changer le mot de passe</span></div>
+    <div style="padding:20px;">
+      <form method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="change_password">
+        <div class="col-form-group">
+          <label>Mot de passe actuel</label>
+          <input type="password" name="old_password" required>
+        </div>
+        <div class="col-form-group">
+          <label>Nouveau mot de passe</label>
+          <input type="password" name="new_password" minlength="8" required>
+        </div>
+        <div class="col-form-group">
+          <label>Confirmer</label>
+          <input type="password" name="password_confirm" required>
+        </div>
+        <button type="submit" class="btn-col btn-col-primary" style="width:100%;justify-content:center;padding:10px;">
+          🔒 Modifier le mot de passe
+        </button>
+      </form>
+    </div>
+
+    <!-- Infos compte -->
+    <div style="padding:0 20px 20px;">
+      <div style="background:#f0fdf4;border-radius:8px;padding:14px;margin-top:16px;">
+        <div style="font-size:0.72rem;font-weight:600;color:#4b7a5f;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">
+          Informations du compte
+        </div>
+        <div style="font-size:0.82rem;color:#334155;display:flex;flex-direction:column;gap:6px;">
+          <span>📧 {{ user.email }}</span>
+          <span>🏷️ Rôle : Collecteur</span>
+          <span>📅 Inscrit le : {{ user.created_at|date:"d/m/Y" }}</span>
+          <span>✅ Email vérifié : {% if user.is_email_verified %}Oui{% else %}Non{% endif %}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}
