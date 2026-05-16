@@ -12,8 +12,10 @@ API REST Django + Interface Web pour la plateforme de recyclage intelligent EcoC
 - **Sessions Django** — authentification pour l'interface web
 - **Stockage médias** — volume local Railway (fichiers vidéo, thumbnails, avatars)
 - **Claude Vision API** (Anthropic) — analyse IA des déchets par photo
-- **Resend** — emails transactionnels (certificats, contact, newsletter)
+- **Resend** — emails transactionnels (certificats, contact, newsletter, paiements)
 - **Firebase FCM** — notifications push
+- **Stripe** (`stripe==15.1.0`) — paiement par carte bancaire
+- **PlopPlop** — passerelle de paiement haïtienne (MonCash, NatCash, Kashpaw)
 - **Whitenoise** + **Gunicorn gthread** — fichiers statiques et serveur WSGI
 - Déploiement sur **Railway** (5 services : web, celery-worker, celery-beat, Redis, PostgreSQL)
 
@@ -26,16 +28,19 @@ ecocycle/
 │   ├── waste/          # Annonces de déchets + analyse IA Claude Vision
 │   ├── marketplace/    # Enchères et achats immédiats
 │   ├── collections/    # Demandes de ramassage physique
+│   ├── payments/       # Service de paiement (Stripe + PlopPlop + Transaction model)
 │   ├── notifications/  # Notifications DB + email (Resend) + push (FCM) + tâches Celery
 │   ├── impact/         # CO2 économisé, leaderboard
-│   ├── academy/        # Cours, leçons multi-vidéos, inscriptions, certificats PDF
+│   ├── academy/        # Cours (gratuits ou payants), leçons, inscriptions, certificats PDF
 │   ├── blog/           # Articles
 │   └── core/           # Contact, newsletter, SiteConfiguration
 ├── web/                # Interface web (Django Templates + sessions)
 │   ├── views/
 │   │   ├── auth_views.py       # Connexion / inscription / déconnexion
 │   │   ├── dashboard_views.py  # Dashboard utilisateur
-│   │   ├── academy_views.py    # Cours, leçons, inscriptions, certificats
+│   │   ├── academy_views.py    # Cours, leçons, inscriptions, paiement cours
+│   │   ├── payment_views.py    # Checkout, Stripe, PlopPlop, webhooks
+│   │   ├── marketplace_views.py # Marketplace web, enchères, achat immédiat
 │   │   ├── admin_views.py      # Panel admin complet
 │   │   └── page_views.py       # Pages publiques
 │   └── urls.py
@@ -45,17 +50,19 @@ ecocycle/
 │   │   ├── development.py
 │   │   └── production.py
 │   ├── celery.py
-│   └── urls.py
+│   └── urls.py             # Inclut les webhooks paiement (CSRF-exempt)
 ├── templates/
 │   ├── base.html
 │   ├── pages/                  # comment_ca_marche, fonctionnalites, notre_impact, faq, contact
 │   ├── auth/                   # login, register, reset password, verify email
 │   ├── dashboard/              # overview, listings, orders, impact, pickups, profile, certificates
-│   ├── marketplace/
+│   ├── marketplace/            # list, detail (countdown, bid/buynow conditionnels)
+│   ├── payments/               # checkout, stripe_checkout, success, course_checkout, course_success…
 │   ├── academy/                # list, detail, lesson_detail
 │   ├── blog/
-│   ├── admin_panel/            # dashboard, listings, users, orders, pickups, blog, academy, config…
-│   └── emails/                 # certificate_earned, admin_course_completed, contact_alert…
+│   ├── admin_panel/            # dashboard, listings, users, orders, auctions, pickups, blog, academy…
+│   └── emails/                 # certificate_earned, order_confirmation, order_paid_seller,
+│                               # course_enrollment_confirmation, contact_alert…
 ├── static/
 │   ├── css/main.css
 │   ├── css/dashboard.css
@@ -77,8 +84,8 @@ ecocycle/
 | `/notre-impact/` | Statistiques live (DB) + témoignages |
 | `/faq/` | Accordion FAQ |
 | `/contact/` | Formulaire de contact (email async Celery) |
-| `/marketplace/` | Enchères publiques |
-| `/academy/` | Catalogue de cours |
+| `/marketplace/` | Enchères publiques (filtres, tri, countdown, badges type) |
+| `/academy/` | Catalogue de cours (gratuits et payants) |
 | `/blog/` | Articles |
 
 ### Dashboard utilisateur
@@ -91,11 +98,11 @@ ecocycle/
 | `/dashboard/pickups/` | Mes demandes de ramassage |
 | `/dashboard/pickups/request/` | Nouvelle demande |
 | `/dashboard/pickups/<id>/` | Détail ramassage + timeline statut |
-| `/dashboard/orders/` | Mes commandes |
+| `/dashboard/orders/` | Mes commandes (acheteur) |
 | `/dashboard/impact/` | Mon impact environnemental |
 | `/dashboard/certificates/` | Mes certificats + téléchargement PDF |
 | `/dashboard/profile/` | Mon profil |
-| `/academy/<slug>/` | Détail cours (inscription) |
+| `/academy/<slug>/` | Détail cours (inscription / paiement) |
 | `/academy/<slug>/lessons/<id>/` | Lecteur leçon (vidéo + contenu + nav + mark-complete) |
 
 ### Dashboard collecteur
@@ -107,26 +114,45 @@ ecocycle/
 | `/collector/pickups/<id>/` | Détail + mise à jour statut |
 | `/collector/profile/` | Profil collecteur |
 
+### Paiement
+
+| URL | Description |
+|---|---|
+| `/payment/<order_id>/` | Choix du mode de paiement (commande marketplace) |
+| `/payment/<order_id>/stripe/init/` | Création du PaymentIntent Stripe (AJAX) |
+| `/payment/<order_id>/stripe/checkout/` | Page Stripe Elements |
+| `/payment/stripe/success/` | Retour Stripe après paiement (marketplace + cours) |
+| `/payment/<order_id>/plopplop/` | Initiation PlopPlop (redirect) |
+| `/payment/plopplop/retour/` | Retour PlopPlop après paiement |
+| `/academy/<slug>/pay/` | Choix du mode de paiement (cours payant) |
+| `/academy/<slug>/pay/stripe/init/` | Création du PaymentIntent pour un cours (AJAX) |
+| `/academy/<slug>/pay/stripe/` | Page Stripe Elements pour un cours |
+| `/academy/<slug>/pay/plopplop/` | Initiation PlopPlop pour un cours |
+| `/api/payments/stripe/webhook/` | Webhook Stripe (CSRF-exempt, re-vérifié) |
+| `/api/payments/plopplop/webhook/` | Webhook PlopPlop (CSRF-exempt, re-vérifié) |
+
 ### Panel admin
 
 | URL | Page |
 |---|---|
 | `/panel/` | Dashboard admin (stats, KPIs) |
-| `/panel/listings/` | Toutes les annonces |
+| `/panel/listings/` | Toutes les annonces (recherche + pagination) |
 | `/panel/listings/<id>/` | Revue / approbation annonce |
 | `/panel/pickups/` | Tous les ramassages |
 | `/panel/pickups/<id>/` | Détail + assignation collecteur |
 | `/panel/users/` | Gestion utilisateurs |
 | `/panel/users/<id>/` | Détail utilisateur |
-| `/panel/orders/` | Toutes les commandes |
-| `/panel/orders/<id>/` | Détail commande |
+| `/panel/auctions/` | Toutes les enchères (filtres, pagination) |
+| `/panel/auctions/<id>/` | Détail enchère + historique enchères + annuler/clôturer |
+| `/panel/orders/` | Toutes les commandes (recherche + pagination) |
+| `/panel/orders/<id>/` | Détail commande + notes internes |
 | `/panel/blog/` | Gestion articles |
 | `/panel/blog/create/` | Créer un article |
 | `/panel/blog/<id>/edit/` | Éditer un article |
 | `/panel/blog/categories/` | Catégories blog |
-| `/panel/academy/` | Gestion cours |
-| `/panel/academy/create/` | Créer un cours |
-| `/panel/academy/<id>/` | Détail cours + liste leçons |
+| `/panel/academy/` | Gestion cours (filtres: niveau, statut, prix) |
+| `/panel/academy/create/` | Créer un cours (avec champ prix HTG) |
+| `/panel/academy/<id>/` | Détail cours + liste leçons + inscriptions |
 | `/panel/academy/<course_id>/lessons/create/` | Créer leçon + première vidéo |
 | `/panel/academy/<course_id>/lessons/<id>/edit/` | Éditer leçon + CRUD vidéos |
 | `/panel/academy/enrollments/` | Toutes les inscriptions |
@@ -136,23 +162,123 @@ ecocycle/
 | `/panel/config/` | Configuration du site (SiteConfiguration) |
 | `/panel/sliders/` | Slides de la page d'accueil |
 
-## Academy — e-learning
+## Service de paiement (`apps/payments`)
 
-Le module Academy gère des cours structurés en leçons multi-vidéos.
+### Modèle `Transaction`
 
-**Modèles :**
-- `Course` : titre, description, niveau, thumbnail, is_free, is_published, durée auto-calculée
-- `Lesson` : titre, contenu Markdown, ordre, durée auto-calculée (somme des vidéos)
-- `LessonVideo` : fichier MP4/WebM **ou** URL externe (YouTube, Vimeo, autre), embed automatique
-- `Enrollment` : progression par leçon, `progress_percent`, `is_completed`
+```python
+Transaction
+├── order       (OneToOne → marketplace.Order, nullable)
+├── enrollment  (OneToOne → academy.Enrollment, nullable)
+├── transaction_number  # EC-YYYYMMDD-XXXXXXXX (auto-généré)
+├── amount, currency    # HTG
+├── status      # pending / completed / failed / cancelled / refunded
+├── payment_method  # credit_card / moncash / natcash / kashpaw
+├── external_transaction_id
+├── meta_data   # JSON (stripe_client_secret, plopplop_url…)
+└── completed_at
+```
+
+Une `Transaction` couvre soit une commande marketplace, soit une inscription de cours — jamais les deux.
+
+### `process_successful_payment()` — fonction centrale idempotente
+
+```
+Transaction confirmée
+  ├── Si transaction.order → Order.status = 'paid'
+  │     → email confirmation acheteur + email vendeur
+  │     → notify_order_paid (push acheteur+vendeur + impact record)
+  └── Si transaction.enrollment → Enrollment.payment_status = 'paid'
+        → email confirmation inscription cours
+```
+
+### Flux Stripe
+
+```
+Checkout page (choix mode)
+  → AJAX POST stripe/init/ → PaymentIntent créé, client_secret stocké
+  → Stripe Elements page → stripe.confirmPayment()
+  → Redirect vers /payment/stripe/success/?payment_intent=pi_xxx
+  → StripeSuccessView re-vérifie côté Stripe → process_successful_payment()
+  (+ webhook payment_intent.succeeded en parallèle, idempotent)
+```
+
+### Flux PlopPlop (mobile money haïtien)
+
+```
+Checkout page
+  → POST plopplop/ → PlopPlopService.create_payment() → redirect vers URL PlopPlop
+  → Retour sur /payment/plopplop/retour/?reference_id=EC-xxx
+  → PlopPlopReturnView re-vérifie côté PlopPlop → process_successful_payment()
+  (+ webhook PlopPlop en parallèle, idempotent)
+```
+
+### Services
+
+| Service | Rôle |
+|---|---|
+| `StripeService` | `create_payment_intent`, `retrieve_payment_intent`, `construct_webhook_event` |
+| `PlopPlopService` | `create_payment`, `verify_payment` (passerelle `plopplop.solutionip.app`) |
+| `ExchangeService` | Taux HTG via `open.er-api.com`, cache Django 1h |
+
+## Marketplace — enchères sécurisées
+
+### Sécurité API
+
+- `select_for_update()` + `transaction.atomic()` sur `PlaceBidView` et `BuyNowView` → zéro race condition
+- `auction_type` enforced : `auction` / `buy_now` / `both`
+- `reserve_price` enforced dans `close_expired_auctions`
+- `CreateAuctionSerializer` : validation dates + `buy_now_price` requis si type `buy_now`/`both`
+
+### Flux d'achat
+
+```
+BuyNow / Enchère gagnante
+  → Order créé (status: pending_payment)
+  → Redirect vers /payment/<order_id>/
+  → Paiement Stripe ou PlopPlop
+  → Order.status = 'paid'
+  → Celery: notify_order_paid → push buyer+seller + email seller + ImpactRecord
+```
+
+### Gestion admin enchères
+
+- Liste avec filtres (statut, type) et pagination
+- Détail : infos financières, historique enchères, profil vendeur, commande liée
+- Actions : annuler ou clôturer manuellement une enchère active
+
+## Academy — e-learning (gratuit + payant)
+
+### Modèles
+
+- `Course` : titre, description, niveau, thumbnail, `price` (HTG, 0 = gratuit), is_published, durée auto-calculée
+- `Lesson` : titre, contenu, PDF (extract ou embed), ordre, durée auto-calculée (somme vidéos)
+- `LessonVideo` : fichier MP4/WebM **ou** URL externe (YouTube, Vimeo), embed automatique
+- `Enrollment` : progression, `progress_percent`, `is_completed`, `payment_status` (free/pending/paid)
 - `Certificate` : délivré automatiquement à 100% de progression, PDF téléchargeable
 
-**Flux completion :**
+### Cours payants
+
 ```
-User mark-complete dernière leçon
+Course.price > 0 → cours payant
+  → Bouton "Payer et s'inscrire" sur la fiche cours
+  → Enrollment créé (payment_status = pending)
+  → Redirect vers /academy/<slug>/pay/ (même UI que marketplace)
+  → Paiement Stripe ou PlopPlop
+  → Enrollment.payment_status = 'paid'
+  → Email confirmation inscription
+  → Accès débloqué à toutes les leçons
+
+LessonDetailView bloque si payment_status != 'paid' pour un cours payant
+```
+
+### Flux completion (cours gratuit ou payant)
+
+```
+User marque la dernière leçon comme terminée
   → Enrollment.update_progress()
   → 100% → Certificate créé
-  → Celery task: email certificat au user + notification admins
+  → Celery: email certificat au user + notification admins
 ```
 
 ## API REST
@@ -191,8 +317,8 @@ L'API (`/api/`) est destinée à l'application mobile Flutter et utilise JWT.
 | GET | `/auctions/` | Enchères actives (public) |
 | POST | `/auctions/create/` | Créer une enchère |
 | GET | `/auctions/<id>/` | Détail enchère |
-| POST | `/auctions/<id>/bid/` | Placer une enchère |
-| POST | `/auctions/<id>/buy-now/` | Achat immédiat |
+| POST | `/auctions/<id>/bid/` | Placer une enchère (atomic, select_for_update) |
+| POST | `/auctions/<id>/buy-now/` | Achat immédiat (atomic, select_for_update) |
 | GET | `/orders/my/` | Mes commandes |
 | GET | `/orders/sales/` | Mes ventes |
 
@@ -224,7 +350,7 @@ L'API (`/api/`) est destinée à l'application mobile Flutter et utilise JWT.
 
 | Tâche | Fréquence |
 |---|---|
-| Clôture des enchères expirées | Toutes les 5 minutes |
+| Clôture des enchères expirées + reserve price check | Toutes les 5 minutes |
 | Annulation des ramassages non assignés après 72h | Toutes les heures |
 | Rapport hebdomadaire admin | Lundi 8h (heure Haïti) |
 
@@ -232,9 +358,19 @@ L'API (`/api/`) est destinée à l'application mobile Flutter et utilise JWT.
 
 | Tâche | Déclencheur |
 |---|---|
-| `notify_course_completed` | Utilisateur termine un cours → email certificat + alerte admins |
-| `notify_contact_message` | Formulaire de contact soumis → alerte admins |
-| `notify_newsletter_signup` | Inscription newsletter → email confirmation double opt-in |
+| `notify_listing_approved` | Admin approuve une annonce → email + push vendeur |
+| `notify_listing_rejected` | Admin rejette une annonce → email + push vendeur |
+| `notify_new_bid` | Nouvelle enchère placée → push vendeur |
+| `notify_auction_closed` | Enchère clôturée → push gagnant + email + order |
+| `notify_order_created` | Commande créée (BuyNow) → push acheteur |
+| `notify_order_paid` | Paiement confirmé → push buyer+seller + email seller + ImpactRecord |
+| `notify_collector_assigned` | Collecteur assigné → push user + push collecteur + email |
+| `notify_pickup_status_update` | Statut ramassage changé → push user |
+| `notify_course_completed` | Cours terminé → email certificat + alerte admins |
+| `notify_contact_message` | Formulaire de contact → alerte admins |
+| `notify_newsletter_signup` | Inscription newsletter → double opt-in |
+| `notify_admin_new_pickup` | Nouvelle demande ramassage → push admins |
+| `create_impact_record` | Paiement confirmé (seulement) → calcul CO2 + leaderboard |
 
 ```bash
 # Lancer en développement
@@ -297,6 +433,11 @@ Interface web : `http://localhost:8000` — API : `http://localhost:8000/api/`
 | `RESEND_API_KEY` | Oui | Clé API Resend (emails transactionnels) |
 | `ANTHROPIC_API_KEY` | Oui | Clé API Anthropic (analyse IA photo déchets) |
 | `FIREBASE_CREDENTIALS_B64` | Oui | JSON Firebase encodé en base64 (push) |
+| `STRIPE_PUBLIC_KEY` | Oui | Clé publique Stripe |
+| `STRIPE_SECRET_KEY` | Oui | Clé secrète Stripe |
+| `STRIPE_WEBHOOK_SECRET` | Oui | Secret de signature webhook Stripe |
+| `PLOPPLOP_CLIENT_ID` | Oui | Client ID passerelle PlopPlop |
+| `PLOPPLOP_RETURN_URL` | Non | URL de retour PlopPlop (défaut : `http://localhost:8000/payment/plopplop/retour/`) |
 | `ALLOWED_HOSTS` | Prod | Domaines autorisés, séparés par virgule |
 | `FRONTEND_URL` | Non | URL du frontend (défaut : `http://localhost:8000`) |
 | `ADMIN_EMAIL` | Non | Email admin (défaut : `admin@ecocycle.ht`) |
@@ -313,13 +454,19 @@ base64 -i firebase-credentials.json | tr -d '\n'
 
 ```
 User (UUID, email, rôle: user/collector/admin)
-├── WasteListing (photo, analyse IA, statut) → Auction → Bid / Order → ImpactRecord
+├── WasteListing (photo, analyse IA, statut)
+│     └── Auction (type: auction/buy_now/both, reserve_price)
+│           ├── Bid (select_for_update, is_winning)
+│           └── Order (pending_payment → paid → completed)
+│                 └── Transaction (EC-YYYYMMDD-XXXXXXXX, Stripe ou PlopPlop)
+│                       └── ImpactRecord (CO2, déclenché après paiement réel)
 ├── PickupRequest (statut, historique JSON) → ImpactRecord
-├── Enrollment → LessonProgress → Certificate (PDF)
+├── Enrollment (payment_status: free/pending/paid) → LessonProgress → Certificate (PDF)
+│     └── Transaction (même modèle que marketplace, enrollment nullable)
 └── UserImpactSummary (CO2 total, rang communauté)
 
-Course → Lesson → LessonVideo (fichier ou URL YouTube/Vimeo)
-SiteConfiguration (singleton: slider, liens app, contact)
+Course (price HTG, is_free property) → Lesson → LessonVideo (fichier ou URL YouTube/Vimeo)
+SiteConfiguration (singleton: slider, liens app, contact, maintenance_mode)
 ```
 
 ## Flux principal
@@ -330,8 +477,10 @@ Photo mobile / web
   → POST /api/waste/listings/ (draft)
   → Admin approuve → statut: approved
   → Création Auction sur le marketplace
-  → Enchère gagnante / achat immédiat → Order
-  → Tâche Celery: ImpactRecord (CO2 calculé) + notifications
+  → Enchère gagnante / achat immédiat → Order (pending_payment)
+  → /payment/<order_id>/ → Stripe ou PlopPlop
+  → process_successful_payment() → Order.status = paid
+  → Celery: ImpactRecord (CO2 calculé) + notifications buyer + seller
 ```
 
 ## Catégories de déchets
@@ -353,7 +502,9 @@ Photo mobile / web
 - HTTPS forcé en production (`SECURE_SSL_REDIRECT`) + HSTS 1 an
 - Headers : `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, XSS filter
 - Throttling API : 100 req/jour (anonyme), 1000 req/jour (authentifié), 20 req/heure (analyse IA)
-- Noms d'URL distincts entre API (`apps/*/urls.py`) et web (`web/urls.py`) pour éviter les conflits de résolution `{% url %}`
+- `select_for_update()` + `transaction.atomic()` sur toutes les opérations d'enchère et d'achat
+- Webhooks paiement : CSRF-exempt + re-vérification serveur (jamais de confiance aveugle au payload)
+- Noms d'URL distincts entre API (`apps/*/urls.py`) et web (`web/urls.py`)
 
 ## Licence
 
