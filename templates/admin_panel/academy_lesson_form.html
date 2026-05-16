@@ -141,8 +141,13 @@
       <div style="padding:16px 20px;display:flex;flex-direction:column;gap:14px;">
         <div>
           <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:6px;">Ordre d'affichage</label>
-          <input type="number" name="order" value="{{ lesson.order|default:next_order|default:1 }}" min="0"
+          {% if lesson %}
+          <input type="number" name="order" value="{{ lesson.order }}" min="0"
                  style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
+          {% else %}
+          <input type="number" name="order" value="{{ next_order|default:1 }}" min="0"
+                 style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
+          {% endif %}
         </div>
         {% if lesson %}
         <div style="font-size:0.78rem;color:#94a3b8;padding:8px 0;border-top:1px solid #f1f5f9;">
