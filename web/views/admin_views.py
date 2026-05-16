@@ -1,3 +1,4 @@
+from datetime import timedelta
 from django.views.generic import View
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
@@ -88,7 +89,37 @@ class AdminReviewListingView(AdminRequiredMixin, View):
             listing.reviewed_at = timezone.now()
             listing.rejection_reason = ''
             listing.save()
-            messages.success(request, f'Listing « {listing.title} » approuvé.')
+
+            if not hasattr(listing, 'auction'):
+                try:
+                    starting_price = float(request.POST.get('starting_price') or 0)
+                    if starting_price <= 0:
+                        starting_price = float(listing.ai_estimated_value or 1000)
+
+                    buy_now_raw = request.POST.get('buy_now_price', '').strip()
+                    buy_now_price = float(buy_now_raw) if buy_now_raw else None
+
+                    auction_type  = request.POST.get('auction_type', 'both')
+                    duration_days = int(request.POST.get('duration_days') or 7)
+
+                    Auction.objects.create(
+                        listing=listing,
+                        seller=listing.user,
+                        auction_type=auction_type,
+                        starting_price=starting_price,
+                        current_price=starting_price,
+                        buy_now_price=buy_now_price,
+                        status='active',
+                        starts_at=timezone.now(),
+                        ends_at=timezone.now() + timedelta(days=duration_days),
+                    )
+                    from apps.notifications.tasks import notify_listing_approved
+                    notify_listing_approved.delay(str(listing.id))
+                    messages.success(request, f'Listing « {listing.title} » approuvé et publié sur le marketplace.')
+                except Exception as e:
+                    messages.warning(request, f'Listing approuvé mais erreur lors de la création de l\'enchère : {e}')
+            else:
+                messages.success(request, f'Listing « {listing.title} » approuvé (enchère déjà existante).')
         elif action == 'reject':
             reason = request.POST.get('rejection_reason', '').strip()
             listing.status = 'rejected'
@@ -96,6 +127,8 @@ class AdminReviewListingView(AdminRequiredMixin, View):
             listing.reviewed_at = timezone.now()
             listing.rejection_reason = reason
             listing.save()
+            from apps.notifications.tasks import notify_listing_rejected
+            notify_listing_rejected.delay(str(listing.id))
             messages.warning(request, f'Listing « {listing.title} » rejeté.')
 
         return redirect('admin_listings')

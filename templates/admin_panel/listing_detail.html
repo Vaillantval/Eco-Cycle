@@ -107,17 +107,65 @@
       <div class="admin-card-header">
         <div class="admin-card-title">✅ Décision</div>
       </div>
-      <div style="padding:16px 20px;display:flex;flex-direction:column;gap:12px;">
+      <div style="padding:16px 20px;display:flex;flex-direction:column;gap:16px;">
 
+        <!-- APPROBATION + PARAMÈTRES ENCHÈRE -->
         <form method="POST" action="{% url 'admin_review_listing' listing.id %}">
           {% csrf_token %}
           <input type="hidden" name="action" value="approve">
+
+          <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">
+
+            <!-- Type d'enchère -->
+            <div>
+              <label style="font-size:0.75rem;color:#64748b;font-weight:600;display:block;margin-bottom:4px;">Type d'enchère</label>
+              <select name="auction_type" style="width:100%;padding:8px 10px;border:1px solid #e2e8f0;border-radius:6px;font-size:0.83rem;background:#fff;">
+                <option value="both">Enchère + Achat immédiat</option>
+                <option value="auction">Enchère uniquement</option>
+                <option value="buy_now">Achat immédiat uniquement</option>
+              </select>
+            </div>
+
+            <!-- Prix de départ -->
+            <div>
+              <label style="font-size:0.75rem;color:#64748b;font-weight:600;display:block;margin-bottom:4px;">
+                Prix de départ (HTG)
+                {% if listing.ai_estimated_value %}<span style="color:#16a34a;font-weight:400;"> — IA : {{ listing.ai_estimated_value }} HTG</span>{% endif %}
+              </label>
+              <input type="number" name="starting_price" min="1" step="1"
+                     value="{{ listing.ai_estimated_value|default:'' }}"
+                     placeholder="Ex : 1500"
+                     style="width:100%;padding:8px 10px;border:1px solid #e2e8f0;border-radius:6px;font-size:0.83rem;box-sizing:border-box;">
+            </div>
+
+            <!-- Prix achat immédiat -->
+            <div id="buy-now-wrap">
+              <label style="font-size:0.75rem;color:#64748b;font-weight:600;display:block;margin-bottom:4px;">Prix achat immédiat (HTG) <span style="font-weight:400;color:#94a3b8;">— optionnel si enchère seule</span></label>
+              <input type="number" name="buy_now_price" min="1" step="1"
+                     placeholder="Ex : 3000"
+                     style="width:100%;padding:8px 10px;border:1px solid #e2e8f0;border-radius:6px;font-size:0.83rem;box-sizing:border-box;">
+            </div>
+
+            <!-- Durée -->
+            <div>
+              <label style="font-size:0.75rem;color:#64748b;font-weight:600;display:block;margin-bottom:4px;">Durée de l'enchère</label>
+              <select name="duration_days" style="width:100%;padding:8px 10px;border:1px solid #e2e8f0;border-radius:6px;font-size:0.83rem;background:#fff;">
+                <option value="3">3 jours</option>
+                <option value="7" selected>7 jours</option>
+                <option value="14">14 jours</option>
+                <option value="30">30 jours</option>
+              </select>
+            </div>
+
+          </div>
+
           <button type="submit" style="width:100%;padding:10px;background:#16a34a;color:white;border:none;
                                        border-radius:8px;font-weight:700;cursor:pointer;font-size:0.88rem;">
-            ✅ Approuver le listing
+            ✅ Approuver et publier sur le marketplace
           </button>
         </form>
 
+        <!-- REJET -->
         <form method="POST" action="{% url 'admin_review_listing' listing.id %}">
           {% csrf_token %}
           <input type="hidden" name="action" value="reject">
@@ -135,6 +183,18 @@
 
       </div>
     </div>
+
+    <script>
+    (function() {
+      const sel = document.querySelector('select[name="auction_type"]');
+      const wrap = document.getElementById('buy-now-wrap');
+      function toggle() {
+        wrap.style.display = sel.value === 'auction' ? 'none' : '';
+      }
+      sel.addEventListener('change', toggle);
+      toggle();
+    })();
+    </script>
     {% else %}
     <div class="admin-card" style="margin-bottom:16px;">
       <div class="admin-card-header">
