@@ -59,6 +59,10 @@
          class="sidebar-link {% if request.resolver_match.url_name == 'academy_list' or request.resolver_match.url_name == 'course_detail' %}active{% endif %}">
         🎓 Academy
       </a>
+      <a href="{% url 'my_certificates' %}"
+         class="sidebar-link {% if request.resolver_match.url_name == 'my_certificates' %}active{% endif %}">
+        🏆 Mes certificats
+      </a>
       <a href="{% url 'blog_list' %}"
          class="sidebar-link {% if request.resolver_match.url_name == 'blog_list' or request.resolver_match.url_name == 'blog_detail' %}active{% endif %}">
         📰 Blog

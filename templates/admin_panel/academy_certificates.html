@@ -54,7 +54,8 @@
               </a>
             </td>
             <td style="font-size:0.82rem;color:#64748b;">{{ cert.issued_at|date:"d/m/Y" }}</td>
-            <td>
+            <td style="white-space:nowrap;">
+              <a href="{% url 'admin_certificate_pdf' cert_id=cert.id %}" class="btn-admin-sm btn-approve" title="Télécharger PDF">⬇ PDF</a>
               <form method="POST" style="display:inline;">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="delete">

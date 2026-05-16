@@ -1,8 +1,9 @@
 from django.views.generic import View
 from django.shortcuts import render, redirect, get_object_or_404
+from django.http import HttpResponse
 from django.contrib import messages
 from django.utils import timezone
-from web.mixins import AdminRequiredMixin
+from web.mixins import AdminRequiredMixin, LoginRequiredMixin
 from apps.accounts.models import User
 from apps.waste.models import WasteListing
 from apps.collections.models import PickupRequest
@@ -855,3 +856,126 @@ class AdminSiteConfigView(AdminRequiredMixin, View):
         config.save()
         messages.success(request, 'Configuration du site enregistrée.')
         return redirect('admin_site_config')
+
+
+# ── PDF certificate generation ─────────────────────────────────────────────
+
+def _build_certificate_pdf(certificate):
+    """Return a BytesIO containing the PDF for the given Certificate object."""
+    import io
+    from reportlab.lib.pagesizes import A4, landscape
+    from reportlab.lib import colors
+    from reportlab.lib.units import cm
+    from reportlab.pdfgen import canvas
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
+
+    W, H = landscape(A4)
+    buf = io.BytesIO()
+    c = canvas.Canvas(buf, pagesize=landscape(A4))
+
+    # Fond vert foncé sur les bords
+    c.setFillColorRGB(0.05, 0.17, 0.13)
+    c.rect(0, 0, W, H, fill=1, stroke=0)
+
+    # Cadre blanc central
+    margin = 1.8 * cm
+    c.setFillColorRGB(1, 1, 1)
+    c.roundRect(margin, margin, W - 2 * margin, H - 2 * margin, 12, fill=1, stroke=0)
+
+    # Bordure décorative intérieure
+    c.setStrokeColorRGB(0.05, 0.48, 0.27)
+    c.setLineWidth(2.5)
+    inner = 0.5 * cm
+    c.roundRect(margin + inner, margin + inner,
+                W - 2 * (margin + inner), H - 2 * (margin + inner),
+                8, fill=0, stroke=1)
+
+    # Logo texte
+    c.setFillColorRGB(0.05, 0.48, 0.27)
+    c.setFont("Helvetica-Bold", 18)
+    c.drawCentredString(W / 2, H - 3.2 * cm, "EcoCycle Haiti")
+
+    # Titre certificat
+    c.setFillColorRGB(0.1, 0.1, 0.1)
+    c.setFont("Helvetica-Bold", 32)
+    c.drawCentredString(W / 2, H - 5.2 * cm, "Certificat de Réussite")
+
+    # Ligne décorative
+    c.setStrokeColorRGB(0.05, 0.48, 0.27)
+    c.setLineWidth(1.5)
+    c.line(W / 2 - 7 * cm, H - 5.7 * cm, W / 2 + 7 * cm, H - 5.7 * cm)
+
+    # Texte principal
+    c.setFont("Helvetica", 14)
+    c.setFillColorRGB(0.3, 0.3, 0.3)
+    c.drawCentredString(W / 2, H - 7 * cm, "Ce certificat est décerné à")
+
+    # Nom de l'utilisateur
+    c.setFont("Helvetica-Bold", 26)
+    c.setFillColorRGB(0.05, 0.17, 0.13)
+    c.drawCentredString(W / 2, H - 8.5 * cm, certificate.user.full_name)
+
+    # Ligne sous le nom
+    c.setStrokeColorRGB(0.3, 0.3, 0.3)
+    c.setLineWidth(0.8)
+    c.line(W / 2 - 8 * cm, H - 8.9 * cm, W / 2 + 8 * cm, H - 8.9 * cm)
+
+    # Pour avoir complété
+    c.setFont("Helvetica", 13)
+    c.setFillColorRGB(0.3, 0.3, 0.3)
+    c.drawCentredString(W / 2, H - 10 * cm, "pour avoir complété avec succès le cours")
+
+    # Titre du cours
+    c.setFont("Helvetica-Bold", 18)
+    c.setFillColorRGB(0.05, 0.48, 0.27)
+    course_title = certificate.course.title
+    if len(course_title) > 55:
+        course_title = course_title[:52] + "..."
+    c.drawCentredString(W / 2, H - 11.3 * cm, course_title)
+
+    # Date d'émission
+    from django.utils.formats import date_format
+    issued = date_format(certificate.issued_at, "d F Y")
+    c.setFont("Helvetica", 11)
+    c.setFillColorRGB(0.5, 0.5, 0.5)
+    c.drawCentredString(W / 2, H - 12.8 * cm, f"Délivré le {issued}")
+
+    # ID unique
+    c.setFont("Helvetica", 8)
+    c.setFillColorRGB(0.7, 0.7, 0.7)
+    c.drawCentredString(W / 2, margin + 1 * cm, f"ID : {certificate.id}")
+
+    # Sceau EcoCycle (cercle décoratif)
+    c.setFillColorRGB(0.05, 0.48, 0.27)
+    c.circle(W / 2, margin + 3 * cm, 0.8 * cm, fill=1, stroke=0)
+    c.setFillColorRGB(1, 1, 1)
+    c.setFont("Helvetica-Bold", 16)
+    c.drawCentredString(W / 2, margin + 2.65 * cm, "♻")
+
+    c.save()
+    buf.seek(0)
+    return buf
+
+
+class CertificatePDFView(LoginRequiredMixin, View):
+    """Accessible par l'utilisateur pour ses propres certificats."""
+    def get(self, request, cert_id):
+        user = self.get_current_user(request)
+        cert = get_object_or_404(Certificate, pk=cert_id, user=user)
+        buf = _build_certificate_pdf(cert)
+        filename = f"certificat-{cert.course.title[:30].replace(' ', '-')}.pdf"
+        response = HttpResponse(buf, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
+
+
+class AdminCertificatePDFView(AdminRequiredMixin, View):
+    """Accessible par l'admin pour n'importe quel certificat."""
+    def get(self, request, cert_id):
+        cert = get_object_or_404(Certificate, pk=cert_id)
+        buf = _build_certificate_pdf(cert)
+        filename = f"certificat-{cert.user.full_name[:20].replace(' ', '-')}-{cert.course.title[:20].replace(' ', '-')}.pdf"
+        response = HttpResponse(buf, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response

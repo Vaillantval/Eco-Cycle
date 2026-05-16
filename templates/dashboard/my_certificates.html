@@ -1,0 +1,67 @@
+{% extends 'dashboard/base_dashboard.html' %}
+
+{% block title %}Mes certificats — EcoCycle Haiti{% endblock %}
+
+{% block dashboard_content %}
+
+<div class="section-header" style="margin-bottom:24px;">
+  <h2 style="font-family:var(--font-display);font-size:1.6rem;font-weight:800;color:var(--charcoal);margin:0 0 6px;">🏆 Mes certificats</h2>
+  <p style="color:var(--gray);font-size:0.92rem;margin:0;">Complétez un cours pour obtenir votre certificat.</p>
+</div>
+
+{% if certificates %}
+
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px;">
+  {% for cert in certificates %}
+  <div style="background:#fff;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
+
+    <!-- Bandeau décoratif -->
+    <div style="background:linear-gradient(135deg,#0f2d20 0%,#0d7a45 100%);padding:28px 24px;text-align:center;position:relative;">
+      <div style="font-size:2.5rem;margin-bottom:8px;">🏆</div>
+      <div style="font-family:var(--font-display);font-weight:800;font-size:1.1rem;color:#fff;letter-spacing:0.5px;">
+        Certificat de Réussite
+      </div>
+      <div style="font-size:0.78rem;color:rgba(255,255,255,0.6);margin-top:4px;">EcoCycle Haiti</div>
+    </div>
+
+    <!-- Corps -->
+    <div style="padding:20px 24px;">
+      <div style="font-size:0.75rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Cours complété</div>
+      <div style="font-family:var(--font-display);font-weight:700;font-size:1rem;color:var(--charcoal);margin-bottom:16px;line-height:1.4;">
+        {{ cert.course.title }}
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:1px solid #f1f5f9;">
+        <div>
+          <div style="font-size:0.72rem;color:var(--gray);">Délivré le</div>
+          <div style="font-size:0.85rem;font-weight:600;color:var(--charcoal);">{{ cert.issued_at|date:"d/m/Y" }}</div>
+        </div>
+        <a href="{% url 'certificate_pdf' cert_id=cert.id %}"
+           style="display:inline-flex;align-items:center;gap:6px;background:var(--green);color:#fff;padding:9px 18px;border-radius:50px;font-size:0.83rem;font-weight:700;text-decoration:none;font-family:var(--font-display);">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Télécharger PDF
+        </a>
+      </div>
+    </div>
+
+  </div>
+  {% endfor %}
+</div>
+
+{% else %}
+
+<div style="text-align:center;padding:60px 20px;background:#fff;border-radius:16px;border:1px solid #e2e8f0;">
+  <div style="font-size:3rem;margin-bottom:16px;">🎓</div>
+  <h3 style="font-family:var(--font-display);font-weight:700;color:var(--charcoal);margin:0 0 8px;">Aucun certificat pour l'instant</h3>
+  <p style="color:var(--gray);font-size:0.92rem;margin:0 0 20px;">Complétez toutes les leçons d'un cours pour obtenir votre certificat.</p>
+  <a href="{% url 'academy_list' %}"
+     style="display:inline-flex;align-items:center;gap:8px;background:var(--green);color:#fff;padding:11px 24px;border-radius:50px;font-size:0.88rem;font-weight:700;text-decoration:none;font-family:var(--font-display);">
+    🎓 Explorer l'Academy
+  </a>
+</div>
+
+{% endif %}
+
+{% endblock %}

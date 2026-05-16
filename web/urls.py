@@ -7,7 +7,7 @@ from .views.auth_views import (
 )
 from .views.dashboard_views import (
     DashboardOverviewView, MyListingsView, SubmitWasteView,
-    MyOrdersView, MyImpactView, ProfileView,
+    MyOrdersView, MyImpactView, MyCertificatesView, ProfileView,
 )
 from .views.marketplace_views import (
     MarketplaceListView, AuctionDetailView, PlaceBidWebView, BuyNowWebView,
@@ -22,7 +22,7 @@ from .views.admin_views import (
     AdminAcademyLessonCreateView, AdminAcademyLessonEditView,
     AdminAcademyEnrollmentsView, AdminAcademyCertificatesView,
     AdminNewslettersView, AdminContactsView, AdminSiteConfigView,
-    AdminSlidersView,
+    AdminSlidersView, AdminCertificatePDFView, CertificatePDFView,
 )
 from .views.collector_views import (
     CollectorDashboardView, CollectorPickupsView,
@@ -68,6 +68,10 @@ urlpatterns = [
          MyOrdersView.as_view(), name='my_orders'),
     path('dashboard/impact/',
          MyImpactView.as_view(), name='my_impact'),
+    path('dashboard/certificates/',
+         MyCertificatesView.as_view(), name='my_certificates'),
+    path('dashboard/certificates/<uuid:cert_id>/pdf/',
+         CertificatePDFView.as_view(), name='certificate_pdf'),
     path('dashboard/profile/',
          ProfileView.as_view(), name='profile'),
 
@@ -169,4 +173,6 @@ urlpatterns = [
          AdminSiteConfigView.as_view(), name='admin_site_config'),
     path('panel/sliders/',
          AdminSlidersView.as_view(), name='admin_sliders'),
+    path('panel/certificates/<uuid:cert_id>/pdf/',
+         AdminCertificatePDFView.as_view(), name='admin_certificate_pdf'),
 ]

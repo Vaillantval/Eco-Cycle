@@ -1,11 +1,13 @@
 from django.views.generic import View
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import HttpResponse
 from django.contrib import messages
 from web.mixins import LoginRequiredMixin
 from apps.waste.models import WasteListing, WasteCategory
 from apps.marketplace.models import Order
 from apps.impact.models import UserImpactSummary, ImpactRecord
 from apps.notifications.models import Notification
+from apps.academy.models import Certificate
 
 
 class DashboardOverviewView(LoginRequiredMixin, View):
@@ -90,6 +92,16 @@ class MyImpactView(LoginRequiredMixin, View):
             'user': user,
             'summary': summary,
             'records': records,
+        })
+
+
+class MyCertificatesView(LoginRequiredMixin, View):
+    def get(self, request):
+        user = self.get_current_user(request)
+        certs = Certificate.objects.filter(user=user).select_related('course').order_by('-issued_at')
+        return render(request, 'dashboard/my_certificates.html', {
+            'user': user,
+            'certificates': certs,
         })
 
 
