@@ -103,9 +103,9 @@ class LessonVideo(models.Model):
         if not url:
             return None
         # YouTube
-        yt = re.search(r'(?:youtube\.com/watch\?v=|youtu\.be/)([A-Za-z0-9_-]{11})', url)
+        yt = re.search(r'(?:youtube\.com/(?:watch\?v=|shorts/|live/)|youtu\.be/)([A-Za-z0-9_-]{11})', url)
         if yt:
-            return f'https://www.youtube.com/embed/{yt.group(1)}?rel=0'
+            return f'https://www.youtube-nocookie.com/embed/{yt.group(1)}?rel=0'
         # Vimeo
         vm = re.search(r'vimeo\.com/(\d+)', url)
         if vm:

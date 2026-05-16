@@ -64,7 +64,15 @@
           <div style="position:relative;padding-bottom:56.25%;background:#000;">
             <iframe src="{{ video.embed_url }}"
                     style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;"
-                    allowfullscreen allow="autoplay; encrypted-media"></iframe>
+                    allowfullscreen
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    referrerpolicy="strict-origin-when-cross-origin"></iframe>
+          </div>
+          <div style="padding:10px 20px;background:#fafafa;border-top:1px solid #f1f5f9;text-align:right;">
+            <a href="{{ video.video_url }}" target="_blank" rel="noopener"
+               style="font-size:0.75rem;color:#64748b;text-decoration:none;font-weight:600;">
+              ↗ Voir sur YouTube
+            </a>
           </div>
 
           {% elif video.video_url %}
