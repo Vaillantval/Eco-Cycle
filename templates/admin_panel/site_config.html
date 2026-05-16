@@ -61,13 +61,6 @@
   <div class="admin-card">
     <div class="admin-card-header"><span class="admin-card-title">📞 Contact</span></div>
     <div style="padding:20px;display:flex;flex-direction:column;gap:14px;">
-      {% for fname, label in contact_fields %}
-      <div>
-        <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">{{ label }}</label>
-        <input type="text" name="{{ fname }}" value="{{ config|default:'' }}"
-               style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
-      </div>
-      {% endfor %}
       <div>
         <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Email</label>
         <input type="email" name="contact_email" value="{{ config.contact_email }}" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
@@ -95,13 +88,6 @@
   <div class="admin-card">
     <div class="admin-card-header"><span class="admin-card-title">📱 Réseaux sociaux</span></div>
     <div style="padding:20px;display:flex;flex-direction:column;gap:14px;">
-      {% for fname, emoji, label in social_fields %}
-      <div>
-        <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">{{ emoji }} {{ label }}</label>
-        <input type="url" name="{{ fname }}" value="{{ config|default:'' }}"
-               style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;" placeholder="https://...">
-      </div>
-      {% endfor %}
       <div>
         <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">📘 Facebook</label>
         <input type="url" name="facebook_url" value="{{ config.facebook_url }}" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
