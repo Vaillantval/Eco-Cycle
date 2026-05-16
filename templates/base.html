@@ -108,6 +108,35 @@
     {% endif %}
   </div>
 
+  <!-- BANNIÈRE APPLICATION MOBILE -->
+  {% if site_config and site_config.android_apk_url or site_config.ios_store_url or site_config.android_direct_apk %}
+  <div class="app-banner" id="appBanner">
+    <div class="app-banner-inner">
+      <span class="app-banner-icon">📱</span>
+      <span class="app-banner-text">L'application EcoCycle est disponible !</span>
+      <div class="app-banner-btns">
+        {% if site_config.ios_store_url %}
+          <a href="{{ site_config.ios_store_url }}" target="_blank" class="app-banner-btn">
+            🍎 App Store
+          </a>
+        {% endif %}
+        {% if site_config.android_apk_url %}
+          <a href="{{ site_config.android_apk_url }}" target="_blank" class="app-banner-btn">
+            ▶ Google Play
+          </a>
+        {% endif %}
+        {% if site_config.android_direct_apk %}
+          <a href="{{ site_config.android_direct_apk.url }}" download class="app-banner-btn app-banner-btn-outline">
+            ⬇ Télécharger APK
+          </a>
+        {% endif %}
+      </div>
+      <button class="app-banner-close" onclick="document.getElementById('appBanner').style.display='none';localStorage.setItem('appBannerDismissed','1')" aria-label="Fermer">✕</button>
+    </div>
+  </div>
+  <script>if(localStorage.getItem('appBannerDismissed')){document.getElementById('appBanner').style.display='none';}</script>
+  {% endif %}
+
   <!-- MESSAGES FLASH -->
   {% if messages %}
     <div class="messages-container">

@@ -166,6 +166,51 @@ body { font-family: var(--font-body); background: var(--white); color: var(--bla
 .page-hero-breadcrumb span { color: rgba(255,255,255,0.4); }
 
 /* ═══════════════════════════════════
+   APP MOBILE BANNER
+═══════════════════════════════════ */
+.app-banner {
+  background: linear-gradient(90deg, var(--green-dark) 0%, #0f4d28 100%);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  position: fixed; top: 0; left: 0; right: 0;
+  z-index: 1100;
+  padding: 10px 0;
+}
+.app-banner-inner {
+  max-width: 1200px; margin: 0 auto; padding: 0 24px;
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+}
+.app-banner-icon { font-size: 1.1rem; flex-shrink: 0; }
+.app-banner-text {
+  font-family: var(--font-display); font-size: 0.85rem;
+  font-weight: 600; color: rgba(255,255,255,0.9); flex: 1;
+}
+.app-banner-btns { display: flex; gap: 8px; flex-shrink: 0; }
+.app-banner-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: rgba(255,255,255,0.15);
+  color: #fff; font-family: var(--font-display);
+  font-size: 0.78rem; font-weight: 700;
+  padding: 6px 14px; border-radius: 50px;
+  text-decoration: none; border: 1px solid rgba(255,255,255,0.25);
+  transition: background 0.2s;
+}
+.app-banner-btn:hover { background: rgba(255,255,255,0.28); }
+.app-banner-btn-outline {
+  background: transparent;
+  border-color: rgba(255,255,255,0.4);
+}
+.app-banner-close {
+  background: none; border: none; color: rgba(255,255,255,0.5);
+  font-size: 0.9rem; cursor: pointer; padding: 4px; flex-shrink: 0;
+  transition: color 0.2s;
+}
+.app-banner-close:hover { color: #fff; }
+
+/* Quand la bannière est visible, pousser la navbar en dessous */
+body:has(.app-banner) .navbar { top: 44px; }
+body:has(.app-banner) .dashboard-layout { margin-top: calc(72px + 44px); }
+
+/* ═══════════════════════════════════
    FLASH MESSAGES
 ═══════════════════════════════════ */
 .messages-container { position: fixed; top: 80px; right: 20px; z-index: 9999; max-width: 380px; }
