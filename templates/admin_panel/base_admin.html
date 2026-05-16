@@ -20,6 +20,22 @@
       will-change: transform;
     }
 
+    @keyframes logo-footer-glow {
+      0%,100% { filter: brightness(0) invert(1) drop-shadow(0 0 0px rgba(255,255,255,0)); }
+      30%     { filter: brightness(0) invert(1.1) drop-shadow(0 0 14px rgba(255,255,255,0.95)) drop-shadow(0 0 32px rgba(74,222,128,0.75)); }
+      60%     { filter: brightness(0) invert(1) drop-shadow(0 0 4px rgba(255,255,255,0.3)); }
+    }
+    .logo-sidebar-anim { animation: logo-footer-glow 3.5s ease-in-out infinite; }
+
+    .logo-sidebar-wrap {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 10px;
+      padding: 6px 12px;
+      display: inline-flex;
+      align-items: center;
+    }
+
     /* Reset styles du site public qui polluent le panel */
     .navbar { display:none !important; }
     body { padding-top:0 !important; margin-top:0 !important; }
@@ -325,8 +341,10 @@
   <aside class="admin-sidebar">
     <div class="admin-sidebar-brand">
       {% if site_config and site_config.logo %}
-      <img src="{{ site_config.logo.url }}" alt="EcoCycle"
-           style="height:32px;width:auto;object-fit:contain;filter:brightness(0) invert(1);flex-shrink:0;">
+      <div class="logo-sidebar-wrap">
+        <img src="{{ site_config.logo.url }}" alt="EcoCycle" class="logo-sidebar-anim"
+             style="height:42px;width:auto;object-fit:contain;flex-shrink:0;">
+      </div>
       <div>
         <small style="color:#94a3b8;">Admin Panel</small>
       </div>
@@ -416,6 +434,7 @@
     </nav>
 
     <div class="admin-sidebar-footer">
+      <a href="{% url 'home' %}">🌐 Accueil</a>
       <a href="{% url 'dashboard' %}">🏠 Dashboard</a>
       <a href="{% url 'web_logout' %}" style="margin-left:auto;">🚪 Déconnexion</a>
     </div>

@@ -9,6 +9,44 @@
   .navbar .nav-logo-text, .navbar .nav-links a, .navbar .nav-login, .navbar .nav-user-name { color: var(--charcoal); }
   .navbar .nav-dropdown-trigger { color: var(--charcoal); }
   .navbar .hamburger span { background: var(--black); }
+
+  /* Logo sidebar utilisateur */
+  .sidebar-logo-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 16px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    margin-bottom: 16px;
+  }
+  .sidebar-logo-frame {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 10px;
+    padding: 5px 10px;
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .sidebar-home-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: rgba(255,255,255,0.45);
+    text-decoration: none;
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.1);
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
+    margin-top: 4px;
+  }
+  .sidebar-home-btn:hover {
+    color: #fff;
+    border-color: rgba(255,255,255,0.25);
+    background: rgba(255,255,255,0.06);
+  }
 </style>
 {% endblock %}
 
@@ -17,6 +55,22 @@
 
   <!-- SIDEBAR -->
   <aside class="sidebar">
+
+    <!-- Logo + lien accueil -->
+    <div class="sidebar-logo-wrap">
+      {% if site_config and site_config.logo %}
+      <div class="sidebar-logo-frame">
+        <img src="{{ site_config.logo.url }}" alt="EcoCycle" class="logo-sidebar-anim"
+             style="height:38px;width:auto;object-fit:contain;">
+      </div>
+      {% else %}
+      <div class="sidebar-logo-frame" style="font-size:1.4rem;">
+        <span class="recycle-spin">♻️</span>
+      </div>
+      {% endif %}
+      <a href="{% url 'home' %}" class="sidebar-home-btn">🌐 Site public</a>
+    </div>
+
     <div class="sidebar-user">
       {% if user.avatar %}
         <img src="{{ user.avatar.url }}" alt="Avatar" class="sidebar-avatar">
