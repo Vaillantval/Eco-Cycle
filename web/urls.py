@@ -29,7 +29,7 @@ from .views.collector_views import (
     CollectorPickupDetailView, CollectorProfileView,
 )
 from .views.blog_views import BlogListView, BlogDetailView
-from .views.academy_views import AcademyListView, CourseDetailView, EnrollCourseView, CompleteLessonView
+from .views.academy_views import AcademyListView, CourseDetailView, EnrollCourseView, CompleteLessonView, LessonDetailView
 from apps.core.views import NewsletterSubscribeView, NewsletterConfirmView
 from .views.page_views import (
     CommentCaMarcheView, FonctionnalitesView, NotreImpactView,
@@ -104,6 +104,8 @@ urlpatterns = [
          CourseDetailView.as_view(), name='course_detail'),
     path('academy/<slug:slug>/enroll/',
          EnrollCourseView.as_view(), name='enroll_course'),
+    path('academy/<slug:slug>/lessons/<uuid:lesson_id>/',
+         LessonDetailView.as_view(), name='lesson_detail'),
     path('academy/<slug:slug>/lessons/<uuid:lesson_id>/complete/',
          CompleteLessonView.as_view(), name='complete_lesson'),
     path('dashboard/pickups/',

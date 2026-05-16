@@ -9,8 +9,109 @@
 
 {% block admin_content %}
 
-<form method="POST">
+{% if lesson %}
+
+<!-- ======= VIDÉOS ======= -->
+<div class="admin-card" style="margin-bottom:20px;">
+  <div class="admin-card-header">
+    <span class="admin-card-title">🎬 Vidéos de la leçon</span>
+    <span style="font-size:0.78rem;color:#94a3b8;">{{ videos|length }} vidéo{{ videos|length|pluralize }}</span>
+  </div>
+
+  {% if videos %}
+  <table class="admin-table">
+    <thead><tr>
+      <th>Ordre</th>
+      <th>Titre</th>
+      <th>Type</th>
+      <th>Durée</th>
+      <th></th>
+    </tr></thead>
+    <tbody>
+    {% for v in videos %}
+    <tr>
+      <td style="text-align:center;color:#64748b;font-weight:600;">{{ v.order }}</td>
+      <td style="font-weight:600;">
+        {% if v.title %}{{ v.title }}{% else %}<span style="color:#94a3b8;font-style:italic;">Sans titre</span>{% endif %}
+      </td>
+      <td>
+        {% if v.video_file %}
+          <span style="font-size:0.75rem;background:#f0fdf4;color:#15803d;padding:2px 8px;border-radius:8px;font-weight:700;">📁 Fichier</span>
+        {% elif v.is_youtube %}
+          <span style="font-size:0.75rem;background:#fef2f2;color:#dc2626;padding:2px 8px;border-radius:8px;font-weight:700;">▶ YouTube</span>
+        {% elif v.is_vimeo %}
+          <span style="font-size:0.75rem;background:#eff6ff;color:#2563eb;padding:2px 8px;border-radius:8px;font-weight:700;">▶ Vimeo</span>
+        {% elif v.video_url %}
+          <span style="font-size:0.75rem;background:#fafafa;color:#64748b;padding:2px 8px;border-radius:8px;font-weight:700;">🔗 URL</span>
+        {% endif %}
+      </td>
+      <td style="color:#64748b;">{{ v.duration_minutes }} min</td>
+      <td>
+        <form method="POST" style="display:inline;" onsubmit="return confirm('Supprimer cette vidéo ?');">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="delete_video">
+          <input type="hidden" name="video_id" value="{{ v.id }}">
+          <button type="submit" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:0.82rem;font-weight:700;">🗑 Supprimer</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div style="padding:20px 24px;color:#94a3b8;font-size:0.88rem;">Aucune vidéo pour l'instant.</div>
+  {% endif %}
+
+  <!-- Ajouter une vidéo -->
+  <div style="border-top:1px solid #f1f5f9;padding:20px 24px;">
+    <div style="font-size:0.82rem;font-weight:700;color:#334155;margin-bottom:14px;">➕ Ajouter une vidéo</div>
+    <form method="POST" enctype="multipart/form-data">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="add_video">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div>
+          <label style="font-size:0.75rem;font-weight:600;color:#64748b;display:block;margin-bottom:5px;">Titre (optionnel)</label>
+          <input type="text" name="video_title" placeholder="Introduction, Partie 1…"
+                 style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div>
+            <label style="font-size:0.75rem;font-weight:600;color:#64748b;display:block;margin-bottom:5px;">Ordre</label>
+            <input type="number" name="video_order" value="{{ videos|length|add:1 }}" min="0"
+                   style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
+          </div>
+          <div>
+            <label style="font-size:0.75rem;font-weight:600;color:#64748b;display:block;margin-bottom:5px;">Durée (min)</label>
+            <input type="number" name="video_duration" value="0" min="0"
+                   style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
+          </div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+        <div>
+          <label style="font-size:0.75rem;font-weight:600;color:#64748b;display:block;margin-bottom:5px;">📁 Fichier vidéo (MP4, WebM…)</label>
+          <input type="file" name="video_file" accept="video/*"
+                 style="width:100%;padding:7px 10px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.83rem;background:#fafafa;">
+        </div>
+        <div>
+          <label style="font-size:0.75rem;font-weight:600;color:#64748b;display:block;margin-bottom:5px;">🔗 URL externe (YouTube, Vimeo…)</label>
+          <input type="url" name="video_url" placeholder="https://youtube.com/watch?v=..."
+                 style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
+        </div>
+      </div>
+
+      <button type="submit" class="btn-admin-sm btn-admin-primary">➕ Ajouter la vidéo</button>
+    </form>
+  </div>
+</div>
+
+{% endif %}
+
+<!-- ======= LEÇON ======= -->
+<form method="POST" enctype="multipart/form-data">
 {% csrf_token %}
+<input type="hidden" name="action" value="save_lesson">
 <div style="display:grid;grid-template-columns:1fr 280px;gap:20px;align-items:start;">
 
   <div>
@@ -25,14 +126,8 @@
         </div>
 
         <div>
-          <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:6px;">URL Vidéo <span style="font-weight:400;">(optionnel)</span></label>
-          <input type="url" name="video_url" value="{{ lesson.video_url|default:'' }}" placeholder="https://youtube.com/watch?v=..."
-                 style="width:100%;padding:9px 14px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
-        </div>
-
-        <div>
           <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:6px;">Contenu <span style="font-weight:400;">(Markdown ou texte brut)</span></label>
-          <textarea name="content" rows="20"
+          <textarea name="content" rows="16"
                     style="width:100%;padding:9px 14px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;font-family:monospace;resize:vertical;">{{ lesson.content|default:'' }}</textarea>
         </div>
 
@@ -49,11 +144,12 @@
           <input type="number" name="order" value="{{ lesson.order|default:next_order|default:1 }}" min="0"
                  style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
         </div>
-        <div>
-          <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:6px;">Durée (minutes)</label>
-          <input type="number" name="duration_minutes" value="{{ lesson.duration_minutes|default:0 }}" min="0"
-                 style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
+        {% if lesson %}
+        <div style="font-size:0.78rem;color:#94a3b8;padding:8px 0;border-top:1px solid #f1f5f9;">
+          Durée auto-calculée : <strong style="color:#334155;">{{ lesson.duration_minutes }} min</strong><br>
+          <span style="font-size:0.72rem;">Somme des durées des vidéos</span>
         </div>
+        {% endif %}
         <button type="submit" class="btn-admin-sm btn-admin-primary" style="width:100%;justify-content:center;padding:10px;font-size:0.88rem;">
           {% if lesson %}💾 Sauvegarder{% else %}➕ Créer la leçon{% endif %}
         </button>

@@ -30,7 +30,7 @@
       {% if lessons %}
       <table class="admin-table">
         <thead>
-          <tr><th>#</th><th>Titre</th><th>Durée</th><th>Vidéo</th><th>Actions</th></tr>
+          <tr><th>#</th><th>Titre</th><th>Durée</th><th>Vidéos</th><th>Actions</th></tr>
         </thead>
         <tbody>
           {% for lesson in lessons %}
@@ -41,10 +41,8 @@
               <div style="font-size:0.72rem;color:#94a3b8;margin-top:2px;">{{ lesson.content|truncatechars:60 }}</div>
             </td>
             <td style="font-size:0.82rem;color:#64748b;">{{ lesson.duration_minutes }} min</td>
-            <td>
-              {% if lesson.video_url %}
-              <a href="{{ lesson.video_url }}" target="_blank" class="btn-admin-sm btn-view" style="font-size:0.72rem;">▶ Voir</a>
-              {% else %}—{% endif %}
+            <td style="font-size:0.82rem;color:#64748b;">
+              {{ lesson.videos.count }} vidéo{{ lesson.videos.count|pluralize }}
             </td>
             <td style="white-space:nowrap;">
               <a href="{% url 'admin_academy_lesson_edit' course_pk=course.id lesson_pk=lesson.id %}" class="btn-admin-sm btn-view">✏️</a>
@@ -80,23 +78,11 @@
               <input type="text" name="lesson_title" required placeholder="Ex: Introduction au recyclage..."
                      style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.85rem;">
             </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-              <div>
-                <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Ordre</label>
-                <input type="number" name="lesson_order" value="{{ lessons|length|add:1 }}" min="0"
-                       style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.85rem;">
-              </div>
-              <div>
-                <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Durée (min)</label>
-                <input type="number" name="lesson_duration" value="0" min="0"
-                       style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.85rem;">
-              </div>
+            <div>
+              <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Ordre</label>
+              <input type="number" name="lesson_order" value="{{ lessons|length|add:1 }}" min="0"
+                     style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.85rem;">
             </div>
-          </div>
-          <div style="margin-bottom:12px;">
-            <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">URL Vidéo (optionnel)</label>
-            <input type="url" name="lesson_video_url" placeholder="https://youtube.com/watch?v=..."
-                   style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.85rem;">
           </div>
           <div style="margin-bottom:14px;">
             <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Contenu de la leçon</label>

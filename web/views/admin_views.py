@@ -9,7 +9,7 @@ from apps.waste.models import WasteListing
 from apps.collections.models import PickupRequest
 from apps.marketplace.models import Order, Auction
 from apps.blog.models import Post, BlogCategory
-from apps.academy.models import Course, Lesson, Enrollment, Certificate
+from apps.academy.models import Course, Lesson, LessonVideo, Enrollment, Certificate
 from apps.core.models import ContactMessage, NewsletterSubscriber, SiteConfiguration, SliderItem
 
 
@@ -544,9 +544,8 @@ class AdminAcademyCourseDetailView(AdminRequiredMixin, View):
                     course=course,
                     title=lesson_title,
                     content=request.POST.get('lesson_content', ''),
-                    video_url=request.POST.get('lesson_video_url', ''),
                     order=request.POST.get('lesson_order') or 0,
-                    duration_minutes=request.POST.get('lesson_duration') or 0,
+                    duration_minutes=0,
                 )
                 messages.success(request, f'Leçon « {lesson_title} » ajoutée.')
             else:
@@ -587,39 +586,64 @@ class AdminAcademyLessonCreateView(AdminRequiredMixin, View):
             messages.error(request, 'Le titre est obligatoire.')
             return redirect('admin_academy_lesson_create', course_pk=course_pk)
         lesson = Lesson.objects.create(
-            course          = course,
-            title           = title,
-            content         = request.POST.get('content', ''),
-            video_url       = request.POST.get('video_url', ''),
-            order           = request.POST.get('order') or course.lessons.count(),
-            duration_minutes= request.POST.get('duration_minutes') or 0,
+            course   = course,
+            title    = title,
+            content  = request.POST.get('content', ''),
+            order    = request.POST.get('order') or course.lessons.count(),
         )
         messages.success(request, f'Leçon « {lesson.title} » créée.')
-        return redirect('admin_academy_course_detail', pk=course_pk)
+        return redirect('admin_academy_lesson_edit', course_pk=course_pk, lesson_pk=lesson.pk)
 
 
 class AdminAcademyLessonEditView(AdminRequiredMixin, View):
-    def get(self, request, course_pk, lesson_pk):
-        admin = self.get_current_user(request)
-        course = get_object_or_404(Course, pk=course_pk)
-        lesson = get_object_or_404(Lesson, pk=lesson_pk, course=course)
+    def _render(self, request, course, lesson):
         return render(request, 'admin_panel/academy_lesson_form.html', {
-            'user': admin,
+            'user': self.get_current_user(request),
             'course': course,
             'lesson': lesson,
+            'videos': lesson.videos.all(),
         })
+
+    def get(self, request, course_pk, lesson_pk):
+        course = get_object_or_404(Course, pk=course_pk)
+        lesson = get_object_or_404(Lesson, pk=lesson_pk, course=course)
+        return self._render(request, course, lesson)
 
     def post(self, request, course_pk, lesson_pk):
         course = get_object_or_404(Course, pk=course_pk)
         lesson = get_object_or_404(Lesson, pk=lesson_pk, course=course)
-        lesson.title            = request.POST.get('title', '').strip() or lesson.title
-        lesson.content          = request.POST.get('content', '')
-        lesson.video_url        = request.POST.get('video_url', '')
-        lesson.order            = request.POST.get('order') or lesson.order
-        lesson.duration_minutes = request.POST.get('duration_minutes') or 0
+        action = request.POST.get('action', 'save_lesson')
+
+        if action == 'add_video':
+            video_file = request.FILES.get('video_file')
+            video_url  = request.POST.get('video_url', '').strip()
+            if video_file or video_url:
+                LessonVideo.objects.create(
+                    lesson         = lesson,
+                    title          = request.POST.get('video_title', '').strip(),
+                    video_file     = video_file,
+                    video_url      = video_url,
+                    order          = request.POST.get('video_order') or lesson.videos.count() + 1,
+                    duration_minutes = request.POST.get('video_duration') or 0,
+                )
+                messages.success(request, 'Vidéo ajoutée.')
+            else:
+                messages.error(request, 'Fichier ou URL requis.')
+            return redirect('admin_academy_lesson_edit', course_pk=course_pk, lesson_pk=lesson_pk)
+
+        if action == 'delete_video':
+            video = get_object_or_404(LessonVideo, pk=request.POST.get('video_id'), lesson=lesson)
+            video.delete()
+            messages.success(request, 'Vidéo supprimée.')
+            return redirect('admin_academy_lesson_edit', course_pk=course_pk, lesson_pk=lesson_pk)
+
+        # default: save_lesson
+        lesson.title   = request.POST.get('title', '').strip() or lesson.title
+        lesson.content = request.POST.get('content', '')
+        lesson.order   = request.POST.get('order') or lesson.order
         lesson.save()
         messages.success(request, f'Leçon « {lesson.title} » mise à jour.')
-        return redirect('admin_academy_course_detail', pk=course_pk)
+        return redirect('admin_academy_lesson_edit', course_pk=course_pk, lesson_pk=lesson_pk)
 
 
 class AdminAcademyEnrollmentsView(AdminRequiredMixin, View):

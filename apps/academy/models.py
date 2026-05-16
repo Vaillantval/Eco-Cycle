@@ -1,7 +1,9 @@
 from django.db import models
 from django.conf import settings
 from django.utils.text import slugify
+from django.db.models import Sum
 import uuid
+import re
 
 
 class Course(models.Model):
@@ -34,13 +36,17 @@ class Course(models.Model):
             self.slug = slugify(self.title)
         super().save(*args, **kwargs)
 
+    def sync_duration(self):
+        total = self.lessons.aggregate(total=Sum('duration_minutes'))['total'] or 0
+        Course.objects.filter(pk=self.pk).update(duration_minutes=total)
+        self.duration_minutes = total
+
 
 class Lesson(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='lessons')
     title = models.CharField(max_length=200)
-    content = models.TextField()
-    video_url = models.URLField(blank=True)
+    content = models.TextField(blank=True)
     order = models.PositiveIntegerField(default=0)
     duration_minutes = models.PositiveIntegerField(default=0)
 
@@ -50,6 +56,67 @@ class Lesson(models.Model):
 
     def __str__(self):
         return f'{self.course.title} — {self.title}'
+
+    def sync_duration(self):
+        total = self.videos.aggregate(total=Sum('duration_minutes'))['total'] or 0
+        Lesson.objects.filter(pk=self.pk).update(duration_minutes=total)
+        self.duration_minutes = total
+        self.course.sync_duration()
+
+
+class LessonVideo(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name='videos')
+    title = models.CharField(max_length=200, blank=True)
+    video_file = models.FileField(
+        upload_to='academy/videos/', null=True, blank=True,
+        verbose_name='Fichier vidéo',
+        help_text='MP4, WebM, OGG — max recommandé : 500 Mo'
+    )
+    video_url = models.URLField(
+        blank=True,
+        verbose_name='URL vidéo externe',
+        help_text='YouTube, Vimeo, ou tout lien direct'
+    )
+    order = models.PositiveIntegerField(default=0)
+    duration_minutes = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        db_table = 'lesson_videos'
+        ordering = ['order']
+
+    def __str__(self):
+        return f'{self.lesson.title} — vidéo {self.order}'
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.lesson.sync_duration()
+
+    def delete(self, *args, **kwargs):
+        lesson = self.lesson
+        super().delete(*args, **kwargs)
+        lesson.sync_duration()
+
+    def embed_url(self):
+        """Return an embeddable URL for YouTube/Vimeo, or None for direct files."""
+        url = self.video_url
+        if not url:
+            return None
+        # YouTube
+        yt = re.search(r'(?:youtube\.com/watch\?v=|youtu\.be/)([A-Za-z0-9_-]{11})', url)
+        if yt:
+            return f'https://www.youtube.com/embed/{yt.group(1)}?rel=0'
+        # Vimeo
+        vm = re.search(r'vimeo\.com/(\d+)', url)
+        if vm:
+            return f'https://player.vimeo.com/video/{vm.group(1)}'
+        return None
+
+    def is_youtube(self):
+        return bool(re.search(r'(?:youtube\.com|youtu\.be)', self.video_url or ''))
+
+    def is_vimeo(self):
+        return bool(re.search(r'vimeo\.com', self.video_url or ''))
 
 
 class Enrollment(models.Model):
@@ -73,6 +140,8 @@ class Enrollment(models.Model):
     def update_progress(self):
         total = self.course.lessons.count()
         if total == 0:
+            self.progress_percent = 0
+            self.save(update_fields=['progress_percent'])
             return
         done = self.completed_lessons.count()
         self.progress_percent = int((done / total) * 100)

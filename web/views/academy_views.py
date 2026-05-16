@@ -2,7 +2,7 @@ from django.views.generic import View
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from web.mixins import LoginRequiredMixin
-from apps.academy.models import Course, Lesson, Enrollment
+from apps.academy.models import Course, Lesson, LessonVideo, Enrollment, Certificate
 
 
 class AcademyListView(View):
@@ -79,5 +79,33 @@ class CompleteLessonView(LoginRequiredMixin, View):
         enrollment.update_progress()
 
         if enrollment.is_completed:
-            messages.success(request, f'Félicitations ! Cours « {course.title} » terminé !')
-        return redirect('course_detail', slug=slug)
+            Certificate.objects.get_or_create(user=user, course=course)
+            messages.success(request, f'Félicitations ! Cours « {course.title} » terminé ! Votre certificat est disponible.')
+        return redirect('lesson_detail', slug=slug, lesson_id=lesson_id)
+
+
+class LessonDetailView(LoginRequiredMixin, View):
+    def get(self, request, slug, lesson_id):
+        user = self.get_current_user(request)
+        course = get_object_or_404(Course, slug=slug, is_published=True)
+        enrollment = get_object_or_404(Enrollment, user=user, course=course)
+        lesson = get_object_or_404(Lesson, id=lesson_id, course=course)
+
+        lessons = list(course.lessons.all())
+        idx = next((i for i, l in enumerate(lessons) if str(l.id) == str(lesson.id)), 0)
+        prev_lesson = lessons[idx - 1] if idx > 0 else None
+        next_lesson = lessons[idx + 1] if idx < len(lessons) - 1 else None
+
+        completed_ids = set(str(l.id) for l in enrollment.completed_lessons.all())
+        is_done = str(lesson.id) in completed_ids
+
+        return render(request, 'academy/lesson_detail.html', {
+            'course': course,
+            'lesson': lesson,
+            'videos': lesson.videos.all(),
+            'enrollment': enrollment,
+            'prev_lesson': prev_lesson,
+            'next_lesson': next_lesson,
+            'is_done': is_done,
+            'completed_ids': completed_ids,
+        })
