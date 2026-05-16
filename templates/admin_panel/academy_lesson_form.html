@@ -157,38 +157,76 @@
 
         <!-- PDF UPLOAD -->
         <div style="border:1.5px dashed #e2e8f0;border-radius:10px;padding:16px;">
-          <div style="font-size:0.78rem;font-weight:700;color:#334155;margin-bottom:10px;">📄 Importer depuis un PDF</div>
-          <div style="font-size:0.75rem;color:#64748b;margin-bottom:12px;line-height:1.5;">
-            Uploadez un PDF pour extraire automatiquement son texte dans le contenu de la leçon.
-          </div>
-          <input type="file" name="pdf_file" accept=".pdf,application/pdf"
-                 style="width:100%;padding:7px 10px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.82rem;background:#fafafa;margin-bottom:10px;">
-          {% if lesson and lesson.content %}
-          <label style="display:flex;align-items:flex-start;gap:8px;font-size:0.78rem;color:#64748b;cursor:pointer;line-height:1.4;margin-bottom:10px;">
-            <input type="checkbox" name="replace_content" value="1" style="margin-top:2px;flex-shrink:0;">
-            <span>Remplacer le contenu existant <span style="color:#94a3b8;">(par défaut : ajouter à la fin)</span></span>
-          </label>
-          {% endif %}
+          <div style="font-size:0.78rem;font-weight:700;color:#334155;margin-bottom:14px;">📄 PDF de la leçon</div>
 
-          <!-- Autoriser le téléchargement du PDF -->
-          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 14px;{% if not lesson or not lesson.pdf_file %}opacity:0.55;{% endif %}">
+          <!-- Fichier -->
+          <div style="margin-bottom:14px;">
+            <label style="font-size:0.75rem;font-weight:600;color:#64748b;display:block;margin-bottom:6px;">Fichier PDF</label>
+            <input type="file" name="pdf_file" accept=".pdf,application/pdf"
+                   style="width:100%;padding:7px 10px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.82rem;background:#fafafa;">
+            {% if lesson and lesson.pdf_file %}
+            <div style="margin-top:6px;font-size:0.73rem;color:#64748b;display:flex;align-items:center;gap:6px;">
+              <span>📎 PDF actuel :</span>
+              <a href="{{ lesson.pdf_file.url }}" target="_blank" style="color:#0d7a45;font-weight:600;text-decoration:none;">Voir / Télécharger</a>
+            </div>
+            {% endif %}
+          </div>
+
+          <!-- Mode d'affichage -->
+          <div style="margin-bottom:14px;">
+            <label style="font-size:0.75rem;font-weight:600;color:#64748b;display:block;margin-bottom:8px;">Mode d'affichage pour l'utilisateur</label>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+
+              <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:10px 12px;border-radius:8px;border:1.5px solid {% if not lesson or lesson.pdf_display_mode == 'extract' %}#0d7a45;background:#f0fdf4{% else %}#e2e8f0;background:#fafafa{% endif %};"
+                     id="mode-extract-label">
+                <input type="radio" name="pdf_display_mode" value="extract"
+                       {% if not lesson or lesson.pdf_display_mode == 'extract' %}checked{% endif %}
+                       style="margin-top:2px;accent-color:#0d7a45;flex-shrink:0;"
+                       onchange="updateModeStyle()">
+                <span>
+                  <span style="font-size:0.82rem;font-weight:700;color:#334155;display:block;">📝 Extraire le texte</span>
+                  <span style="font-size:0.72rem;color:#64748b;line-height:1.4;">Le contenu du PDF est extrait et affiché comme du texte lisible dans la leçon. Idéal pour le contenu textuel.</span>
+                </span>
+              </label>
+
+              <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:10px 12px;border-radius:8px;border:1.5px solid {% if lesson and lesson.pdf_display_mode == 'embed' %}#0d7a45;background:#f0fdf4{% else %}#e2e8f0;background:#fafafa{% endif %};"
+                     id="mode-embed-label">
+                <input type="radio" name="pdf_display_mode" value="embed"
+                       {% if lesson and lesson.pdf_display_mode == 'embed' %}checked{% endif %}
+                       style="margin-top:2px;accent-color:#0d7a45;flex-shrink:0;"
+                       onchange="updateModeStyle()">
+                <span>
+                  <span style="font-size:0.82rem;font-weight:700;color:#334155;display:block;">📄 Afficher le PDF tel quel</span>
+                  <span style="font-size:0.72rem;color:#64748b;line-height:1.4;">Le PDF est intégré via une visionneuse dans la page. Idéal pour les documents avec mise en page, images, tableaux.</span>
+                </span>
+              </label>
+
+            </div>
+          </div>
+
+          <!-- Option : remplacer le texte existant (extract uniquement) -->
+          <div id="replace-content-row" style="margin-bottom:12px;{% if lesson and lesson.pdf_display_mode == 'embed' %}display:none;{% endif %}">
+            {% if lesson and lesson.content %}
+            <label style="display:flex;align-items:flex-start;gap:8px;font-size:0.78rem;color:#64748b;cursor:pointer;line-height:1.4;">
+              <input type="checkbox" name="replace_content" value="1" style="margin-top:2px;flex-shrink:0;">
+              <span>Remplacer le contenu texte existant <span style="color:#94a3b8;">(par défaut : ajouter à la fin)</span></span>
+            </label>
+            {% endif %}
+          </div>
+
+          <!-- Autoriser le téléchargement -->
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 14px;">
             <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
               <input type="checkbox" name="pdf_allow_download" value="1"
                      {% if lesson and lesson.pdf_allow_download %}checked{% endif %}
                      style="width:16px;height:16px;accent-color:#0d7a45;flex-shrink:0;">
               <span>
-                <span style="font-size:0.82rem;font-weight:700;color:#334155;">📥 Autoriser le téléchargement du PDF</span><br>
-                <span style="font-size:0.72rem;color:#94a3b8;">L'utilisateur pourra télécharger le fichier PDF original (en plus du texte extrait affiché)</span>
+                <span style="font-size:0.82rem;font-weight:700;color:#334155;">📥 Autoriser le téléchargement</span><br>
+                <span style="font-size:0.72rem;color:#94a3b8;">L'utilisateur pourra télécharger le fichier PDF original</span>
               </span>
             </label>
           </div>
 
-          {% if lesson and lesson.pdf_file %}
-          <div style="margin-top:10px;font-size:0.75rem;color:#64748b;display:flex;align-items:center;gap:6px;">
-            <span>📎 PDF actuel :</span>
-            <a href="{{ lesson.pdf_file.url }}" target="_blank" style="color:#0d7a45;font-weight:600;text-decoration:none;">Télécharger</a>
-          </div>
-          {% endif %}
         </div>
 
       </div>
@@ -233,11 +271,29 @@
 </form>
 
 <script>
-// Afficher le toggle "Autoriser le téléchargement" uniquement si un fichier vidéo est sélectionné
+// Toggle "Autoriser le téléchargement vidéo" uniquement si un fichier est sélectionné
 document.getElementById('videoFileInput').addEventListener('change', function () {
-  const toggle = document.getElementById('videoDownloadToggle');
-  toggle.style.display = this.files.length > 0 ? 'block' : 'none';
+  document.getElementById('videoDownloadToggle').style.display =
+    this.files.length > 0 ? 'block' : 'none';
 });
+
+// Met à jour le style visuel des labels radio PDF + affiche/cache la ligne "remplacer"
+function updateModeStyle() {
+  const extractChecked = document.querySelector('input[name="pdf_display_mode"][value="extract"]').checked;
+  const extractLabel   = document.getElementById('mode-extract-label');
+  const embedLabel     = document.getElementById('mode-embed-label');
+  const replaceRow     = document.getElementById('replace-content-row');
+
+  const activeStyle   = '1.5px solid #0d7a45';
+  const inactiveStyle = '1.5px solid #e2e8f0';
+
+  extractLabel.style.border     = extractChecked ? activeStyle : inactiveStyle;
+  extractLabel.style.background = extractChecked ? '#f0fdf4'  : '#fafafa';
+  embedLabel.style.border       = extractChecked ? inactiveStyle : activeStyle;
+  embedLabel.style.background   = extractChecked ? '#fafafa'  : '#f0fdf4';
+
+  if (replaceRow) replaceRow.style.display = extractChecked ? '' : 'none';
+}
 </script>
 
 {% endblock %}

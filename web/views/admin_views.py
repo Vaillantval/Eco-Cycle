@@ -584,9 +584,10 @@ class AdminAcademyLessonCreateView(AdminRequiredMixin, View):
         if not title:
             messages.error(request, 'Le titre est obligatoire.')
             return redirect('admin_academy_lesson_create', course_pk=course_pk)
-        content  = request.POST.get('content', '')
-        pdf_file = request.FILES.get('pdf_file')
-        if pdf_file:
+        content          = request.POST.get('content', '')
+        pdf_file         = request.FILES.get('pdf_file')
+        pdf_display_mode = request.POST.get('pdf_display_mode', 'extract')
+        if pdf_file and pdf_display_mode == 'extract':
             extracted = _extract_pdf_text(pdf_file)
             if extracted:
                 content = extracted
@@ -594,11 +595,14 @@ class AdminAcademyLessonCreateView(AdminRequiredMixin, View):
             else:
                 messages.warning(request, 'PDF uploadé mais aucun texte n\'a pu être extrait.')
             pdf_file.seek(0)
+        elif pdf_file:
+            pdf_file.seek(0)
         lesson = Lesson.objects.create(
             course             = course,
             title              = title,
             content            = content,
             pdf_file           = pdf_file if pdf_file else None,
+            pdf_display_mode   = pdf_display_mode,
             pdf_allow_download = request.POST.get('pdf_allow_download') == '1',
             order              = request.POST.get('order') or course.lessons.count(),
         )
@@ -672,23 +676,28 @@ class AdminAcademyLessonEditView(AdminRequiredMixin, View):
         lesson.title              = request.POST.get('title', '').strip() or lesson.title
         lesson.order              = request.POST.get('order') or lesson.order
         lesson.pdf_allow_download = request.POST.get('pdf_allow_download') == '1'
+        lesson.pdf_display_mode   = request.POST.get('pdf_display_mode', lesson.pdf_display_mode)
         pdf_file                  = request.FILES.get('pdf_file')
         replace_content           = request.POST.get('replace_content') == '1'
         if pdf_file:
-            extracted = _extract_pdf_text(pdf_file)
-            if extracted:
-                if replace_content or not lesson.content.strip():
-                    lesson.content = extracted
-                    messages.info(request, f'Contenu remplacé par le texte du PDF ({len(extracted)} caractères).')
+            if lesson.pdf_display_mode == 'extract':
+                extracted = _extract_pdf_text(pdf_file)
+                if extracted:
+                    if replace_content or not lesson.content.strip():
+                        lesson.content = extracted
+                        messages.info(request, f'Contenu remplacé par le texte du PDF ({len(extracted)} caractères).')
+                    else:
+                        lesson.content = lesson.content.rstrip() + '\n\n' + extracted
+                        messages.info(request, f'Texte du PDF ajouté à la fin ({len(extracted)} caractères).')
                 else:
-                    lesson.content = lesson.content.rstrip() + '\n\n' + extracted
-                    messages.info(request, f'Texte du PDF ajouté à la fin du contenu ({len(extracted)} caractères).')
+                    messages.warning(request, 'PDF uploadé mais aucun texte n\'a pu être extrait.')
             else:
-                messages.warning(request, 'PDF uploadé mais aucun texte n\'a pu être extrait.')
+                messages.info(request, 'PDF uploadé — affiché en visionneuse pour l\'utilisateur.')
             pdf_file.seek(0)
             lesson.pdf_file = pdf_file
         else:
-            lesson.content = request.POST.get('content', '')
+            if lesson.pdf_display_mode == 'extract':
+                lesson.content = request.POST.get('content', '')
         lesson.save()
         messages.success(request, f'Leçon « {lesson.title} » mise à jour.')
         return redirect('admin_academy_lesson_edit', course_pk=course_pk, lesson_pk=lesson_pk)

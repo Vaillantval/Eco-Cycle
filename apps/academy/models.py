@@ -43,6 +43,13 @@ class Course(models.Model):
 
 
 class Lesson(models.Model):
+    PDF_DISPLAY_EXTRACT = 'extract'
+    PDF_DISPLAY_EMBED   = 'embed'
+    PDF_DISPLAY_CHOICES = [
+        ('extract', 'Extraire le texte (affichage texte)'),
+        ('embed',   'Afficher le PDF tel quel (visionneuse)'),
+    ]
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='lessons')
     title = models.CharField(max_length=200)
@@ -50,7 +57,12 @@ class Lesson(models.Model):
     pdf_file = models.FileField(
         upload_to='academy/pdfs/', null=True, blank=True,
         verbose_name='PDF de la leçon',
-        help_text='Upload un PDF pour extraire automatiquement le texte'
+    )
+    pdf_display_mode = models.CharField(
+        max_length=10,
+        choices=PDF_DISPLAY_CHOICES,
+        default='extract',
+        verbose_name='Mode d\'affichage du PDF',
     )
     pdf_allow_download = models.BooleanField(
         default=False,

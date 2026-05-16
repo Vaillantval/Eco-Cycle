@@ -366,8 +366,61 @@
       </div>
     </div>
 
-    <!-- CONTENU TEXTE -->
-    {% if lesson.content %}
+    <!-- VISIONNEUSE PDF (mode embed) -->
+    {% if lesson.pdf_file and lesson.pdf_display_mode == 'embed' %}
+    <div style="padding:24px 28px 0;">
+
+      <!-- Bannière téléchargement si activé -->
+      {% if lesson.pdf_allow_download %}
+      <div class="pdf-dl-banner" style="margin-bottom:16px;">
+        <div class="pdf-dl-info">
+          <span class="pdf-dl-icon">📄</span>
+          <div class="pdf-dl-text">
+            <strong>Support de cours disponible</strong>
+            <span>Téléchargez le PDF original de cette leçon</span>
+          </div>
+        </div>
+        <a href="{{ lesson.pdf_file.url }}" download class="pdf-dl-btn">↓ Télécharger le PDF</a>
+      </div>
+      {% endif %}
+
+      <!-- Visionneuse -->
+      <div style="border-radius:12px;overflow:hidden;border:1px solid #e2e8f0;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
+        <object data="{{ lesson.pdf_file.url }}" type="application/pdf"
+                style="width:100%;height:780px;display:block;"
+                id="pdf-viewer-obj">
+          <!-- Fallback iframe pour Firefox / Safari mobile -->
+          <iframe src="{{ lesson.pdf_file.url }}"
+                  style="width:100%;height:780px;border:none;display:block;"
+                  id="pdf-viewer-iframe">
+            <!-- Fallback final si aucun lecteur intégré -->
+            <div style="padding:40px;text-align:center;background:#f8fafc;">
+              <div style="font-size:2.5rem;margin-bottom:12px;">📄</div>
+              <p style="color:#475569;font-size:0.92rem;margin-bottom:16px;">
+                Votre navigateur ne supporte pas la visionneuse PDF intégrée.
+              </p>
+              <a href="{{ lesson.pdf_file.url }}" target="_blank"
+                 style="display:inline-flex;align-items:center;gap:8px;background:#0d7a45;color:#fff;
+                        padding:10px 22px;border-radius:50px;font-weight:700;text-decoration:none;font-size:0.88rem;">
+                📄 Ouvrir le PDF
+              </a>
+            </div>
+          </iframe>
+        </object>
+      </div>
+
+      <!-- Lien d'ouverture dans un nouvel onglet (toujours visible) -->
+      <div style="padding:10px 0 24px;text-align:right;">
+        <a href="{{ lesson.pdf_file.url }}" target="_blank" rel="noopener"
+           style="font-size:0.75rem;color:#94a3b8;text-decoration:none;font-weight:600;">
+          ↗ Ouvrir dans un nouvel onglet
+        </a>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- CONTENU TEXTE (mode extract) -->
+    {% if lesson.content and lesson.pdf_display_mode != 'embed' %}
     <div class="lesson-prose">
 
       <!-- BANNIÈRE PDF EN TÊTE (animée) -->
