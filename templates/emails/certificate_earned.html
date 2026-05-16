@@ -1,0 +1,24 @@
+{% extends "emails/base_email.html" %}
+{% block subject %}Félicitations ! Votre certificat EcoCycle est prêt{% endblock %}
+{% block content %}
+<h2 style="color:#2e7d32;">🏆 Certificat de réussite</h2>
+<p>Bonjour {{ user.first_name }},</p>
+<p>Toutes nos félicitations ! Vous avez <strong>complété avec succès</strong> le cours :</p>
+
+<div class="info-box" style="text-align:center;padding:24px 20px;">
+  <p style="font-size:18px;font-weight:700;color:#1b5e20;margin:0 0 8px;">{{ course.title }}</p>
+  <p style="color:#555;margin:0;font-size:13px;">Niveau : {{ course.get_level_display }} &nbsp;·&nbsp; {{ course.duration_minutes }} min</p>
+</div>
+
+<p>Votre certificat est désormais disponible dans votre tableau de bord. Vous pouvez le télécharger en PDF à tout moment pour le partager ou l'imprimer.</p>
+
+<p style="text-align:center;">
+  <a href="{{ certificates_url }}" class="btn">📄 Voir mon certificat</a>
+</p>
+
+<hr class="divider">
+<p>Continuez sur votre lancée — d'autres cours vous attendent dans l'Academy EcoCycle !</p>
+<p style="text-align:center;">
+  <a href="{{ academy_url }}" style="color:#2e7d32;font-weight:600;text-decoration:none;">→ Explorer l'Academy</a>
+</p>
+{% endblock %}

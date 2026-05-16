@@ -1,0 +1,28 @@
+{% extends "emails/base_email.html" %}
+{% block subject %}[EcoCycle] {{ user.full_name }} a complété un cours{% endblock %}
+{% block content %}
+<h2 style="color:#2e7d32;">🎓 Cours complété par un utilisateur</h2>
+<p>Bonjour,</p>
+<p>Un utilisateur vient de terminer un cours sur EcoCycle Academy. Un certificat lui a été automatiquement délivré.</p>
+
+<div class="info-box">
+  <p>
+    <strong>Utilisateur :</strong> {{ user.full_name }} ({{ user.email }})<br>
+    <strong>Téléphone :</strong> {{ user.phone|default:"Non renseigné" }}<br>
+    <strong>Inscrit le :</strong> {{ user.date_joined|date:"d/m/Y" }}<br>
+    <br>
+    <strong>Cours :</strong> {{ course.title }}<br>
+    <strong>Niveau :</strong> {{ course.get_level_display }}<br>
+    <strong>Durée :</strong> {{ course.duration_minutes }} min<br>
+    <br>
+    <strong>Certificat délivré le :</strong> {{ certificate.issued_at|date:"d/m/Y à H:i" }}
+  </p>
+</div>
+
+<p style="text-align:center;">
+  <a href="{{ admin_url }}" class="btn">⚙️ Voir dans le panel admin</a>
+</p>
+
+<hr class="divider">
+<p style="color:#999;font-size:13px;">Notification automatique EcoCycle — ne pas répondre directement à cet email.</p>
+{% endblock %}

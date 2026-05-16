@@ -105,3 +105,31 @@ class EmailService:
             'confirm_url': f'{settings.FRONTEND_URL}/newsletter/confirm/{subscriber.token}',
         })
         cls._send(subscriber.email, 'Confirmez votre abonnement — EcoCycle', html)
+
+    @classmethod
+    def send_certificate_earned(cls, user, course, certificate):
+        html = render_to_string('emails/certificate_earned.html', {
+            'user': user,
+            'course': course,
+            'certificate': certificate,
+            'certificates_url': f'{settings.FRONTEND_URL}/dashboard/certificates/',
+            'academy_url': f'{settings.FRONTEND_URL}/academy/',
+            'frontend_url': settings.FRONTEND_URL,
+        })
+        cls._send(user.email, f'Félicitations ! Votre certificat « {course.title} » est prêt — EcoCycle', html)
+
+    @classmethod
+    def send_admin_course_completed(cls, admin, user, course, certificate):
+        html = render_to_string('emails/admin_course_completed.html', {
+            'admin': admin,
+            'user': user,
+            'course': course,
+            'certificate': certificate,
+            'admin_url': f'{settings.FRONTEND_URL}/panel/academy/certificates/',
+            'frontend_url': settings.FRONTEND_URL,
+        })
+        cls._send(
+            admin.email,
+            f'[EcoCycle] {user.full_name} a complété « {course.title} »',
+            html,
+        )
