@@ -13,6 +13,21 @@ from apps.academy.models import Course, Lesson, LessonVideo, Enrollment, Certifi
 from apps.core.models import ContactMessage, NewsletterSubscriber, SiteConfiguration, SliderItem
 
 
+def _extract_pdf_text(file_obj):
+    """Extract plain text from an uploaded PDF file object. Returns '' on failure."""
+    try:
+        from pypdf import PdfReader
+        reader = PdfReader(file_obj)
+        pages = []
+        for page in reader.pages:
+            text = page.extract_text() or ''
+            if text.strip():
+                pages.append(text.strip())
+        return '\n\n'.join(pages)
+    except Exception:
+        return ''
+
+
 class AdminDashboardView(AdminRequiredMixin, View):
     def get(self, request):
         user = self.get_current_user(request)
@@ -569,11 +584,22 @@ class AdminAcademyLessonCreateView(AdminRequiredMixin, View):
         if not title:
             messages.error(request, 'Le titre est obligatoire.')
             return redirect('admin_academy_lesson_create', course_pk=course_pk)
+        content  = request.POST.get('content', '')
+        pdf_file = request.FILES.get('pdf_file')
+        if pdf_file:
+            extracted = _extract_pdf_text(pdf_file)
+            if extracted:
+                content = extracted
+                messages.info(request, f'Texte extrait du PDF ({len(extracted)} caractères).')
+            else:
+                messages.warning(request, 'PDF uploadé mais aucun texte n\'a pu être extrait.')
+            pdf_file.seek(0)
         lesson = Lesson.objects.create(
-            course  = course,
-            title   = title,
-            content = request.POST.get('content', ''),
-            order   = request.POST.get('order') or course.lessons.count(),
+            course   = course,
+            title    = title,
+            content  = content,
+            pdf_file = pdf_file if pdf_file else None,
+            order    = request.POST.get('order') or course.lessons.count(),
         )
         # Ajouter la première vidéo si fournie
         video_file = request.FILES.get('video_file')
@@ -634,9 +660,25 @@ class AdminAcademyLessonEditView(AdminRequiredMixin, View):
             return redirect('admin_academy_lesson_edit', course_pk=course_pk, lesson_pk=lesson_pk)
 
         # default: save_lesson
-        lesson.title   = request.POST.get('title', '').strip() or lesson.title
-        lesson.content = request.POST.get('content', '')
-        lesson.order   = request.POST.get('order') or lesson.order
+        lesson.title  = request.POST.get('title', '').strip() or lesson.title
+        lesson.order  = request.POST.get('order') or lesson.order
+        pdf_file      = request.FILES.get('pdf_file')
+        replace_content = request.POST.get('replace_content') == '1'
+        if pdf_file:
+            extracted = _extract_pdf_text(pdf_file)
+            if extracted:
+                if replace_content or not lesson.content.strip():
+                    lesson.content = extracted
+                    messages.info(request, f'Contenu remplacé par le texte du PDF ({len(extracted)} caractères).')
+                else:
+                    lesson.content = lesson.content.rstrip() + '\n\n' + extracted
+                    messages.info(request, f'Texte du PDF ajouté à la fin du contenu ({len(extracted)} caractères).')
+            else:
+                messages.warning(request, 'PDF uploadé mais aucun texte n\'a pu être extrait.')
+            pdf_file.seek(0)
+            lesson.pdf_file = pdf_file
+        else:
+            lesson.content = request.POST.get('content', '')
         lesson.save()
         messages.success(request, f'Leçon « {lesson.title} » mise à jour.')
         return redirect('admin_academy_lesson_edit', course_pk=course_pk, lesson_pk=lesson_pk)

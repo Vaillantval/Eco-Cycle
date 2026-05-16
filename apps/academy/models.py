@@ -47,6 +47,11 @@ class Lesson(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='lessons')
     title = models.CharField(max_length=200)
     content = models.TextField(blank=True)
+    pdf_file = models.FileField(
+        upload_to='academy/pdfs/', null=True, blank=True,
+        verbose_name='PDF de la leçon',
+        help_text='Upload un PDF pour extraire automatiquement le texte'
+    )
     order = models.PositiveIntegerField(default=0)
     duration_minutes = models.PositiveIntegerField(default=0)
 

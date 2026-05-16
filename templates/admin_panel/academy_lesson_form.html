@@ -126,6 +126,28 @@
                     style="width:100%;padding:9px 14px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;font-family:monospace;resize:vertical;">{{ lesson.content|default:'' }}</textarea>
         </div>
 
+        <!-- PDF UPLOAD -->
+        <div style="border:1.5px dashed #e2e8f0;border-radius:10px;padding:16px;">
+          <div style="font-size:0.78rem;font-weight:700;color:#334155;margin-bottom:10px;">📄 Importer depuis un PDF</div>
+          <div style="font-size:0.75rem;color:#64748b;margin-bottom:12px;line-height:1.5;">
+            Uploadez un PDF pour extraire automatiquement son texte dans le contenu de la leçon.
+          </div>
+          <input type="file" name="pdf_file" accept=".pdf,application/pdf"
+                 style="width:100%;padding:7px 10px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.82rem;background:#fafafa;margin-bottom:10px;">
+          {% if lesson and lesson.content %}
+          <label style="display:flex;align-items:flex-start;gap:8px;font-size:0.78rem;color:#64748b;cursor:pointer;line-height:1.4;">
+            <input type="checkbox" name="replace_content" value="1" style="margin-top:2px;flex-shrink:0;">
+            <span>Remplacer le contenu existant <span style="color:#94a3b8;">(par défaut : ajouter à la fin)</span></span>
+          </label>
+          {% endif %}
+          {% if lesson and lesson.pdf_file %}
+          <div style="margin-top:10px;font-size:0.75rem;color:#64748b;display:flex;align-items:center;gap:6px;">
+            <span>📎 PDF actuel :</span>
+            <a href="{{ lesson.pdf_file.url }}" target="_blank" style="color:#0d7a45;font-weight:600;text-decoration:none;">Télécharger</a>
+          </div>
+          {% endif %}
+        </div>
+
       </div>
     </div>
   </div>
