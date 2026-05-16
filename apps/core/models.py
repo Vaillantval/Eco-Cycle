@@ -61,7 +61,21 @@ class SiteConfiguration(models.Model):
 
     def save(self, *args, **kwargs):
         self.pk = 1
+
+        # Détecter le passage maintenance_mode True → False
+        was_in_maintenance = False
+        try:
+            previous = SiteConfiguration.objects.get(pk=1)
+            was_in_maintenance = previous.maintenance_mode
+        except SiteConfiguration.DoesNotExist:
+            pass
+
         super().save(*args, **kwargs)
+
+        # Si on vient de désactiver la maintenance, notifier tous les users
+        if was_in_maintenance and not self.maintenance_mode:
+            from apps.core.tasks import notify_maintenance_over
+            notify_maintenance_over.delay(message=self.maintenance_message)
 
 
 # ── Slider items (géré depuis l'admin) ──────────────────────────────────────

@@ -1,0 +1,28 @@
+{% extends "emails/base_email.html" %}
+{% block subject %}EcoCycle est de retour !{% endblock %}
+{% block content %}
+<h2>Le site est de retour ! &#127881;</h2>
+
+<p>Bonjour {{ user.first_name }},</p>
+
+<p>La maintenance d'EcoCycle Haiti est terminée. Le site est désormais pleinement opérationnel — merci infiniment pour votre patience.</p>
+
+<div class="info-box">
+  <p>&#9989; Toutes les fonctionnalités sont à nouveau disponibles :<br>
+  marketplace, academy, dashboard et suivi d'impact.</p>
+</div>
+
+{% if message %}
+<p style="color:#475569;">{{ message }}</p>
+{% endif %}
+
+<p style="text-align:center;">
+  <a href="{{ frontend_url }}" class="btn">Retourner sur EcoCycle</a>
+</p>
+
+<hr class="divider">
+
+<p style="font-size:0.88rem;color:#94a3b8;">
+  Vous recevez cet email car vous êtes inscrit sur EcoCycle Haiti.
+</p>
+{% endblock %}

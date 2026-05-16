@@ -1,4 +1,54 @@
 from celery import shared_task
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+@shared_task(name='core.notify_maintenance_over', bind=True, max_retries=3)
+def notify_maintenance_over(self, message: str = ''):
+    """
+    Notifie tous les utilisateurs actifs que la maintenance est terminée :
+    - Email via Resend (par lots de 50)
+    - Push FCM multicast (un seul appel pour tous les tokens)
+    """
+    from apps.accounts.models import User
+    from apps.notifications.email_service import EmailService
+    from apps.notifications.fcm_service import FCMService
+
+    users = list(User.objects.filter(is_active=True).only(
+        'email', 'first_name', 'fcm_token'
+    ))
+
+    if not users:
+        return 'Aucun utilisateur actif.'
+
+    # ── Push FCM (multicast) ──────────────────────────────────────────────────
+    try:
+        FCMService.send_to_multiple(
+            users,
+            title='EcoCycle est de retour ! 🎉',
+            body=message or 'Le site est à nouveau disponible. Merci pour votre patience.',
+            data={'type': 'maintenance_over'},
+        )
+        logger.info(f'FCM multicast envoyé à {len(users)} utilisateurs.')
+    except Exception as e:
+        logger.error(f'FCM multicast erreur : {e}')
+
+    # ── Emails par lots de 50 ────────────────────────────────────────────────
+    sent = 0
+    errors = 0
+    chunk_size = 50
+    for i in range(0, len(users), chunk_size):
+        chunk = users[i:i + chunk_size]
+        for user in chunk:
+            try:
+                EmailService.send_maintenance_over(user, message=message)
+                sent += 1
+            except Exception as e:
+                logger.error(f'Email maintenance_over erreur ({user.email}): {e}')
+                errors += 1
+
+    return f'Emails : {sent} envoyés, {errors} erreurs.'
 
 
 @shared_task(name='core.send_weekly_report')

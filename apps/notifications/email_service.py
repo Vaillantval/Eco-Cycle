@@ -119,6 +119,15 @@ class EmailService:
         cls._send(user.email, f'Félicitations ! Votre certificat « {course.title} » est prêt — EcoCycle', html)
 
     @classmethod
+    def send_maintenance_over(cls, user, message: str = ''):
+        html = render_to_string('emails/maintenance_over.html', {
+            'user': user,
+            'message': message,
+            'frontend_url': settings.FRONTEND_URL,
+        })
+        cls._send(user.email, 'EcoCycle est de retour ! — Le site est à nouveau disponible', html)
+
+    @classmethod
     def send_admin_course_completed(cls, admin, user, course, certificate):
         html = render_to_string('emails/admin_course_completed.html', {
             'admin': admin,
