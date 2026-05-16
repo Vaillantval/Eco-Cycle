@@ -152,7 +152,7 @@
 
           <!-- LISTE LEÇONS MINI -->
           <div style="display:flex;flex-direction:column;gap:6px;">
-            {% for l in course.lessons.all %}
+            {% for l in lessons %}
             {% with lid=l.id|stringformat:"s" %}
             <a href="{% url 'lesson_detail' slug=course.slug lesson_id=l.id %}"
                style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;text-decoration:none;

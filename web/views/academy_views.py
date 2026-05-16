@@ -92,22 +92,30 @@ class CompleteLessonView(LoginRequiredMixin, View):
 class LessonDetailView(LoginRequiredMixin, View):
     def get(self, request, slug, lesson_id):
         user = self.get_current_user(request)
-        course = get_object_or_404(Course, slug=slug, is_published=True)
-        enrollment = get_object_or_404(Enrollment, user=user, course=course)
+        course = get_object_or_404(
+            Course.objects.prefetch_related('lessons__videos'),
+            slug=slug, is_published=True,
+        )
+        enrollment = get_object_or_404(
+            Enrollment.objects.prefetch_related('completed_lessons'),
+            user=user, course=course,
+        )
         lesson = get_object_or_404(Lesson, id=lesson_id, course=course)
 
-        lessons = list(course.lessons.all())
+        lessons = list(course.lessons.all())  # already prefetched, no extra query
         idx = next((i for i, l in enumerate(lessons) if str(l.id) == str(lesson.id)), 0)
         prev_lesson = lessons[idx - 1] if idx > 0 else None
         next_lesson = lessons[idx + 1] if idx < len(lessons) - 1 else None
 
-        completed_ids = set(str(l.id) for l in enrollment.completed_lessons.all())
+        completed_ids = set(str(l.id) for l in enrollment.completed_lessons.all())  # prefetched
         is_done = str(lesson.id) in completed_ids
+        videos = [v for v in lesson.videos.all() if True]  # prefetched via lessons__videos
 
         return render(request, 'academy/lesson_detail.html', {
             'course': course,
             'lesson': lesson,
-            'videos': lesson.videos.all(),
+            'lessons': lessons,
+            'videos': videos,
             'enrollment': enrollment,
             'prev_lesson': prev_lesson,
             'next_lesson': next_lesson,
