@@ -25,27 +25,45 @@
     <div class="contact-inner">
       <div class="reveal">
         <div class="contact-info">
+          {% if site_config.address %}
           <div class="contact-item">
             <div class="contact-item-icon">📍</div>
             <div>
               <h4>Adresse</h4>
-              <p>Port-au-Prince, Haïti<br>Zone Industrielle Sonapi</p>
+              <p>{{ site_config.address|linebreaksbr }}</p>
             </div>
           </div>
+          {% endif %}
+          {% if site_config.contact_phone %}
           <div class="contact-item">
             <div class="contact-item-icon">📞</div>
             <div>
               <h4>Téléphone</h4>
-              <p>+509 2222-0000<br>Lun–Ven, 8h–17h</p>
+              <p>
+                <a href="tel:{{ site_config.contact_phone }}" style="color:inherit;text-decoration:none;">{{ site_config.contact_phone }}</a>
+                {% if site_config.hours %}<br><span style="font-size:0.85rem;color:var(--gray);">{{ site_config.hours }}</span>{% endif %}
+              </p>
             </div>
           </div>
+          {% endif %}
+          {% if site_config.whatsapp %}
+          <div class="contact-item">
+            <div class="contact-item-icon">💬</div>
+            <div>
+              <h4>WhatsApp</h4>
+              <p><a href="https://wa.me/{{ site_config.whatsapp|cut:'+' }}" target="_blank" style="color:inherit;text-decoration:none;">{{ site_config.whatsapp }}</a></p>
+            </div>
+          </div>
+          {% endif %}
+          {% if site_config.contact_email %}
           <div class="contact-item">
             <div class="contact-item-icon">✉️</div>
             <div>
               <h4>Email</h4>
-              <p>hello@ecocycle.ht<br>partnerships@ecocycle.ht</p>
+              <p><a href="mailto:{{ site_config.contact_email }}" style="color:inherit;text-decoration:none;">{{ site_config.contact_email }}</a></p>
             </div>
           </div>
+          {% endif %}
         </div>
 
         <!-- Newsletter -->

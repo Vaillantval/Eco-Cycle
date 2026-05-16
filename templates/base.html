@@ -143,10 +143,14 @@
           </div>
           <p>Transformez vos déchets en ressources. Achetez et vendez des matériaux recyclables via notre marketplace d'enchères de confiance. Révolutionnons le recyclage en Haïti.</p>
           <div class="footer-social">
-            <a href="#" class="social-link">📘</a>
-            <a href="#" class="social-link">🐦</a>
-            <a href="#" class="social-link">📸</a>
-            <a href="#" class="social-link">💼</a>
+            {% if site_config.facebook_url %}<a href="{{ site_config.facebook_url }}" target="_blank" class="social-link" aria-label="Facebook">📘</a>{% endif %}
+            {% if site_config.twitter_url %}<a href="{{ site_config.twitter_url }}" target="_blank" class="social-link" aria-label="Twitter">🐦</a>{% endif %}
+            {% if site_config.instagram_url %}<a href="{{ site_config.instagram_url }}" target="_blank" class="social-link" aria-label="Instagram">📸</a>{% endif %}
+            {% if site_config.youtube_url %}<a href="{{ site_config.youtube_url }}" target="_blank" class="social-link" aria-label="YouTube">▶️</a>{% endif %}
+            {% if site_config.linkedin_url %}<a href="{{ site_config.linkedin_url }}" target="_blank" class="social-link" aria-label="LinkedIn">💼</a>{% endif %}
+            {% if not site_config or not site_config.facebook_url and not site_config.instagram_url %}
+              <span style="font-size:0.8rem;color:rgba(255,255,255,0.3);">Réseaux à configurer dans l'admin</span>
+            {% endif %}
           </div>
         </div>
         <div class="footer-col">
@@ -187,7 +191,7 @@
         </div>
       </div>
       <div class="footer-bottom">
-        <p>© 2026 EcoCycle Haiti. Tous droits réservés. Créé par Eliézer Léonce.</p>
+        <p>{{ site_config.copyright_text|default:"© 2026 EcoCycle Haiti. Tous droits réservés. Créé par Eliézer Léonce, Valcin Vaillant et Lafleur." }}</p>
         <div class="footer-bottom-links">
           <a href="#">Politique de confidentialité</a>
           <a href="#">Conditions d'utilisation</a>
