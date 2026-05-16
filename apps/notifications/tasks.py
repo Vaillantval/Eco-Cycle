@@ -95,6 +95,20 @@ def notify_auction_closed(auction_id: str, winner: bool):
         )
         if hasattr(auction, 'order'):
             EmailService.send_auction_won(auction.order)
+    else:
+        # No winner — notify the seller
+        FCMService.send_to_user(
+            auction.seller,
+            'Enchere cloturee sans acheteur',
+            f'Votre annonce "{auction.listing.title}" n\'a recu aucune offre valide.',
+            {'type': 'auction_closed', 'auction_id': str(auction_id)},
+        )
+        _create_notification(
+            auction.seller, 'auction_closed',
+            'Enchere cloturee',
+            f'"{auction.listing.title}" — aucune offre valide.',
+            {'auction_id': str(auction_id)},
+        )
 
 
 @shared_task(name='notifications.notify_order_created')

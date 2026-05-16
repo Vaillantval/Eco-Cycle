@@ -11,7 +11,7 @@ app.autodiscover_tasks()
 app.conf.beat_schedule = {
     # Clôturer les enchères expirées toutes les 5 minutes
     'close-expired-auctions': {
-        'task': 'apps.marketplace.tasks.close_expired_auctions',
+        'task': 'marketplace.close_expired_auctions',
         'schedule': 300.0,
     },
     # Rapport hebdomadaire admins — lundi 8h (heure Haïti)
