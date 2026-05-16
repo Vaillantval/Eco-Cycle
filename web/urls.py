@@ -177,4 +177,8 @@ urlpatterns = [
          AdminSlidersView.as_view(), name='admin_sliders'),
     path('panel/certificates/<uuid:cert_id>/pdf/',
          AdminCertificatePDFView.as_view(), name='admin_certificate_pdf'),
+
+    # Maintenance
+    path('maintenance/',
+         TemplateView.as_view(template_name='maintenance.html'), name='maintenance'),
 ]

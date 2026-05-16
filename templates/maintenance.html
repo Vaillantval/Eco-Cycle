@@ -1,0 +1,239 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maintenance — EcoCycle Haiti</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #0a1a10;
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 24px;
+      overflow: hidden;
+    }
+
+    /* Orbes d'arrière-plan */
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.18;
+      pointer-events: none;
+      animation: drift 12s ease-in-out infinite alternate;
+    }
+    .orb-1 { width: 520px; height: 520px; background: #0d7a45; top: -140px; left: -160px; animation-delay: 0s; }
+    .orb-2 { width: 380px; height: 380px; background: #4ade80; bottom: -100px; right: -80px;  animation-delay: -4s; }
+    .orb-3 { width: 260px; height: 260px; background: #f07c1a; top: 50%;   left: 60%;       animation-delay: -8s; }
+
+    @keyframes drift {
+      from { transform: translate(0, 0) scale(1); }
+      to   { transform: translate(30px, 20px) scale(1.08); }
+    }
+
+    /* Carte centrale */
+    .card {
+      position: relative;
+      z-index: 1;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 24px;
+      padding: 56px 48px;
+      max-width: 560px;
+      width: 100%;
+      text-align: center;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 32px 80px rgba(0,0,0,0.4);
+      animation: card-in 0.6s cubic-bezier(0.4,0,0.2,1) both;
+    }
+
+    @keyframes card-in {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Logo */
+    .logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 36px;
+      text-decoration: none;
+    }
+    .logo-icon {
+      width: 42px; height: 42px;
+      background: #0d7a45;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .logo-icon svg { width: 24px; height: 24px; fill: none; stroke: #fff; stroke-width: 2.5; }
+    .logo-text {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    /* Icône principale */
+    .main-icon {
+      font-size: 3.6rem;
+      margin-bottom: 20px;
+      display: block;
+      animation: pulse-icon 2.4s ease-in-out infinite;
+    }
+    @keyframes pulse-icon {
+      0%, 100% { transform: scale(1);    opacity: 1; }
+      50%       { transform: scale(1.08); opacity: 0.85; }
+    }
+
+    /* Badge */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(240,124,26,0.15);
+      border: 1px solid rgba(240,124,26,0.35);
+      color: #fb923c;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 4px 14px;
+      border-radius: 50px;
+      margin-bottom: 20px;
+    }
+    .badge-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #fb923c;
+      animation: blink 1.2s ease infinite;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.2; }
+    }
+
+    h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(1.7rem, 4vw, 2.2rem);
+      font-weight: 800;
+      line-height: 1.15;
+      margin-bottom: 16px;
+      color: #fff;
+    }
+
+    .message {
+      font-size: 0.97rem;
+      color: rgba(255,255,255,0.6);
+      line-height: 1.7;
+      margin-bottom: 36px;
+    }
+
+    /* Barre de progression animée */
+    .progress-bar {
+      height: 3px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 32px;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #0d7a45, #4ade80, #0d7a45);
+      background-size: 200% 100%;
+      border-radius: 2px;
+      animation: progress-shimmer 2s linear infinite;
+      width: 100%;
+    }
+    @keyframes progress-shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* Contact */
+    .contact-line {
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.35);
+    }
+    .contact-line a {
+      color: #4ade80;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .contact-line a:hover { text-decoration: underline; }
+
+    @media (max-width: 480px) {
+      .card { padding: 40px 28px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <div class="card">
+
+    <!-- Logo -->
+    <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24">
+          <path d="M7 16.5C4.2 15 2 12.3 2 9a7 7 0 0 1 14 0"/>
+          <path d="M17 16.5C19.8 15 22 12.3 22 9"/>
+          <path d="M12 22v-7"/>
+          <path d="M9 19l3-3 3 3"/>
+        </svg>
+      </div>
+      <span class="logo-text">EcoCycle</span>
+    </div>
+
+    <!-- Icône -->
+    <span class="main-icon">🔧</span>
+
+    <!-- Badge -->
+    <div class="badge">
+      <span class="badge-dot"></span>
+      Maintenance en cours
+    </div>
+
+    <!-- Titre -->
+    <h1>On revient très bientôt</h1>
+
+    <!-- Message personnalisé ou message par défaut -->
+    <p class="message">
+      {% if config and config.maintenance_message %}
+        {{ config.maintenance_message }}
+      {% else %}
+        Nous effectuons des améliorations pour vous offrir une meilleure expérience.
+        Merci de votre patience — le site sera de retour dans quelques instants.
+      {% endif %}
+    </p>
+
+    <!-- Barre animée -->
+    <div class="progress-bar">
+      <div class="progress-fill"></div>
+    </div>
+
+    <!-- Contact -->
+    {% if config and config.contact_email %}
+    <p class="contact-line">
+      Une urgence ?
+      <a href="mailto:{{ config.contact_email }}">{{ config.contact_email }}</a>
+    </p>
+    {% endif %}
+
+  </div>
+
+</body>
+</html>
