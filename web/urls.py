@@ -21,6 +21,7 @@ from .views.admin_views import (
     AdminAcademyView, AdminAcademyCourseCreateView, AdminAcademyCourseDetailView,
     AdminAcademyLessonEditView, AdminAcademyEnrollmentsView, AdminAcademyCertificatesView,
     AdminNewslettersView, AdminContactsView, AdminSiteConfigView,
+    AdminSlidersView,
 )
 from .views.collector_views import (
     CollectorDashboardView, CollectorPickupsView,
@@ -163,4 +164,6 @@ urlpatterns = [
          AdminContactsView.as_view(), name='admin_contacts'),
     path('panel/site-config/',
          AdminSiteConfigView.as_view(), name='admin_site_config'),
+    path('panel/sliders/',
+         AdminSlidersView.as_view(), name='admin_sliders'),
 ]

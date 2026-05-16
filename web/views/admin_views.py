@@ -9,7 +9,7 @@ from apps.collections.models import PickupRequest
 from apps.marketplace.models import Order, Auction
 from apps.blog.models import Post, BlogCategory
 from apps.academy.models import Course, Lesson, Enrollment, Certificate
-from apps.core.models import ContactMessage, NewsletterSubscriber, SiteConfiguration
+from apps.core.models import ContactMessage, NewsletterSubscriber, SiteConfiguration, SliderItem
 
 
 class AdminDashboardView(AdminRequiredMixin, View):
@@ -621,7 +621,83 @@ class AdminAcademyCertificatesView(AdminRequiredMixin, View):
             'user': admin,
             'certificates': certs,
             'search': search,
+            'courses': Course.objects.filter(is_published=True).order_by('title'),
+            'users': User.objects.filter(is_active=True).order_by('email'),
         })
+
+    def post(self, request):
+        action = request.POST.get('action')
+        if action == 'create':
+            user_id  = request.POST.get('user_id')
+            course_id = request.POST.get('course_id')
+            if user_id and course_id:
+                user   = get_object_or_404(User, pk=user_id)
+                course = get_object_or_404(Course, pk=course_id)
+                _, created = Certificate.objects.get_or_create(user=user, course=course)
+                if created:
+                    messages.success(request, f'Certificat créé pour {user.email} — {course.title}.')
+                else:
+                    messages.warning(request, 'Ce certificat existe déjà.')
+            else:
+                messages.error(request, 'Utilisateur et cours requis.')
+        elif action == 'delete':
+            cert_id = request.POST.get('cert_id')
+            Certificate.objects.filter(pk=cert_id).delete()
+            messages.success(request, 'Certificat supprimé.')
+        return redirect('admin_academy_certificates')
+
+
+class AdminSlidersView(AdminRequiredMixin, View):
+    def get(self, request):
+        admin = self.get_current_user(request)
+        return render(request, 'admin_panel/sliders.html', {
+            'user': admin,
+            'slides': SliderItem.objects.order_by('ordre'),
+        })
+
+    def post(self, request):
+        action = request.POST.get('action')
+
+        if action == 'create':
+            slide = SliderItem(
+                title    = request.POST.get('title', '').strip(),
+                subtitle = request.POST.get('subtitle', ''),
+                btn_text = request.POST.get('btn_text', ''),
+                btn_url  = request.POST.get('btn_url', ''),
+                ordre    = request.POST.get('ordre') or 0,
+                is_active = bool(request.POST.get('is_active')),
+            )
+            if request.FILES.get('image'):
+                slide.image = request.FILES['image']
+            slide.save()
+            messages.success(request, f'Slide « {slide.title} » créée.')
+
+        elif action == 'update':
+            slide_id = request.POST.get('slide_id')
+            slide = get_object_or_404(SliderItem, pk=slide_id)
+            slide.title    = request.POST.get('title', slide.title).strip()
+            slide.subtitle = request.POST.get('subtitle', slide.subtitle)
+            slide.btn_text = request.POST.get('btn_text', slide.btn_text)
+            slide.btn_url  = request.POST.get('btn_url', slide.btn_url)
+            slide.ordre    = request.POST.get('ordre') or slide.ordre
+            slide.is_active = bool(request.POST.get('is_active'))
+            if request.FILES.get('image'):
+                slide.image = request.FILES['image']
+            slide.save()
+            messages.success(request, f'Slide « {slide.title} » mise à jour.')
+
+        elif action == 'toggle':
+            slide_id = request.POST.get('slide_id')
+            slide = get_object_or_404(SliderItem, pk=slide_id)
+            slide.is_active = not slide.is_active
+            slide.save()
+
+        elif action == 'delete':
+            slide_id = request.POST.get('slide_id')
+            SliderItem.objects.filter(pk=slide_id).delete()
+            messages.success(request, 'Slide supprimée.')
+
+        return redirect('admin_sliders')
 
 
 class AdminNewslettersView(AdminRequiredMixin, View):

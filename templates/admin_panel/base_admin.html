@@ -377,6 +377,10 @@
          class="{% if request.resolver_match.url_name == 'admin_site_config' %}active{% endif %}">
         <span class="nav-icon">⚙️</span> Config du site
       </a>
+      <a href="{% url 'admin_sliders' %}"
+         class="{% if request.resolver_match.url_name == 'admin_sliders' %}active{% endif %}">
+        <span class="nav-icon">🖼️</span> Sliders
+      </a>
       <a href="/admin/" target="_blank">
         <span class="nav-icon">🔧</span> Django Admin
       </a>

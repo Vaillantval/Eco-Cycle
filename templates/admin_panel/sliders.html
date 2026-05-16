@@ -1,0 +1,204 @@
+{% extends 'admin_panel/base_admin.html' %}
+
+{% block title %}Slides — Admin EcoCycle{% endblock %}
+{% block page_title %}Slider de la page d'accueil{% endblock %}
+
+{% block topbar_actions %}
+<a href="{% url 'admin_site_config' %}" class="btn-admin-sm btn-view">⚙️ Config du site</a>
+{% endblock %}
+
+{% block admin_content %}
+
+<div style="display:grid;grid-template-columns:1fr 360px;gap:20px;align-items:start;">
+
+  <!-- LISTE DES SLIDES -->
+  <div>
+    <div class="admin-card">
+      <div class="admin-card-header">
+        <span class="admin-card-title">🖼️ Slides ({{ slides|length }})</span>
+      </div>
+
+      {% if slides %}
+      <div style="display:flex;flex-direction:column;gap:0;">
+        {% for slide in slides %}
+        <div style="padding:16px 20px;border-bottom:1px solid #f1f5f9;">
+          <div style="display:flex;gap:14px;align-items:flex-start;">
+
+            <!-- Aperçu image -->
+            {% if slide.image %}
+            <img src="{{ slide.image.url }}" alt="{{ slide.title }}"
+                 style="width:110px;height:62px;object-fit:cover;border-radius:6px;flex-shrink:0;border:1px solid #e2e8f0;">
+            {% else %}
+            <div style="width:110px;height:62px;background:#f1f5f9;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0;">🖼️</div>
+            {% endif %}
+
+            <!-- Infos -->
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                <span style="font-weight:700;font-size:0.9rem;color:#1e293b;">{{ slide.title }}</span>
+                <span style="font-size:0.72rem;font-weight:600;padding:1px 8px;border-radius:10px;
+                  {% if slide.is_active %}background:#dcfce7;color:#15803d;{% else %}background:#f1f5f9;color:#64748b;{% endif %}">
+                  {% if slide.is_active %}Actif{% else %}Inactif{% endif %}
+                </span>
+                <span style="font-size:0.72rem;color:#94a3b8;">Ordre : {{ slide.ordre }}</span>
+              </div>
+              {% if slide.subtitle %}
+              <div style="font-size:0.78rem;color:#64748b;margin-bottom:4px;">{{ slide.subtitle|truncatechars:80 }}</div>
+              {% endif %}
+              {% if slide.btn_text %}
+              <div style="font-size:0.72rem;color:#94a3b8;">Bouton : « {{ slide.btn_text }} » → {{ slide.btn_url }}</div>
+              {% endif %}
+            </div>
+
+            <!-- Actions -->
+            <div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;">
+              <button onclick="toggleEditForm('edit-{{ slide.id }}')" class="btn-admin-sm btn-view">✏️ Éditer</button>
+              <form method="POST" style="display:inline;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="toggle">
+                <input type="hidden" name="slide_id" value="{{ slide.id }}">
+                <button type="submit" class="btn-admin-sm {% if slide.is_active %}btn-view{% else %}btn-approve{% endif %}">
+                  {% if slide.is_active %}⏸{% else %}▶{% endif %}
+                </button>
+              </form>
+              <form method="POST" style="display:inline;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="slide_id" value="{{ slide.id }}">
+                <button type="submit" class="btn-admin-sm btn-reject"
+                  onclick="return confirm('Supprimer la slide « {{ slide.title|truncatechars:30 }} » ?')">🗑</button>
+              </form>
+            </div>
+
+          </div>
+
+          <!-- Formulaire d'édition inline (caché par défaut) -->
+          <div id="edit-{{ slide.id }}" style="display:none;margin-top:14px;padding:14px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;">
+            <form method="POST" enctype="multipart/form-data">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="update">
+              <input type="hidden" name="slide_id" value="{{ slide.id }}">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+                <div>
+                  <label style="font-size:0.75rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Titre *</label>
+                  <input type="text" name="title" value="{{ slide.title }}" required
+                         style="width:100%;padding:7px 10px;border:1px solid #e2e8f0;border-radius:6px;font-size:0.85rem;">
+                </div>
+                <div>
+                  <label style="font-size:0.75rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Ordre</label>
+                  <input type="number" name="ordre" value="{{ slide.ordre }}" min="0"
+                         style="width:100%;padding:7px 10px;border:1px solid #e2e8f0;border-radius:6px;font-size:0.85rem;">
+                </div>
+              </div>
+              <div style="margin-bottom:10px;">
+                <label style="font-size:0.75rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Sous-titre / description</label>
+                <textarea name="subtitle" rows="2"
+                          style="width:100%;padding:7px 10px;border:1px solid #e2e8f0;border-radius:6px;font-size:0.85rem;resize:vertical;">{{ slide.subtitle }}</textarea>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+                <div>
+                  <label style="font-size:0.75rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Texte du bouton</label>
+                  <input type="text" name="btn_text" value="{{ slide.btn_text }}"
+                         style="width:100%;padding:7px 10px;border:1px solid #e2e8f0;border-radius:6px;font-size:0.85rem;">
+                </div>
+                <div>
+                  <label style="font-size:0.75rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Lien du bouton</label>
+                  <input type="text" name="btn_url" value="{{ slide.btn_url }}"
+                         style="width:100%;padding:7px 10px;border:1px solid #e2e8f0;border-radius:6px;font-size:0.85rem;">
+                </div>
+              </div>
+              <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;">
+                <div style="flex:1;">
+                  <label style="font-size:0.75rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Nouvelle image</label>
+                  <input type="file" name="image" accept="image/*" style="font-size:0.78rem;">
+                </div>
+                <label style="display:flex;align-items:center;gap:6px;font-size:0.85rem;cursor:pointer;white-space:nowrap;">
+                  <input type="checkbox" name="is_active" value="1" {% if slide.is_active %}checked{% endif %} style="width:15px;height:15px;">
+                  Actif
+                </label>
+              </div>
+              <div style="display:flex;gap:8px;">
+                <button type="submit" class="btn-admin-sm btn-approve" style="flex:1;justify-content:center;">💾 Sauvegarder</button>
+                <button type="button" class="btn-admin-sm btn-view" onclick="toggleEditForm('edit-{{ slide.id }}')">Annuler</button>
+              </div>
+            </form>
+          </div>
+
+        </div>
+        {% endfor %}
+      </div>
+
+      {% else %}
+      <div style="padding:40px;text-align:center;color:#94a3b8;">
+        <div style="font-size:2rem;margin-bottom:8px;">🖼️</div>
+        <p>Aucune slide. Créez la première ci-dessous.</p>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+
+  <!-- CRÉER UNE SLIDE -->
+  <div>
+    <div class="admin-card">
+      <div class="admin-card-header"><span class="admin-card-title">➕ Nouvelle slide</span></div>
+      <div style="padding:20px;">
+        <form method="POST" enctype="multipart/form-data">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="create">
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <div>
+              <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Image de fond</label>
+              <input type="file" name="image" accept="image/*" style="font-size:0.8rem;">
+              <div style="font-size:0.7rem;color:#94a3b8;margin-top:3px;">Recommandé : 1600 × 700 px</div>
+            </div>
+            <div>
+              <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Titre *</label>
+              <input type="text" name="title" required placeholder="Ex: Recyclons ensemble !"
+                     style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
+            </div>
+            <div>
+              <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Sous-titre / description</label>
+              <textarea name="subtitle" rows="3" placeholder="Texte affiché sous le titre..."
+                        style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.85rem;resize:vertical;"></textarea>
+            </div>
+            <div>
+              <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Texte du bouton <span style="font-weight:400;">(optionnel)</span></label>
+              <input type="text" name="btn_text" placeholder="Ex: Commencer"
+                     style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
+            </div>
+            <div>
+              <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Lien du bouton</label>
+              <input type="text" name="btn_url" placeholder="/marketplace/"
+                     style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
+            </div>
+            <div style="display:flex;gap:12px;align-items:center;">
+              <div style="flex:1;">
+                <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Ordre</label>
+                <input type="number" name="ordre" value="{{ slides|length }}" min="0"
+                       style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
+              </div>
+              <label style="display:flex;align-items:center;gap:6px;font-size:0.85rem;cursor:pointer;margin-top:18px;">
+                <input type="checkbox" name="is_active" value="1" checked style="width:15px;height:15px;">
+                Actif
+              </label>
+            </div>
+            <button type="submit" class="btn-admin-sm btn-admin-primary" style="width:100%;justify-content:center;padding:10px;">
+              ➕ Créer la slide
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function toggleEditForm(id) {
+  var el = document.getElementById(id);
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+</script>
+
+{% endblock %}
