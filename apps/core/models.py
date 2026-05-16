@@ -68,12 +68,11 @@ class SiteConfiguration(models.Model):
 # ── Slider items (géré depuis l'admin) ──────────────────────────────────────
 
 class SliderItem(models.Model):
-    icon        = models.CharField(max_length=10, default='♻️', verbose_name='Icône (emoji)')
-    tag         = models.CharField(max_length=80, blank=True, verbose_name='Étiquette (ex: Intelligence artificielle)')
+    image       = models.ImageField(upload_to='slider/', null=True, blank=True, verbose_name='Image de fond', help_text='Recommandé : 1600 × 700 px, format JPG/PNG')
     title       = models.CharField(max_length=120, verbose_name='Titre')
-    description = models.TextField(verbose_name='Description')
-    cta_text    = models.CharField(max_length=60, default='En savoir plus →', blank=True, verbose_name='Texte du lien')
-    cta_url     = models.CharField(max_length=255, blank=True, verbose_name='URL du lien', help_text='URL relative ou absolue')
+    subtitle    = models.TextField(blank=True, verbose_name='Sous-titre / description')
+    btn_text    = models.CharField(max_length=60, blank=True, verbose_name='Texte du bouton', help_text='Laisser vide pour masquer le bouton')
+    btn_url     = models.CharField(max_length=255, blank=True, verbose_name='Lien du bouton', help_text='URL relative (/marketplace/) ou absolue')
     ordre       = models.PositiveSmallIntegerField(default=0, verbose_name='Ordre')
     is_active   = models.BooleanField(default=True, verbose_name='Actif')
 

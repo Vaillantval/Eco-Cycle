@@ -151,18 +151,19 @@ if (newsletterBtn) {
   });
 }
 
-// ── FEATURES SLIDER ──
+// ── IMAGE SLIDER ──
 (function () {
   const track    = document.getElementById('sliderTrack');
   const dots     = document.querySelectorAll('.slider-dot');
   const progress = document.getElementById('sliderProgress');
-  if (!track || !dots.length) return;
+  const btnPrev  = document.getElementById('sliderPrev');
+  const btnNext  = document.getElementById('sliderNext');
+  if (!track) return;
 
-  const TOTAL    = dots.length;
-  const DELAY    = 4000;
-  let current    = 0;
-  let timer      = null;
-  let progTimer  = null;
+  const TOTAL = dots.length || 1;
+  const DELAY = 5000;
+  let current = 0;
+  let timer   = null;
 
   function goTo(idx) {
     current = (idx + TOTAL) % TOTAL;
@@ -172,37 +173,31 @@ if (newsletterBtn) {
   }
 
   function resetProgress() {
-    if (progress) {
-      progress.style.transition = 'none';
-      progress.style.width = '0%';
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          progress.style.transition = `width ${DELAY}ms linear`;
-          progress.style.width = '100%';
-        });
-      });
-    }
+    if (!progress) return;
+    progress.style.transition = 'none';
+    progress.style.width = '0%';
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      progress.style.transition = `width ${DELAY}ms linear`;
+      progress.style.width = '100%';
+    }));
   }
 
   function startAuto() {
+    clearInterval(timer);
     timer = setInterval(() => goTo(current + 1), DELAY);
   }
 
-  dots.forEach(dot => {
-    dot.addEventListener('click', () => {
-      clearInterval(timer);
-      goTo(parseInt(dot.dataset.slide));
-      startAuto();
-    });
-  });
+  dots.forEach(dot => dot.addEventListener('click', () => {
+    goTo(parseInt(dot.dataset.slide)); startAuto();
+  }));
+  if (btnPrev) btnPrev.addEventListener('click', () => { goTo(current - 1); startAuto(); });
+  if (btnNext) btnNext.addEventListener('click', () => { goTo(current + 1); startAuto(); });
 
-  // Pause on hover
-  const wrapper = document.getElementById('sliderTrack')?.closest('#features-slider');
-  if (wrapper) {
-    wrapper.addEventListener('mouseenter', () => clearInterval(timer));
-    wrapper.addEventListener('mouseleave', () => { startAuto(); });
+  const section = track.closest('#features-slider');
+  if (section) {
+    section.addEventListener('mouseenter', () => clearInterval(timer));
+    section.addEventListener('mouseleave', startAuto);
   }
 
-  resetProgress();
-  startAuto();
+  if (TOTAL > 1) { resetProgress(); startAuto(); }
 })();

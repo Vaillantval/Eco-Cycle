@@ -60,10 +60,20 @@ class SiteConfigurationAdmin(admin.ModelAdmin):
 
 @admin.register(SliderItem)
 class SliderItemAdmin(admin.ModelAdmin):
-    list_display  = ('title', 'tag', 'icon', 'ordre', 'is_active')
+    list_display  = ('title', 'image_preview', 'btn_text', 'ordre', 'is_active')
     list_editable = ('ordre', 'is_active')
     ordering      = ('ordre',)
-    fields        = ('icon', 'tag', 'title', 'description', 'cta_text', 'cta_url', 'ordre', 'is_active')
+    fields        = ('image', 'image_preview', 'title', 'subtitle', 'btn_text', 'btn_url', 'ordre', 'is_active')
+    readonly_fields = ('image_preview',)
+
+    def image_preview(self, obj):
+        if obj.image:
+            return format_html(
+                '<img src="{}" style="height:60px;border-radius:6px;object-fit:cover;width:120px;">',
+                obj.image.url
+            )
+        return '—'
+    image_preview.short_description = 'Aperçu'
 
 
 # ── ContactMessage ────────────────────────────────────────────────────────────
