@@ -97,15 +97,52 @@
     display: flex;
     align-items: center;
     gap: 7px;
-    padding: 5px 9px;
+    padding: 6px 9px;
     background: #fafafa;
     border-left: 2px solid #e2e8f0;
     border-radius: 0 6px 6px 0;
     font-size: 0.75rem;
     color: #475569;
+    cursor: pointer;
+    transition: background 0.15s, border-left-color 0.15s;
   }
-  .step-video-item .sv-icon { color: #e85d04; font-size: 0.62rem; flex-shrink: 0; }
+  .step-video-item:hover { background: #f0fdf4; border-left-color: #0d7a45; color: #0d7a45; }
+  .step-video-item.sv-active { background: #f0fdf4; border-left-color: #0d7a45; color: #0d7a45; font-weight: 600; }
+  .step-video-item .sv-icon { font-size: 0.6rem; flex-shrink: 0; transition: color 0.15s; }
   .step-video-item .sv-dur  { margin-left: auto; color: #94a3b8; font-size: 0.68rem; white-space: nowrap; }
+
+  /* Contenu texte lisible */
+  .lesson-prose {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 32px 28px 40px;
+  }
+  .lesson-prose h3 {
+    font-family: var(--font-display);
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #94a3b8;
+    margin: 0 0 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .lesson-prose h3::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #f1f5f9;
+  }
+  .lesson-prose-body {
+    font-size: 1rem;
+    line-height: 1.85;
+    color: #334155;
+    font-family: Georgia, 'Times New Roman', serif;
+  }
+  .lesson-prose-body p { margin: 0 0 1.2em; }
+  .lesson-prose-body p:last-child { margin-bottom: 0; }
 
   .video-tabs { display: flex; gap: 0; border-bottom: 2px solid #e2e8f0; margin-bottom: 0; overflow-x: auto; }
   .video-tab {
@@ -157,8 +194,9 @@
   <!-- COLONNE PRINCIPALE -->
   <div class="lesson-main">
 
-    <!-- VIDÉO(S) -->
-    <div style="background:#000;">
+    <!-- VIDÉO(S) — masqué si aucune vidéo -->
+    {% if videos %}
+    <div id="video-area" style="background:#000;">
       {% if videos|length == 1 %}
         {% with video=videos.0 %}
           {% if video.video_file %}
@@ -230,13 +268,6 @@
         {% endfor %}
       </div>
 
-      {% else %}
-      <div style="padding-bottom:40%;position:relative;background:#111;">
-        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:rgba(255,255,255,0.4);">
-          <div style="font-size:3rem;">🎬</div>
-          <span style="font-size:0.9rem;">Aucune vidéo pour cette leçon</span>
-        </div>
-      </div>
       {% endif %}
 
       <!-- Lien YouTube de secours (vidéos embed uniquement) -->
@@ -249,6 +280,7 @@
       </div>
       {% endif %}
     </div>
+    {% endif %}{# /if videos #}
 
     <!-- INFOS LEÇON -->
     <div style="padding:24px 28px 0;">
@@ -271,11 +303,11 @@
 
     <!-- CONTENU TEXTE -->
     {% if lesson.content %}
-    <div style="padding:24px 28px;">
-      <h3 style="font-family:var(--font-display);font-size:0.92rem;font-weight:700;color:#334155;margin:0 0 12px;text-transform:uppercase;letter-spacing:0.4px;">
-        📖 Notes de la leçon
-      </h3>
-      <div style="font-size:0.92rem;line-height:1.75;color:#334155;white-space:pre-wrap;">{{ lesson.content }}</div>
+    <div class="lesson-prose">
+      <h3>Notes de la leçon</h3>
+      <div class="lesson-prose-body">
+        {{ lesson.content|linebreaks }}
+      </div>
     </div>
     {% endif %}
 
@@ -373,11 +405,13 @@
             </div>
           </a>
 
-          <!-- Vidéos de la leçon active dépliées -->
+          <!-- Vidéos de la leçon active — cliquables -->
           {% if lid == cur and lvids %}
           <div class="step-videos">
             {% for v in lvids %}
-            <div class="step-video-item">
+            <div class="step-video-item {% if forloop.first %}sv-active{% endif %}"
+                 id="sv-{{ forloop.counter0 }}"
+                 onclick="goToVideo({{ forloop.counter0 }})">
               <span class="sv-icon">▶</span>
               <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
                 {% if v.title %}{{ v.title }}{% else %}Vidéo {{ forloop.counter }}{% endif %}
@@ -409,15 +443,31 @@
 
 {% block extra_js %}
 <script>
+const multiVideo = document.querySelectorAll('.video-panel').length > 0;
+
 function switchVideo(idx) {
   document.querySelectorAll('.video-panel').forEach((p, i) => {
     p.classList.toggle('active', i === idx);
   });
   document.querySelectorAll('.video-tab').forEach((t, i) => {
-    const isActive = i === idx;
-    t.classList.toggle('active', isActive);
-    t.style.color = isActive ? '#4ade80' : 'rgba(255,255,255,0.5)';
-    t.style.borderBottomColor = isActive ? '#4ade80' : 'transparent';
+    const on = i === idx;
+    t.classList.toggle('active', on);
+    t.style.color = on ? '#4ade80' : 'rgba(255,255,255,0.5)';
+    t.style.borderBottomColor = on ? '#4ade80' : 'transparent';
+  });
+}
+
+function goToVideo(idx) {
+  // 1. Changer l'onglet si multi-vidéo
+  if (multiVideo) switchVideo(idx);
+
+  // 2. Scroll vers la zone vidéo dans la colonne principale
+  const area = document.getElementById('video-area');
+  if (area) area.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // 3. Mettre en surbrillance l'item sidebar cliqué
+  document.querySelectorAll('.step-video-item').forEach((el, i) => {
+    el.classList.toggle('sv-active', i === idx);
   });
 }
 </script>
