@@ -25,20 +25,20 @@
 
         <div>
           <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:6px;">Titre *</label>
-          <input type="text" name="title" value="{{ post.title|default:data.title|default:'' }}" required
+          <input type="text" name="title" value="{% if post %}{{ post.title }}{% else %}{{ data.title }}{% endif %}" required
                  style="width:100%;padding:9px 14px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.95rem;font-weight:600;">
         </div>
 
         <div>
           <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:6px;">Extrait * <span style="font-weight:400;">(affiché dans la liste — max 500 cars)</span></label>
           <textarea name="excerpt" rows="3" required
-                    style="width:100%;padding:9px 14px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;resize:vertical;">{{ post.excerpt|default:data.excerpt|default:'' }}</textarea>
+                    style="width:100%;padding:9px 14px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;resize:vertical;">{% if post %}{{ post.excerpt }}{% else %}{{ data.excerpt }}{% endif %}</textarea>
         </div>
 
         <div>
           <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:6px;">Contenu * <span style="font-weight:400;">(Markdown ou texte brut)</span></label>
           <textarea name="content" rows="20" required
-                    style="width:100%;padding:9px 14px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;font-family:monospace;resize:vertical;">{{ post.content|default:data.content|default:'' }}</textarea>
+                    style="width:100%;padding:9px 14px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;font-family:monospace;resize:vertical;">{% if post %}{{ post.content }}{% else %}{{ data.content }}{% endif %}</textarea>
         </div>
 
       </div>
@@ -85,7 +85,7 @@
         </div>
         <div>
           <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:6px;">Temps de lecture (minutes)</label>
-          <input type="number" name="read_time_minutes" value="{{ post.read_time_minutes|default:'5' }}" min="1"
+          <input type="number" name="read_time_minutes" value="{% if post %}{{ post.read_time_minutes }}{% else %}5{% endif %}" min="1"
                  style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
         </div>
       </div>

@@ -307,6 +307,7 @@ class AdminBlogCreateView(AdminRequiredMixin, View):
             'user': admin,
             'categories': BlogCategory.objects.order_by('name'),
             'post': None,
+            'data': {},
         })
 
     def post(self, request):
@@ -348,6 +349,7 @@ class AdminBlogEditView(AdminRequiredMixin, View):
             'user': admin,
             'post': post,
             'categories': BlogCategory.objects.order_by('name'),
+            'data': {},
         })
 
     def post(self, request, pk):
