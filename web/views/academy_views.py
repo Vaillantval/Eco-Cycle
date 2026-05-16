@@ -48,6 +48,12 @@ class CourseDetailView(View):
                 pass
 
         lessons_list = list(lessons)
+        continue_lesson = None
+        if enrollment and not enrollment.is_completed:
+            continue_lesson = next(
+                (l for l in lessons_list if str(l.id) not in completed_ids),
+                lessons_list[0] if lessons_list else None,
+            )
         return render(request, 'academy/detail.html', {
             'course': course,
             'lessons': lessons_list,
@@ -55,6 +61,7 @@ class CourseDetailView(View):
             'completed_ids': completed_ids,
             'total_lessons': len(lessons_list),
             'first_lesson': lessons_list[0] if lessons_list else None,
+            'continue_lesson': continue_lesson,
         })
 
 

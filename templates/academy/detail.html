@@ -2,17 +2,48 @@
 
 {% block title %}{{ course.title }} — Academy EcoCycle{% endblock %}
 
+{% block extra_css %}
+<style>
+  .lesson-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px 24px;
+    border-bottom: 1px solid #f8fafc;
+    text-decoration: none;
+    transition: background 0.15s;
+    cursor: pointer;
+  }
+  .lesson-row:hover { background: #f8fafc; }
+  .lesson-row.done   { background: #f0fdf4; }
+
+  .lr-bullet {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.82rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .lr-bullet.done    { background: #0d7a45; color: #fff; }
+  .lr-bullet.pending { background: #f1f5f9; color: #64748b; }
+  .lr-bullet.locked  { background: #f8fafc; color: #cbd5e1; border: 1px solid #e2e8f0; }
+</style>
+{% endblock %}
+
 {% block content %}
-<section style="padding:60px 0 80px;background:var(--cream);">
+<section style="padding:48px 0 80px;background:var(--cream);">
   <div class="container">
 
     <!-- BREADCRUMB -->
-    <div style="margin-bottom:24px;font-size:0.82rem;color:#999;">
-      <a href="{% url 'home' %}" style="color:#999;text-decoration:none;">Accueil</a>
+    <div style="margin-bottom:24px;font-size:0.82rem;color:#94a3b8;">
+      <a href="{% url 'academy_list' %}" style="color:#94a3b8;text-decoration:none;">Academy</a>
       <span style="margin:0 6px;">›</span>
-      <a href="{% url 'academy_list' %}" style="color:#999;text-decoration:none;">Academy</a>
-      <span style="margin:0 6px;">›</span>
-      {{ course.title|truncatechars:40 }}
+      <span style="color:#334155;">{{ course.title|truncatechars:50 }}</span>
     </div>
 
     <div style="display:grid;grid-template-columns:1fr 320px;gap:28px;align-items:start;">
@@ -24,115 +55,123 @@
         <div style="background:white;border-radius:16px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.07);margin-bottom:24px;">
           {% if course.thumbnail %}
           <img src="{{ course.thumbnail.url }}" alt="{{ course.title }}"
-               style="width:100%;max-height:340px;object-fit:cover;display:block;">
+               style="width:100%;max-height:320px;object-fit:cover;display:block;">
           {% else %}
-          <div style="height:240px;background:linear-gradient(135deg,var(--orange),#c85d0a);
+          <div style="height:220px;background:linear-gradient(135deg,#0f2d20 0%,#0d7a45 60%,#4ade80 100%);
                       display:flex;align-items:center;justify-content:center;font-size:5rem;">🎓</div>
           {% endif %}
 
           <div style="padding:28px 32px;">
-            <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
-              <span style="font-size:0.7rem;font-weight:700;text-transform:uppercase;padding:2px 10px;border-radius:10px;
+            <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+              <span style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;padding:3px 10px;border-radius:10px;
                            {% if course.level == 'beginner' %}background:#f0fdf4;color:#15803d;
                            {% elif course.level == 'intermediate' %}background:#fff7ed;color:#c2410c;
                            {% else %}background:#fef2f2;color:#dc2626;{% endif %}">
                 {{ course.get_level_display }}
               </span>
               {% if course.is_free %}
-              <span style="font-size:0.7rem;font-weight:700;text-transform:uppercase;padding:2px 10px;border-radius:10px;background:#e0f2fe;color:#0369a1;">Gratuit</span>
+              <span style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;padding:3px 10px;border-radius:10px;background:#e0f2fe;color:#0369a1;">Gratuit</span>
               {% endif %}
             </div>
 
-            <h1 style="font-family:var(--font-display);font-size:clamp(1.4rem,3vw,2rem);font-weight:800;
-                       color:var(--charcoal);margin:0 0 12px;line-height:1.2;">
+            <h1 style="font-family:var(--font-display);font-size:clamp(1.5rem,3vw,2.1rem);font-weight:800;
+                       color:var(--charcoal);margin:0 0 14px;line-height:1.2;">
               {{ course.title }}
             </h1>
 
-            <p style="color:#555;font-size:0.95rem;line-height:1.65;margin:0 0 20px;">
+            <p style="color:#475569;font-size:0.95rem;line-height:1.7;margin:0 0 20px;">
               {{ course.description }}
             </p>
 
-            <div style="display:flex;gap:20px;font-size:0.82rem;color:#888;flex-wrap:wrap;">
-              <span>📚 {{ total_lessons }} leçon{{ total_lessons|pluralize }}</span>
-              <span>⏱ {{ course.duration_minutes }} min</span>
+            <div style="display:flex;gap:20px;font-size:0.82rem;color:#94a3b8;flex-wrap:wrap;padding-top:16px;border-top:1px solid #f1f5f9;">
+              <span style="display:flex;align-items:center;gap:5px;">📚 <strong style="color:#334155;">{{ total_lessons }}</strong> leçon{{ total_lessons|pluralize }}</span>
+              <span style="display:flex;align-items:center;gap:5px;">⏱ <strong style="color:#334155;">{{ course.duration_minutes }}</strong> min au total</span>
             </div>
           </div>
         </div>
 
-        <!-- LISTE DES LEÇONS -->
+        <!-- CONTENU DU COURS -->
         <div style="background:white;border-radius:16px;box-shadow:0 2px 16px rgba(0,0,0,0.07);overflow:hidden;">
-          <div style="padding:18px 24px;border-bottom:1px solid #f5f2ed;display:flex;align-items:center;justify-content:space-between;">
+
+          <!-- EN-TÊTE DE LA LISTE -->
+          <div style="padding:18px 24px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;">
             <h2 style="font-family:var(--font-display);font-size:1.05rem;font-weight:700;color:var(--charcoal);margin:0;">
               📖 Contenu du cours
             </h2>
             {% if enrollment %}
-            <span style="font-size:0.78rem;font-weight:700;color:var(--green);">{{ enrollment.progress_percent }}% complété</span>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="width:60px;height:5px;background:#e2f5eb;border-radius:3px;">
+                <div style="height:100%;border-radius:3px;background:#0d7a45;width:{{ enrollment.progress_percent }}%;"></div>
+              </div>
+              <span style="font-size:0.78rem;font-weight:700;color:#0d7a45;">{{ enrollment.progress_percent }}%</span>
+            </div>
             {% endif %}
           </div>
 
-          {% if enrollment %}
-          <!-- BARRE DE PROGRESSION GLOBALE -->
-          <div style="padding:12px 24px;background:#f8fffe;border-bottom:1px solid #f0fdf4;">
-            <div style="background:#e2f5eb;border-radius:6px;height:8px;">
-              <div style="background:var(--green);height:100%;border-radius:6px;width:{{ enrollment.progress_percent }}%;transition:width 0.4s;"></div>
-            </div>
-            {% if enrollment.is_completed %}
-            <div style="text-align:center;margin-top:6px;font-size:0.8rem;color:#15803d;font-weight:700;">
-              🎉 Cours terminé — Félicitations !
-            </div>
-            {% endif %}
+          {% if enrollment and enrollment.is_completed %}
+          <div style="padding:12px 24px;background:#f0fdf4;border-bottom:1px solid #bbf7d0;display:flex;align-items:center;gap:10px;">
+            <span style="font-size:1.1rem;">🎉</span>
+            <span style="font-size:0.85rem;font-weight:700;color:#15803d;">Cours terminé — Félicitations !</span>
           </div>
           {% endif %}
 
+          <!-- LEÇONS -->
           <div>
             {% for lesson in lessons %}
-            {% with is_done=lesson.id|stringformat:"s" %}
-            <div style="display:flex;align-items:flex-start;gap:14px;padding:18px 24px;
-                        border-bottom:1px solid #f8f9fa;
-                        {% if is_done in completed_ids %}background:#f0fdf4;{% endif %}">
+            {% with lid=lesson.id|stringformat:"s" %}
+            {% if enrollment %}
+            <a href="{% url 'lesson_detail' slug=course.slug lesson_id=lesson.id %}"
+               class="lesson-row {% if lid in completed_ids %}done{% endif %}"
+               style="display:flex;">
+            {% else %}
+            <div class="lesson-row">
+            {% endif %}
 
-              <!-- NUMÉRO / CHECK -->
-              <div style="width:32px;height:32px;border-radius:50%;flex-shrink:0;
-                          display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem;
-                          {% if is_done in completed_ids %}background:var(--green);color:white;
-                          {% else %}background:#f1f5f9;color:#64748b;{% endif %}">
-                {% if is_done in completed_ids %}✓{% else %}{{ forloop.counter }}{% endif %}
+              <!-- BULLET -->
+              <div class="lr-bullet {% if lid in completed_ids %}done{% elif enrollment %}pending{% else %}locked{% endif %}">
+                {% if lid in completed_ids %}✓
+                {% elif not enrollment %}🔒
+                {% else %}{{ forloop.counter }}
+                {% endif %}
               </div>
 
+              <!-- CONTENU ROW -->
               <div style="flex:1;min-width:0;">
-                {% if enrollment %}
-                <a href="{% url 'lesson_detail' slug=course.slug lesson_id=lesson.id %}"
-                   style="font-weight:700;color:var(--charcoal);font-size:0.92rem;margin-bottom:4px;display:block;text-decoration:none;
-                          {% if is_done in completed_ids %}color:#15803d;{% endif %}">
-                  {{ lesson.title }}
-                </a>
-                {% else %}
-                <div style="font-weight:600;color:var(--charcoal);font-size:0.92rem;margin-bottom:4px;">
-                  {{ lesson.title }}
-                </div>
-                {% endif %}
-
-                <div style="display:flex;align-items:center;gap:10px;margin-top:4px;flex-wrap:wrap;">
-                  {% if lesson.duration_minutes %}
-                  <span style="font-size:0.75rem;color:#94a3b8;">⏱ {{ lesson.duration_minutes }} min</span>
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+                  <div style="font-weight:700;font-size:0.92rem;line-height:1.35;
+                              {% if lid in completed_ids %}color:#15803d;{% else %}color:var(--charcoal);{% endif %}">
+                    {{ lesson.title }}
+                  </div>
+                  {% if lid in completed_ids %}
+                  <span style="font-size:0.68rem;font-weight:700;background:#dcfce7;color:#15803d;padding:2px 8px;border-radius:8px;flex-shrink:0;margin-top:2px;">Fait</span>
                   {% endif %}
-                  {% if is_done in completed_ids %}
-                  <span style="font-size:0.72rem;color:#15803d;font-weight:700;">✅ Complétée</span>
-                  {% elif enrollment %}
-                  <a href="{% url 'lesson_detail' slug=course.slug lesson_id=lesson.id %}"
-                     style="font-size:0.75rem;color:var(--green);font-weight:700;text-decoration:none;">▶ Commencer</a>
-                  {% else %}
-                  <span style="font-size:0.78rem;color:#94a3b8;">
-                    <a href="{% url 'web_login' %}" style="color:var(--green);font-weight:600;">Connectez-vous</a> pour accéder
+                </div>
+
+                <div style="display:flex;align-items:center;gap:12px;margin-top:5px;flex-wrap:wrap;">
+                  {% if lesson.duration_minutes %}
+                  <span style="font-size:0.75rem;color:#94a3b8;display:flex;align-items:center;gap:3px;">
+                    ⏱ {{ lesson.duration_minutes }} min
                   </span>
                   {% endif %}
+                  {% with vcount=lesson.videos.count %}
+                  {% if vcount %}
+                  <span style="font-size:0.75rem;color:#94a3b8;display:flex;align-items:center;gap:3px;">
+                    🎬 {{ vcount }} vidéo{{ vcount|pluralize }}
+                  </span>
+                  {% endif %}
+                  {% endwith %}
+                  {% if not enrollment %}
+                  <span style="font-size:0.73rem;color:#94a3b8;font-style:italic;">Inscription requise</span>
+                  {% elif lid not in completed_ids %}
+                  <span style="font-size:0.73rem;color:#0d7a45;font-weight:700;">▶ Accéder</span>
+                  {% endif %}
                 </div>
               </div>
 
-            </div>
+            {% if enrollment %}</a>{% else %}</div>{% endif %}
             {% endwith %}
             {% empty %}
-            <div style="padding:40px;text-align:center;color:#94a3b8;font-size:0.9rem;">
+            <div style="padding:48px;text-align:center;color:#94a3b8;font-size:0.9rem;">
               Les leçons arrivent bientôt…
             </div>
             {% endfor %}
@@ -142,89 +181,117 @@
       </div>
 
       <!-- COLONNE DROITE (sticky) -->
-      <div style="position:sticky;top:24px;">
+      <div style="position:sticky;top:24px;display:flex;flex-direction:column;gap:16px;">
+
         <div style="background:white;border-radius:16px;box-shadow:0 2px 16px rgba(0,0,0,0.07);overflow:hidden;">
 
-          <!-- CTA INSCRIPTION -->
+          <!-- CTA PRINCIPAL -->
           <div style="padding:24px;">
+
             {% if enrollment %}
               {% if enrollment.is_completed %}
-              <div style="text-align:center;padding:16px 0 8px;">
-                <div style="font-size:3rem;margin-bottom:8px;">🏆</div>
-                <div style="font-family:var(--font-display);font-weight:800;color:var(--green);font-size:1.1rem;margin-bottom:4px;">Cours complété !</div>
-                <div style="font-size:0.82rem;color:#64748b;margin-bottom:16px;">Inscrit le {{ enrollment.enrolled_at|date:"d/m/Y" }}</div>
+              <!-- COURS TERMINÉ -->
+              <div style="text-align:center;padding:8px 0 16px;">
+                <div style="font-size:3rem;margin-bottom:10px;">🏆</div>
+                <div style="font-family:var(--font-display);font-weight:800;color:#0d7a45;font-size:1.1rem;margin-bottom:4px;">Cours complété !</div>
+                <div style="font-size:0.8rem;color:#94a3b8;margin-bottom:18px;">Inscrit le {{ enrollment.enrolled_at|date:"d/m/Y" }}</div>
                 {% if first_lesson %}
                 <a href="{% url 'lesson_detail' slug=course.slug lesson_id=first_lesson.id %}"
-                   style="display:block;padding:12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;
-                          font-family:var(--font-display);font-weight:700;font-size:0.88rem;color:var(--green);
-                          text-decoration:none;">
+                   style="display:block;padding:12px 16px;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:10px;
+                          font-family:var(--font-display);font-weight:700;font-size:0.88rem;color:#0d7a45;
+                          text-decoration:none;text-align:center;">
                   ▶ Revoir le cours
                 </a>
                 {% endif %}
               </div>
+
               {% else %}
+              <!-- EN COURS -->
               <div style="margin-bottom:16px;">
                 <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:#64748b;margin-bottom:6px;">
                   <span>Progression</span>
-                  <span style="font-weight:700;color:var(--green);">{{ enrollment.progress_percent }}%</span>
+                  <span style="font-weight:700;color:#0d7a45;">{{ enrollment.progress_percent }}%</span>
                 </div>
-                <div style="background:#f1f5f9;border-radius:6px;height:10px;">
-                  <div style="background:var(--green);height:100%;border-radius:6px;width:{{ enrollment.progress_percent }}%;"></div>
+                <div style="background:#e2f5eb;border-radius:6px;height:8px;">
+                  <div style="background:#0d7a45;height:100%;border-radius:6px;width:{{ enrollment.progress_percent }}%;transition:width 0.4s;"></div>
                 </div>
               </div>
-              <div style="text-align:center;font-size:0.82rem;color:#64748b;">
+              {% if continue_lesson %}
+              <a href="{% url 'lesson_detail' slug=course.slug lesson_id=continue_lesson.id %}"
+                 style="display:block;padding:13px 16px;background:#0d7a45;color:#fff;border:none;border-radius:10px;
+                        font-family:var(--font-display);font-weight:700;font-size:0.95rem;cursor:pointer;
+                        text-decoration:none;text-align:center;box-shadow:0 2px 8px rgba(13,122,69,0.25);">
+                ▶ Continuer le cours
+              </a>
+              {% endif %}
+              <div style="text-align:center;margin-top:10px;font-size:0.78rem;color:#94a3b8;">
                 Inscrit le {{ enrollment.enrolled_at|date:"d/m/Y" }}
               </div>
               {% endif %}
 
             {% elif request.session.user_id %}
+            <!-- S'INSCRIRE -->
+            <div style="text-align:center;margin-bottom:16px;">
+              <div style="font-size:0.85rem;color:#475569;line-height:1.5;">
+                Inscrivez-vous pour accéder à toutes les leçons et suivre votre progression.
+              </div>
+            </div>
             <form method="POST" action="{% url 'enroll_course' course.slug %}">
               {% csrf_token %}
               <button type="submit"
-                      style="width:100%;padding:14px;background:var(--green);color:white;border:none;
+                      style="width:100%;padding:14px;background:#0d7a45;color:white;border:none;
                              border-radius:10px;font-family:var(--font-display);font-weight:700;
-                             font-size:1rem;cursor:pointer;transition:background 0.2s;">
+                             font-size:1rem;cursor:pointer;box-shadow:0 2px 8px rgba(13,122,69,0.25);">
                 🎓 S'inscrire gratuitement
               </button>
             </form>
+
             {% else %}
+            <!-- SE CONNECTER -->
+            <div style="text-align:center;margin-bottom:16px;">
+              <div style="font-size:0.85rem;color:#475569;line-height:1.5;">
+                Connectez-vous pour accéder au contenu du cours.
+              </div>
+            </div>
             <a href="{% url 'web_login' %}?next={{ request.path }}"
-               style="display:block;text-align:center;padding:14px;background:var(--green);color:white;
+               style="display:block;text-align:center;padding:14px;background:#0d7a45;color:white;
                       border-radius:10px;font-family:var(--font-display);font-weight:700;
-                      font-size:1rem;text-decoration:none;">
-              🔑 Se connecter pour s'inscrire
+                      font-size:1rem;text-decoration:none;box-shadow:0 2px 8px rgba(13,122,69,0.25);">
+              🔑 Se connecter
             </a>
-            <p style="text-align:center;font-size:0.75rem;color:#94a3b8;margin-top:8px;">
-              Pas encore de compte ? <a href="{% url 'web_register' %}" style="color:var(--green);font-weight:600;">Créer un compte gratuit</a>
+            <p style="text-align:center;font-size:0.75rem;color:#94a3b8;margin-top:10px;">
+              Pas encore de compte ?
+              <a href="{% url 'web_register' %}" style="color:#0d7a45;font-weight:600;">Créer un compte</a>
             </p>
             {% endif %}
           </div>
 
           <!-- INFOS COURS -->
-          <div style="border-top:1px solid #f5f2ed;padding:20px 24px;display:flex;flex-direction:column;gap:12px;font-size:0.85rem;">
-            <div style="display:flex;justify-content:space-between;">
+          <div style="border-top:1px solid #f1f5f9;padding:18px 24px;display:flex;flex-direction:column;gap:11px;font-size:0.85rem;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
               <span style="color:#64748b;">Niveau</span>
-              <span style="font-weight:600;">{{ course.get_level_display }}</span>
+              <span style="font-weight:600;color:#334155;">{{ course.get_level_display }}</span>
             </div>
-            <div style="display:flex;justify-content:space-between;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
               <span style="color:#64748b;">Leçons</span>
-              <span style="font-weight:600;">{{ total_lessons }}</span>
+              <span style="font-weight:600;color:#334155;">{{ total_lessons }}</span>
             </div>
-            <div style="display:flex;justify-content:space-between;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
               <span style="color:#64748b;">Durée totale</span>
-              <span style="font-weight:600;">{{ course.duration_minutes }} min</span>
+              <span style="font-weight:600;color:#334155;">{{ course.duration_minutes }} min</span>
             </div>
-            <div style="display:flex;justify-content:space-between;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
               <span style="color:#64748b;">Accès</span>
-              <span style="font-weight:600;color:var(--green);">{% if course.is_free %}Gratuit{% else %}Payant{% endif %}</span>
+              <span style="font-weight:600;color:#0d7a45;">{% if course.is_free %}Gratuit{% else %}Payant{% endif %}</span>
             </div>
           </div>
-
         </div>
 
-        <div style="text-align:center;margin-top:16px;">
-          <a href="{% url 'academy_list' %}" style="color:#64748b;font-size:0.82rem;text-decoration:none;">← Tous les cours</a>
-        </div>
+        <a href="{% url 'academy_list' %}"
+           style="text-align:center;color:#94a3b8;font-size:0.82rem;text-decoration:none;padding:8px;display:block;">
+          ← Tous les cours
+        </a>
+
       </div>
 
     </div>
