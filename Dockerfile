@@ -25,5 +25,8 @@ COPY . /app/
 # Les variables sans valeur réelle sont acceptées ici — collectstatic ne touche pas la DB ni les médias
 RUN python manage.py collectstatic --noinput
 
+# Crée le dossier media (point de montage du volume Railway)
+RUN mkdir -p /app/media
+
 # Railway injecte $PORT dynamiquement — EXPOSE est indicatif
 EXPOSE 8080
