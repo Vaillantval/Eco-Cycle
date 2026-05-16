@@ -19,7 +19,8 @@ from .views.admin_views import (
     AdminUserDetailView, AdminPickupDetailView, AdminOrderDetailView,
     AdminBlogView, AdminBlogCreateView, AdminBlogEditView, AdminBlogCategoriesView,
     AdminAcademyView, AdminAcademyCourseCreateView, AdminAcademyCourseDetailView,
-    AdminAcademyLessonEditView, AdminAcademyEnrollmentsView, AdminAcademyCertificatesView,
+    AdminAcademyLessonCreateView, AdminAcademyLessonEditView,
+    AdminAcademyEnrollmentsView, AdminAcademyCertificatesView,
     AdminNewslettersView, AdminContactsView, AdminSiteConfigView,
     AdminSlidersView,
 )
@@ -152,6 +153,8 @@ urlpatterns = [
          AdminAcademyCourseCreateView.as_view(), name='admin_academy_create'),
     path('panel/academy/<uuid:pk>/',
          AdminAcademyCourseDetailView.as_view(), name='admin_academy_course_detail'),
+    path('panel/academy/<uuid:course_pk>/lessons/create/',
+         AdminAcademyLessonCreateView.as_view(), name='admin_academy_lesson_create'),
     path('panel/academy/<uuid:course_pk>/lessons/<uuid:lesson_pk>/edit/',
          AdminAcademyLessonEditView.as_view(), name='admin_academy_lesson_edit'),
     path('panel/academy/enrollments/',

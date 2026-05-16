@@ -5,6 +5,7 @@
 
 {% block topbar_actions %}
 <a href="{% url 'admin_academy' %}" class="btn-admin-sm btn-view">← Retour</a>
+<a href="{% url 'admin_academy_lesson_create' course_pk=course.id %}" class="btn-admin-sm btn-admin-primary">➕ Nouvelle leçon</a>
 <form method="POST" style="display:inline;">
   {% csrf_token %}
   <button name="action" value="toggle_publish" class="btn-admin-sm {% if course.is_published %}btn-view{% else %}btn-approve{% endif %}">

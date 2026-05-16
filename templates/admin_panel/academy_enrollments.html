@@ -10,89 +10,145 @@
 
 {% block admin_content %}
 
-<!-- FILTRES -->
-<div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
-  <form method="GET" style="display:flex;gap:8px;align-items:center;flex:1;min-width:220px;">
-    <select name="course" style="flex:1;padding:7px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.85rem;">
-      <option value="">— Tous les cours —</option>
-      {% for c in courses %}
-      <option value="{{ c.id }}" {% if course_filter == c.id|stringformat:'s' %}selected{% endif %}>{{ c.title|truncatechars:50 }}</option>
-      {% endfor %}
-    </select>
-    {% if completed_filter %}<input type="hidden" name="completed" value="{{ completed_filter }}">{% endif %}
-    <button type="submit" class="btn-admin-sm btn-view">🔍</button>
-    {% if course_filter or completed_filter %}
-    <a href="{% url 'admin_academy_enrollments' %}" class="btn-admin-sm btn-reject">✕ Reset</a>
-    {% endif %}
-  </form>
-</div>
+<div style="display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start;">
 
-<div class="filter-bar">
-  <a href="{% url 'admin_academy_enrollments' %}{% if course_filter %}?course={{ course_filter }}{% endif %}"
-     class="filter-btn {% if not completed_filter %}active{% endif %}">Toutes</a>
-  <a href="{% url 'admin_academy_enrollments' %}?completed=1{% if course_filter %}&course={{ course_filter }}{% endif %}"
-     class="filter-btn {% if completed_filter == '1' %}active{% endif %}">✅ Terminées</a>
-  <a href="{% url 'admin_academy_enrollments' %}?completed=0{% if course_filter %}&course={{ course_filter }}{% endif %}"
-     class="filter-btn {% if completed_filter == '0' %}active{% endif %}">🔄 En cours</a>
-</div>
+  <!-- LISTE -->
+  <div>
 
-<div class="admin-card">
-  <div class="admin-card-header">
-    <span class="admin-card-title">👥 Inscriptions ({{ enrollments|length }})</span>
+    <!-- FILTRES -->
+    <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
+      <form method="GET" style="display:flex;gap:8px;align-items:center;flex:1;min-width:220px;">
+        <select name="course" style="flex:1;padding:7px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.85rem;">
+          <option value="">— Tous les cours —</option>
+          {% for c in courses %}
+          <option value="{{ c.id }}" {% if course_filter == c.id|stringformat:'s' %}selected{% endif %}>{{ c.title|truncatechars:50 }}</option>
+          {% endfor %}
+        </select>
+        {% if completed_filter %}<input type="hidden" name="completed" value="{{ completed_filter }}">{% endif %}
+        <button type="submit" class="btn-admin-sm btn-view">🔍</button>
+        {% if course_filter or completed_filter %}
+        <a href="{% url 'admin_academy_enrollments' %}" class="btn-admin-sm btn-reject">✕ Reset</a>
+        {% endif %}
+      </form>
+    </div>
+
+    <div class="filter-bar" style="margin-bottom:16px;">
+      <a href="{% url 'admin_academy_enrollments' %}{% if course_filter %}?course={{ course_filter }}{% endif %}"
+         class="filter-btn {% if not completed_filter %}active{% endif %}">Toutes</a>
+      <a href="{% url 'admin_academy_enrollments' %}?completed=1{% if course_filter %}&course={{ course_filter }}{% endif %}"
+         class="filter-btn {% if completed_filter == '1' %}active{% endif %}">✅ Terminées</a>
+      <a href="{% url 'admin_academy_enrollments' %}?completed=0{% if course_filter %}&course={{ course_filter }}{% endif %}"
+         class="filter-btn {% if completed_filter == '0' %}active{% endif %}">🔄 En cours</a>
+    </div>
+
+    <div class="admin-card">
+      <div class="admin-card-header">
+        <span class="admin-card-title">👥 Inscriptions ({{ enrollments|length }})</span>
+      </div>
+      {% if enrollments %}
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Utilisateur</th>
+            <th>Cours</th>
+            <th>Inscrit le</th>
+            <th>Progression</th>
+            <th>Statut</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for enr in enrollments %}
+          <tr>
+            <td>
+              <strong>{{ enr.user.full_name }}</strong>
+              <div style="font-size:0.72rem;color:#94a3b8;">{{ enr.user.email }}</div>
+            </td>
+            <td>
+              <a href="{% url 'admin_academy_course_detail' pk=enr.course.id %}" style="color:#0d7a45;font-weight:600;">
+                {{ enr.course.title|truncatechars:40 }}
+              </a>
+            </td>
+            <td style="font-size:0.82rem;color:#64748b;">{{ enr.enrolled_at|date:"d/m/Y" }}</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div style="flex:1;height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden;min-width:60px;">
+                  <div style="width:{{ enr.progress_percent }}%;height:100%;background:{% if enr.is_completed %}#15803d{% else %}#0d7a45{% endif %};border-radius:3px;"></div>
+                </div>
+                <span style="font-size:0.78rem;font-weight:700;color:{% if enr.is_completed %}#15803d{% else %}#64748b{% endif %};">{{ enr.progress_percent }}%</span>
+              </div>
+            </td>
+            <td>
+              {% if enr.is_completed %}
+              <span style="padding:2px 10px;border-radius:12px;font-size:0.72rem;font-weight:700;background:#dcfce7;color:#15803d;">✅ Terminé</span>
+              {% else %}
+              <span style="padding:2px 10px;border-radius:12px;font-size:0.72rem;font-weight:700;background:#f1f5f9;color:#64748b;">En cours</span>
+              {% endif %}
+            </td>
+            <td>
+              <form method="POST" style="display:inline;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="enr_id" value="{{ enr.id }}">
+                <button type="submit" class="btn-admin-sm btn-reject"
+                  onclick="return confirm('Supprimer l\'inscription de {{ enr.user.email }} ?')">🗑</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div style="padding:40px;text-align:center;color:#94a3b8;">
+        <div style="font-size:2rem;margin-bottom:8px;">👥</div>
+        <p>Aucune inscription trouvée.</p>
+      </div>
+      {% endif %}
+    </div>
+
   </div>
-  {% if enrollments %}
-  <table class="admin-table">
-    <thead>
-      <tr>
-        <th>Utilisateur</th>
-        <th>Cours</th>
-        <th>Inscrit le</th>
-        <th>Progression</th>
-        <th>Statut</th>
-        <th>Terminé le</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for enr in enrollments %}
-      <tr>
-        <td>
-          <strong>{{ enr.user.full_name }}</strong>
-          <div style="font-size:0.72rem;color:#94a3b8;">{{ enr.user.email }}</div>
-        </td>
-        <td>
-          <a href="{% url 'admin_academy_course_detail' pk=enr.course.id %}" style="color:#0d7a45;font-weight:600;">
-            {{ enr.course.title|truncatechars:40 }}
-          </a>
-        </td>
-        <td style="font-size:0.82rem;color:#64748b;">{{ enr.enrolled_at|date:"d/m/Y" }}</td>
-        <td>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <div style="flex:1;height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden;">
-              <div style="width:{{ enr.progress_percent }}%;height:100%;background:{% if enr.is_completed %}#15803d{% else %}#0d7a45{% endif %};border-radius:3px;"></div>
+
+  <!-- CRÉER UNE INSCRIPTION -->
+  <div>
+    <div class="admin-card">
+      <div class="admin-card-header"><span class="admin-card-title">➕ Inscrire un utilisateur</span></div>
+      <div style="padding:20px;">
+        <form method="POST">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="create">
+          <div style="display:flex;flex-direction:column;gap:14px;">
+            <div>
+              <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:6px;">Utilisateur *</label>
+              <select name="user_id" required
+                      style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.85rem;">
+                <option value="">— Choisir un utilisateur —</option>
+                {% for u in users %}
+                <option value="{{ u.id }}">{{ u.full_name }} ({{ u.email }})</option>
+                {% endfor %}
+              </select>
             </div>
-            <span style="font-size:0.78rem;font-weight:700;color:{% if enr.is_completed %}#15803d{% else %}#64748b{% endif %};">{{ enr.progress_percent }}%</span>
+            <div>
+              <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:6px;">Cours *</label>
+              <select name="course_id" required
+                      style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.85rem;">
+                <option value="">— Choisir un cours —</option>
+                {% for c in courses %}
+                <option value="{{ c.id }}">{{ c.title|truncatechars:50 }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div style="font-size:0.75rem;color:#94a3b8;padding:8px;background:#f8fafc;border-radius:6px;">
+              Une inscription est unique par paire utilisateur / cours.
+            </div>
+            <button type="submit" class="btn-admin-sm btn-admin-primary" style="width:100%;justify-content:center;padding:10px;">
+              👥 Inscrire
+            </button>
           </div>
-        </td>
-        <td>
-          {% if enr.is_completed %}
-          <span style="padding:2px 10px;border-radius:12px;font-size:0.72rem;font-weight:700;background:#dcfce7;color:#15803d;">✅ Terminé</span>
-          {% else %}
-          <span style="padding:2px 10px;border-radius:12px;font-size:0.72rem;font-weight:700;background:#f1f5f9;color:#64748b;">En cours</span>
-          {% endif %}
-        </td>
-        <td style="font-size:0.82rem;color:#94a3b8;">
-          {% if enr.completed_at %}{{ enr.completed_at|date:"d/m/Y" }}{% else %}—{% endif %}
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {% else %}
-  <div style="padding:40px;text-align:center;color:#94a3b8;">
-    <div style="font-size:2rem;margin-bottom:8px;">👥</div>
-    <p>Aucune inscription trouvée.</p>
+        </form>
+      </div>
+    </div>
   </div>
-  {% endif %}
+
 </div>
 
 {% endblock %}

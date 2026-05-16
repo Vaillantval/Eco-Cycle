@@ -1,7 +1,7 @@
 {% extends 'admin_panel/base_admin.html' %}
 
-{% block title %}Éditer la leçon — Academy Admin{% endblock %}
-{% block page_title %}Éditer la leçon{% endblock %}
+{% block title %}{% if lesson %}Éditer{% else %}Nouvelle{% endif %} leçon — Academy Admin{% endblock %}
+{% block page_title %}{% if lesson %}Éditer la leçon{% else %}Nouvelle leçon{% endif %}{% endblock %}
 
 {% block topbar_actions %}
 <a href="{% url 'admin_academy_course_detail' pk=course.id %}" class="btn-admin-sm btn-view">← Retour au cours</a>
@@ -20,7 +20,7 @@
 
         <div>
           <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:6px;">Titre *</label>
-          <input type="text" name="title" value="{{ lesson.title }}" required
+          <input type="text" name="title" value="{{ lesson.title|default:'' }}" required
                  style="width:100%;padding:9px 14px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.95rem;font-weight:600;">
         </div>
 
@@ -46,16 +46,16 @@
       <div style="padding:16px 20px;display:flex;flex-direction:column;gap:14px;">
         <div>
           <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:6px;">Ordre d'affichage</label>
-          <input type="number" name="order" value="{{ lesson.order }}" min="0"
+          <input type="number" name="order" value="{{ lesson.order|default:next_order|default:1 }}" min="0"
                  style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
         </div>
         <div>
           <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:6px;">Durée (minutes)</label>
-          <input type="number" name="duration_minutes" value="{{ lesson.duration_minutes }}" min="0"
+          <input type="number" name="duration_minutes" value="{{ lesson.duration_minutes|default:0 }}" min="0"
                  style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
         </div>
         <button type="submit" class="btn-admin-sm btn-admin-primary" style="width:100%;justify-content:center;padding:10px;font-size:0.88rem;">
-          💾 Sauvegarder
+          {% if lesson %}💾 Sauvegarder{% else %}➕ Créer la leçon{% endif %}
         </button>
       </div>
     </div>
@@ -63,7 +63,7 @@
     <div class="admin-card">
       <div style="padding:14px 20px;font-size:0.78rem;color:#94a3b8;display:flex;flex-direction:column;gap:4px;">
         <div>Cours : <strong style="color:#334155;">{{ course.title|truncatechars:36 }}</strong></div>
-        <div>ID leçon : {{ lesson.id }}</div>
+        {% if lesson %}<div>ID leçon : {{ lesson.id }}</div>{% endif %}
       </div>
     </div>
   </div>

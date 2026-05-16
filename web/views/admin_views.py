@@ -565,6 +565,36 @@ class AdminAcademyCourseDetailView(AdminRequiredMixin, View):
         return redirect('admin_academy_course_detail', pk=pk)
 
 
+class AdminAcademyLessonCreateView(AdminRequiredMixin, View):
+    def get(self, request, course_pk):
+        admin  = self.get_current_user(request)
+        course = get_object_or_404(Course, pk=course_pk)
+        next_order = course.lessons.count() + 1
+        return render(request, 'admin_panel/academy_lesson_form.html', {
+            'user': admin,
+            'course': course,
+            'lesson': None,
+            'next_order': next_order,
+        })
+
+    def post(self, request, course_pk):
+        course = get_object_or_404(Course, pk=course_pk)
+        title  = request.POST.get('title', '').strip()
+        if not title:
+            messages.error(request, 'Le titre est obligatoire.')
+            return redirect('admin_academy_lesson_create', course_pk=course_pk)
+        lesson = Lesson.objects.create(
+            course          = course,
+            title           = title,
+            content         = request.POST.get('content', ''),
+            video_url       = request.POST.get('video_url', ''),
+            order           = request.POST.get('order') or course.lessons.count(),
+            duration_minutes= request.POST.get('duration_minutes') or 0,
+        )
+        messages.success(request, f'Leçon « {lesson.title} » créée.')
+        return redirect('admin_academy_course_detail', pk=course_pk)
+
+
 class AdminAcademyLessonEditView(AdminRequiredMixin, View):
     def get(self, request, course_pk, lesson_pk):
         admin = self.get_current_user(request)
@@ -590,8 +620,7 @@ class AdminAcademyLessonEditView(AdminRequiredMixin, View):
 
 
 class AdminAcademyEnrollmentsView(AdminRequiredMixin, View):
-    def get(self, request):
-        admin = self.get_current_user(request)
+    def _context(self, request, admin):
         course_filter    = request.GET.get('course', '')
         completed_filter = request.GET.get('completed', '')
         enrollments = Enrollment.objects.select_related('user', 'course').order_by('-enrolled_at')
@@ -601,13 +630,39 @@ class AdminAcademyEnrollmentsView(AdminRequiredMixin, View):
             enrollments = enrollments.filter(is_completed=True)
         elif completed_filter == '0':
             enrollments = enrollments.filter(is_completed=False)
-        return render(request, 'admin_panel/academy_enrollments.html', {
+        return {
             'user': admin,
             'enrollments': enrollments,
             'course_filter': course_filter,
             'completed_filter': completed_filter,
             'courses': Course.objects.order_by('title'),
-        })
+            'users': User.objects.filter(is_active=True).order_by('email'),
+        }
+
+    def get(self, request):
+        admin = self.get_current_user(request)
+        return render(request, 'admin_panel/academy_enrollments.html', self._context(request, admin))
+
+    def post(self, request):
+        action = request.POST.get('action')
+        if action == 'create':
+            user_id   = request.POST.get('user_id')
+            course_id = request.POST.get('course_id')
+            if user_id and course_id:
+                user   = get_object_or_404(User, pk=user_id)
+                course = get_object_or_404(Course, pk=course_id)
+                _, created = Enrollment.objects.get_or_create(user=user, course=course)
+                if created:
+                    messages.success(request, f'{user.email} inscrit à « {course.title} ».')
+                else:
+                    messages.warning(request, 'Cette inscription existe déjà.')
+            else:
+                messages.error(request, 'Utilisateur et cours requis.')
+        elif action == 'delete':
+            enr_id = request.POST.get('enr_id')
+            Enrollment.objects.filter(pk=enr_id).delete()
+            messages.success(request, 'Inscription supprimée.')
+        return redirect('admin_academy_enrollments')
 
 
 class AdminAcademyCertificatesView(AdminRequiredMixin, View):
