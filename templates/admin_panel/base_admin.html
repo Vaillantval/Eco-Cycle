@@ -9,6 +9,12 @@
   <link rel="stylesheet" href="/static/css/main.css">
   <link rel="stylesheet" href="/static/css/dashboard.css">
   <style>
+    /* Reset styles du site public qui polluent le panel */
+    .navbar { display:none !important; }
+    body { padding-top:0 !important; margin-top:0 !important; }
+    .dashboard-layout { margin-top:0 !important; }
+    .app-banner { display:none !important; }
+
     .admin-layout { display:grid; grid-template-columns:240px 1fr; min-height:100vh; }
 
     .admin-sidebar {
