@@ -77,54 +77,35 @@
 <section id="features-slider">
   <div class="slider-wrapper">
     <div class="slider-track" id="sliderTrack">
-
+      {% for slide in slider_items %}
+      <div class="slide">
+        <div class="slide-icon-box">{{ slide.icon }}</div>
+        <div>
+          {% if slide.tag %}<div class="slide-tag">{{ slide.tag }}</div>{% endif %}
+          <div class="slide-title">{{ slide.title }}</div>
+          <div class="slide-desc">{{ slide.description }}</div>
+          {% if slide.cta_url %}<a href="{{ slide.cta_url }}" class="slide-cta">{{ slide.cta_text }}</a>{% endif %}
+        </div>
+      </div>
+      {% empty %}
       <div class="slide">
         <div class="slide-icon-box">🤖</div>
         <div>
           <div class="slide-tag">Intelligence artificielle</div>
           <div class="slide-title">Identifiez vos déchets en 3 secondes</div>
-          <div class="slide-desc">Pointez votre caméra sur n'importe quel déchet. Notre IA Claude Vision analyse le matériau, estime sa valeur marchande et vous guide vers la meilleure action.</div>
+          <div class="slide-desc">Pointez votre caméra sur n'importe quel déchet. Notre IA Claude Vision analyse le matériau et estime sa valeur marchande instantanément.</div>
           <a href="{% url 'fonctionnalites' %}" class="slide-cta">Voir les fonctionnalités →</a>
         </div>
       </div>
-
-      <div class="slide">
-        <div class="slide-icon-box">🏪</div>
-        <div>
-          <div class="slide-tag">Marketplace d'enchères</div>
-          <div class="slide-title">Vendez au meilleur prix du marché</div>
-          <div class="slide-desc">Publiez vos matériaux recyclables sur notre marketplace et laissez les acheteurs s'affronter aux enchères. Achat immédiat disponible pour les transactions rapides.</div>
-          <a href="{% url 'marketplace' %}" class="slide-cta">Explorer le marketplace →</a>
-        </div>
-      </div>
-
-      <div class="slide">
-        <div class="slide-icon-box">🚚</div>
-        <div>
-          <div class="slide-tag">Ramassage à domicile</div>
-          <div class="slide-title">Un collecteur vient chez vous</div>
-          <div class="slide-desc">Planifiez une collecte en quelques clics. Un collecteur agréé récupère vos déchets à l'adresse et au créneau de votre choix, partout en Haïti.</div>
-          <a href="{% url 'comment_ca_marche' %}" class="slide-cta">Comment ça marche →</a>
-        </div>
-      </div>
-
-      <div class="slide">
-        <div class="slide-icon-box">🌱</div>
-        <div>
-          <div class="slide-tag">Impact environnemental</div>
-          <div class="slide-title">Mesurez votre CO₂ économisé</div>
-          <div class="slide-desc">Chaque kg recyclé est tracé. Suivez votre impact en temps réel, comparez-vous à la communauté et recevez votre certificat de contribution environnementale.</div>
-          <a href="{% url 'notre_impact' %}" class="slide-cta">Voir notre impact →</a>
-        </div>
-      </div>
-
+      {% endfor %}
     </div>
 
     <div class="slider-dots" id="sliderDots">
+      {% for slide in slider_items %}
+      <button class="slider-dot {% if forloop.first %}active{% endif %}" data-slide="{{ forloop.counter0 }}"></button>
+      {% empty %}
       <button class="slider-dot active" data-slide="0"></button>
-      <button class="slider-dot" data-slide="1"></button>
-      <button class="slider-dot" data-slide="2"></button>
-      <button class="slider-dot" data-slide="3"></button>
+      {% endfor %}
     </div>
 
     <div class="slider-progress" id="sliderProgress"></div>

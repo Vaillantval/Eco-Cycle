@@ -35,4 +35,6 @@ class HomeView(TemplateView):
             .select_related('listing', 'listing__category')
             .order_by('-created_at')[:6]
         )
+        from apps.core.models import SliderItem
+        context['slider_items'] = SliderItem.objects.filter(is_active=True).order_by('ordre')
         return context
