@@ -584,12 +584,17 @@ class AdminAcademyCourseCreateView(AdminRequiredMixin, View):
             price_val = abs(float(request.POST.get('price', 0) or 0))
         except (ValueError, TypeError):
             price_val = 0
+        try:
+            delay_val = max(0, int(request.POST.get('auto_advance_delay', 0) or 0))
+        except (ValueError, TypeError):
+            delay_val = 0
         course = Course(
             title=title,
             description=description,
             level=request.POST.get('level', 'beginner'),
             is_published=bool(request.POST.get('is_published')),
             price=price_val,
+            auto_advance_delay=delay_val,
         )
         if request.FILES.get('thumbnail'):
             course.thumbnail = request.FILES['thumbnail']
@@ -627,11 +632,16 @@ class AdminAcademyCourseDetailView(AdminRequiredMixin, View):
                 price_val = abs(float(request.POST.get('price', 0) or 0))
             except (ValueError, TypeError):
                 price_val = 0
-            course.title        = title
-            course.description  = description
-            course.level        = request.POST.get('level', 'beginner')
-            course.is_published = bool(request.POST.get('is_published'))
-            course.price        = price_val
+            try:
+                delay_val = max(0, int(request.POST.get('auto_advance_delay', 0) or 0))
+            except (ValueError, TypeError):
+                delay_val = 0
+            course.title               = title
+            course.description         = description
+            course.level               = request.POST.get('level', 'beginner')
+            course.is_published        = bool(request.POST.get('is_published'))
+            course.price               = price_val
+            course.auto_advance_delay  = delay_val
             if request.FILES.get('thumbnail'):
                 course.thumbnail = request.FILES['thumbnail']
             course.save()

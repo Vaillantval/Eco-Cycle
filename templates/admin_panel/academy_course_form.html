@@ -59,6 +59,16 @@
                  value="{% if course %}{{ course.price }}{% else %}0{% endif %}"
                  style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
         </div>
+        <div>
+          <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:6px;">
+            ⏩ Avance auto leçon→leçon (secondes) — 0 = désactivé
+          </label>
+          <input type="number" name="auto_advance_delay" min="0" max="120" step="1"
+                 value="{% if course %}{{ course.auto_advance_delay }}{% else %}0{% endif %}"
+                 style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;"
+                 placeholder="ex. 5">
+          <div style="font-size:0.72rem;color:#94a3b8;margin-top:4px;">L'avance vidéo→vidéo est toujours fixée à 5 secondes.</div>
+        </div>
         <label style="display:flex;align-items:center;gap:8px;font-size:0.88rem;cursor:pointer;">
           <input type="checkbox" name="is_published" value="1" {% if course and course.is_published %}checked{% endif %} style="width:16px;height:16px;">
           Publier immédiatement

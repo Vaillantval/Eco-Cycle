@@ -225,12 +225,84 @@
   }
 
   @media (max-width: 768px) {
-    main { padding-top: 62px; } /* smaller on mobile (nav scrolled height) */
+    main { padding-top: 62px; }
     .lesson-layout { grid-template-columns: 1fr; }
     .lesson-sidebar { position: static; max-height: none; border-left: none; border-top: 1px solid #e2e8f0; }
     .pdf-dl-banner { flex-direction: column; align-items: flex-start; }
     .pdf-dl-btn { width: 100%; justify-content: center; }
   }
+
+  /* ── Auto-advance overlay ── */
+  #advance-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(10,16,12,0.82);
+    backdrop-filter: blur(4px);
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+  }
+  #advance-overlay.visible { display: flex; }
+
+  .advance-card {
+    background: #0f2d20;
+    border: 1px solid rgba(74,222,128,0.2);
+    border-radius: 20px;
+    padding: 36px 40px;
+    text-align: center;
+    max-width: 340px;
+    width: 90%;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+  }
+  .advance-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #4ade80;
+    margin-bottom: 12px;
+  }
+  .advance-title {
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #f0fdf4;
+    margin-bottom: 24px;
+    line-height: 1.35;
+  }
+
+  /* SVG ring */
+  .advance-ring-wrap {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 20px;
+  }
+  .advance-ring-wrap svg { transform: rotate(-90deg); }
+  .ring-bg   { fill: none; stroke: rgba(255,255,255,0.08); stroke-width: 6; }
+  .ring-fill { fill: none; stroke: #4ade80; stroke-width: 6; stroke-linecap: round;
+               stroke-dasharray: 220; stroke-dashoffset: 220; transition: stroke-dashoffset 1s linear; }
+  .ring-num  {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-display); font-size: 1.6rem; font-weight: 800; color: #fff;
+  }
+
+  .advance-actions { display: flex; gap: 10px; justify-content: center; margin-top: 8px; }
+  .btn-advance-now {
+    padding: 9px 20px; background: #0d7a45; color: #fff; border: none;
+    border-radius: 50px; font-weight: 700; font-size: 0.85rem; cursor: pointer;
+    transition: background 0.18s;
+  }
+  .btn-advance-now:hover { background: #0a6038; }
+  .btn-advance-cancel {
+    padding: 9px 16px; background: transparent; color: rgba(255,255,255,0.5);
+    border: 1px solid rgba(255,255,255,0.15); border-radius: 50px;
+    font-size: 0.82rem; cursor: pointer; transition: color 0.18s, border-color 0.18s;
+  }
+  .btn-advance-cancel:hover { color: #fff; border-color: rgba(255,255,255,0.4); }
 </style>
 {% endblock %}
 
@@ -604,34 +676,187 @@
   </div>
 </div>
 
+<!-- AUTO-ADVANCE OVERLAY -->
+<div id="advance-overlay">
+  <div class="advance-card">
+    <div class="advance-label" id="advance-label">Prochaine vidéo</div>
+    <div class="advance-title" id="advance-title"></div>
+    <div class="advance-ring-wrap">
+      <svg width="80" height="80" viewBox="0 0 80 80">
+        <circle class="ring-bg"   cx="40" cy="40" r="35"/>
+        <circle class="ring-fill" cx="40" cy="40" r="35" id="ring-fill"/>
+      </svg>
+      <div class="ring-num" id="ring-num">5</div>
+    </div>
+    <div class="advance-actions">
+      <button class="btn-advance-now"    onclick="advanceNow()">Continuer maintenant</button>
+      <button class="btn-advance-cancel" onclick="cancelAdvance()">Annuler</button>
+    </div>
+  </div>
+</div>
+
 {% block extra_js %}
 <script>
+// ── Tab switching ──────────────────────────────────────────────────────────────
 const multiVideo = document.querySelectorAll('.video-panel').length > 0;
 
 function switchVideo(idx) {
-  document.querySelectorAll('.video-panel').forEach((p, i) => {
-    p.classList.toggle('active', i === idx);
-  });
+  document.querySelectorAll('.video-panel').forEach((p, i) => p.classList.toggle('active', i === idx));
   document.querySelectorAll('.video-tab').forEach((t, i) => {
-    const on = i === idx;
-    t.classList.toggle('active', on);
-    t.style.color = on ? '#4ade80' : 'rgba(255,255,255,0.5)';
-    t.style.borderBottomColor = on ? '#4ade80' : 'transparent';
+    t.classList.toggle('active', i === idx);
+    t.style.color = i === idx ? '#4ade80' : 'rgba(255,255,255,0.5)';
+    t.style.borderBottomColor = i === idx ? '#4ade80' : 'transparent';
   });
 }
 
 function goToVideo(idx) {
-  // 1. Changer l'onglet si multi-vidéo
   if (multiVideo) switchVideo(idx);
-
-  // 2. Scroll vers la zone vidéo dans la colonne principale
   const area = document.getElementById('video-area');
   if (area) area.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.querySelectorAll('.step-video-item').forEach((el, i) => el.classList.toggle('sv-active', i === idx));
+}
 
-  // 3. Mettre en surbrillance l'item sidebar cliqué
-  document.querySelectorAll('.step-video-item').forEach((el, i) => {
-    el.classList.toggle('sv-active', i === idx);
+// ── Django context ─────────────────────────────────────────────────────────────
+const LESSON_ADVANCE_DELAY = {{ course.auto_advance_delay }};
+const VIDEO_ADVANCE_DELAY  = 5;
+const NEXT_LESSON_URL = {% if next_lesson %}'{% url "lesson_detail" slug=course.slug lesson_id=next_lesson.id %}'{% else %}null{% endif %};
+const COMPLETE_URL    = '{% url "complete_lesson" course.slug lesson.id %}';
+const CSRF            = '{{ csrf_token }}';
+const IS_DONE         = {{ is_done|yesno:"true,false" }};
+const TOTAL_VIDEOS    = {{ videos|length }};
+const NEXT_TITLE      = '{{ next_lesson.title|default:""|escapejs }}';
+
+// ── Overlay helpers ────────────────────────────────────────────────────────────
+let advanceTimer    = null;
+let advanceCallback = null;
+
+function runCallback() {
+  document.getElementById('advance-overlay').classList.remove('visible');
+  if (advanceCallback) { const cb = advanceCallback; advanceCallback = null; cb(); }
+}
+
+function startAdvanceCountdown(seconds, label, title, callback) {
+  advanceCallback  = callback;
+  let remaining    = seconds;
+  const ringFill   = document.getElementById('ring-fill');
+  const ringNum    = document.getElementById('ring-num');
+  const circum     = 220;
+
+  document.getElementById('advance-label').textContent = label;
+  document.getElementById('advance-title').textContent = title;
+  ringFill.style.strokeDashoffset = circum;
+  ringNum.textContent = remaining;
+  document.getElementById('advance-overlay').classList.add('visible');
+
+  advanceTimer = setInterval(() => {
+    remaining--;
+    ringNum.textContent = remaining;
+    ringFill.style.strokeDashoffset = circum * (remaining / seconds);
+    if (remaining <= 0) { clearInterval(advanceTimer); advanceTimer = null; runCallback(); }
+  }, 1000);
+}
+
+function advanceNow() {
+  if (advanceTimer) { clearInterval(advanceTimer); advanceTimer = null; }
+  runCallback();
+}
+function cancelAdvance() {
+  if (advanceTimer) { clearInterval(advanceTimer); advanceTimer = null; }
+  advanceCallback = null;
+  document.getElementById('advance-overlay').classList.remove('visible');
+}
+
+function postComplete() {
+  return fetch(COMPLETE_URL, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': CSRF, 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `csrfmiddlewaretoken=${CSRF}`,
   });
+}
+
+function completeAndAdvance(url) {
+  if (IS_DONE) { window.location.href = url; return; }
+  postComplete().finally(() => { window.location.href = url; });
+}
+
+function getVideoTitle(idx) {
+  const items = document.querySelectorAll('.step-video-item');
+  if (items[idx]) {
+    const s = items[idx].querySelector('span:not(.sv-icon):not(.sv-dur)');
+    return s ? s.textContent.trim() : `Vidéo ${idx + 1}`;
+  }
+  return `Vidéo ${idx + 1}`;
+}
+
+function onVideoEnded(idx) {
+  // Not the last video — 5 s countdown then switch tab
+  if (idx < TOTAL_VIDEOS - 1) {
+    startAdvanceCountdown(VIDEO_ADVANCE_DELAY, 'Prochaine vidéo', getVideoTitle(idx + 1),
+      () => goToVideo(idx + 1));
+    return;
+  }
+  // Last video: silently mark lesson complete
+  if (!IS_DONE) postComplete();
+  // Then auto-advance to next lesson if configured
+  if (NEXT_LESSON_URL && LESSON_ADVANCE_DELAY > 0) {
+    startAdvanceCountdown(LESSON_ADVANCE_DELAY, 'Prochaine leçon',
+      NEXT_TITLE || 'Leçon suivante',
+      () => { window.location.href = NEXT_LESSON_URL; });
+  }
+}
+
+// ── Resolve which video-index an iframe belongs to ─────────────────────────────
+function resolveVideoIdx(iframe) {
+  const panels = document.querySelectorAll('.video-panel');
+  if (!panels.length) return 0;
+  for (let i = 0; i < panels.length; i++) { if (panels[i].contains(iframe)) return i; }
+  return 0;
+}
+
+const videoArea = document.getElementById('video-area');
+
+// ── HTML5 <video> ──────────────────────────────────────────────────────────────
+if (videoArea) {
+  videoArea.querySelectorAll('video').forEach((v, idx) => {
+    v.addEventListener('ended', () => onVideoEnded(idx));
+  });
+}
+
+// ── YouTube IFrame API ─────────────────────────────────────────────────────────
+const ytFrames = videoArea
+  ? Array.from(videoArea.querySelectorAll('iframe')).filter(f => f.src.includes('youtube'))
+  : [];
+
+if (ytFrames.length) {
+  const ytTag = document.createElement('script');
+  ytTag.src = 'https://www.youtube.com/iframe_api';
+  document.head.appendChild(ytTag);
+  window.onYouTubeIframeAPIReady = function () {
+    ytFrames.forEach(iframe => {
+      const vidIdx = resolveVideoIdx(iframe);
+      new YT.Player(iframe, {
+        events: { onStateChange: e => { if (e.data === YT.PlayerState.ENDED) onVideoEnded(vidIdx); } },
+      });
+    });
+  };
+}
+
+// ── Vimeo Player SDK ───────────────────────────────────────────────────────────
+const vimeoFrames = videoArea
+  ? Array.from(videoArea.querySelectorAll('iframe')).filter(f => f.src.includes('vimeo'))
+  : [];
+
+if (vimeoFrames.length) {
+  const vmTag = document.createElement('script');
+  vmTag.src = 'https://player.vimeo.com/api/player.js';
+  vmTag.onload = function () {
+    vimeoFrames.forEach(iframe => {
+      const vidIdx = resolveVideoIdx(iframe);
+      const player = new Vimeo.Player(iframe);
+      player.on('ended', () => onVideoEnded(vidIdx));
+    });
+  };
+  document.head.appendChild(vmTag);
 }
 </script>
 {% endblock %}

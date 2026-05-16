@@ -20,8 +20,12 @@ class Course(models.Model):
     thumbnail = models.ImageField(upload_to='courses/', blank=True)
     level = models.CharField(max_length=20, choices=LEVEL_CHOICES, default='beginner')
     duration_minutes = models.PositiveIntegerField(default=0)
-    is_published = models.BooleanField(default=False)
-    price        = models.DecimalField(max_digits=8, decimal_places=2, default=0)
+    is_published        = models.BooleanField(default=False)
+    price               = models.DecimalField(max_digits=8, decimal_places=2, default=0)
+    auto_advance_delay  = models.PositiveIntegerField(
+        default=0,
+        help_text='Secondes avant de passer automatiquement à la leçon suivante (0 = désactivé)',
+    )
     created_at   = models.DateTimeField(auto_now_add=True)
 
     @property
@@ -133,14 +137,14 @@ class LessonVideo(models.Model):
         url = self.video_url
         if not url:
             return None
-        # YouTube
+        # YouTube — enablejsapi=1 requis pour détecter la fin de lecture
         yt = re.search(r'(?:youtube\.com/(?:watch\?v=|shorts/|live/)|youtu\.be/)([A-Za-z0-9_-]{11})', url)
         if yt:
-            return f'https://www.youtube-nocookie.com/embed/{yt.group(1)}?rel=0'
-        # Vimeo
+            return f'https://www.youtube-nocookie.com/embed/{yt.group(1)}?rel=0&enablejsapi=1'
+        # Vimeo — api=1 requis pour détecter la fin de lecture
         vm = re.search(r'vimeo\.com/(\d+)', url)
         if vm:
-            return f'https://player.vimeo.com/video/{vm.group(1)}'
+            return f'https://player.vimeo.com/video/{vm.group(1)}?api=1'
         return None
 
     def is_youtube(self):
