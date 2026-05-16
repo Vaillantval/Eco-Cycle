@@ -26,19 +26,11 @@ class ContactView(APIView):
 
         message = serializer.save()
 
-        from apps.notifications.email_service import EmailService
-        from apps.accounts.models import User
-        admins = User.objects.filter(role='admin', is_active=True)
-        for admin in admins:
-            try:
-                EmailService._send(
-                    admin.email,
-                    f'[EcoCycle Contact] {message.subject}',
-                    f'<p>De : {message.first_name} {message.last_name} ({message.email})</p>'
-                    f'<p>{message.message}</p>',
-                )
-            except Exception:
-                pass
+        try:
+            from apps.notifications.tasks import notify_contact_message
+            notify_contact_message.delay(message.id)
+        except Exception:
+            pass
 
         if _is_html_request(request):
             messages.success(request, 'Message envoyé avec succès ! Nous vous répondrons bientôt.')
@@ -62,8 +54,8 @@ class NewsletterSubscribeView(APIView):
         subscriber, created = NewsletterSubscriber.objects.get_or_create(email=email)
         if created or not subscriber.is_confirmed:
             try:
-                from apps.notifications.email_service import EmailService
-                EmailService.send_newsletter_confirmation(subscriber)
+                from apps.notifications.tasks import notify_newsletter_signup
+                notify_newsletter_signup.delay(subscriber.id)
             except Exception:
                 pass
 

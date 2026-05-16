@@ -154,6 +154,42 @@ def notify_collector_assigned(pickup_id: str):
     EmailService.send_pickup_confirmed(pickup)
 
 
+@shared_task(name='notifications.notify_course_completed')
+def notify_course_completed(user_id: str, course_id: str, cert_id: str):
+    from apps.accounts.models import User
+    from apps.academy.models import Course, Certificate
+    from .email_service import EmailService
+    user = User.objects.get(id=user_id)
+    course = Course.objects.get(id=course_id)
+    cert = Certificate.objects.get(id=cert_id)
+    EmailService.send_certificate_earned(user, course, cert)
+    for admin in User.objects.filter(role='admin', is_active=True):
+        EmailService.send_admin_course_completed(admin, user, course, cert)
+
+
+@shared_task(name='notifications.notify_contact_message')
+def notify_contact_message(message_id: int):
+    from apps.core.models import ContactMessage
+    from apps.accounts.models import User
+    from .email_service import EmailService
+    msg = ContactMessage.objects.get(id=message_id)
+    html = (
+        f'<p><strong>De :</strong> {msg.first_name} {msg.last_name} ({msg.email})</p>'
+        f'<p><strong>Sujet :</strong> {msg.subject}</p>'
+        f'<p>{msg.message}</p>'
+    )
+    for admin in User.objects.filter(role='admin', is_active=True):
+        EmailService._send(admin.email, f'[EcoCycle Contact] {msg.subject}', html)
+
+
+@shared_task(name='notifications.notify_newsletter_signup')
+def notify_newsletter_signup(subscriber_id: int):
+    from apps.core.models import NewsletterSubscriber
+    from .email_service import EmailService
+    subscriber = NewsletterSubscriber.objects.get(id=subscriber_id)
+    EmailService.send_newsletter_confirmation(subscriber)
+
+
 @shared_task(name='notifications.notify_pickup_status_update')
 def notify_pickup_status_update(pickup_id: str):
     from apps.collections.models import PickupRequest

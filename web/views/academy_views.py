@@ -81,11 +81,8 @@ class CompleteLessonView(LoginRequiredMixin, View):
         if enrollment.is_completed:
             cert, created = Certificate.objects.get_or_create(user=user, course=course)
             if created:
-                from apps.notifications.email_service import EmailService
-                from apps.accounts.models import User as UserModel
-                EmailService.send_certificate_earned(user, course, cert)
-                for admin in UserModel.objects.filter(role='admin', is_active=True):
-                    EmailService.send_admin_course_completed(admin, user, course, cert)
+                from apps.notifications.tasks import notify_course_completed
+                notify_course_completed.delay(str(user.id), str(course.id), str(cert.id))
             messages.success(request, f'Félicitations ! Cours « {course.title} » terminé ! Votre certificat est disponible.')
         return redirect('lesson_detail', slug=slug, lesson_id=lesson_id)
 

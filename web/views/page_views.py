@@ -47,15 +47,8 @@ class ContactPageView(View):
         message = serializer.save()
 
         try:
-            from apps.notifications.email_service import EmailService
-            from apps.accounts.models import User
-            for admin in User.objects.filter(role='admin', is_active=True):
-                EmailService._send(
-                    admin.email,
-                    f'[EcoCycle Contact] {message.subject}',
-                    f'<p>De : {message.first_name} {message.last_name} ({message.email})</p>'
-                    f'<p>{message.message}</p>',
-                )
+            from apps.notifications.tasks import notify_contact_message
+            notify_contact_message.delay(message.id)
         except Exception:
             pass
 
