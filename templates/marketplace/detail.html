@@ -4,145 +4,464 @@
 {% block title %}{{ auction.listing.title }} — Marketplace EcoCycle{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
 <style>
-/* Navbar blanche */
-.main-nav { background: white !important; box-shadow: 0 2px 12px rgba(0,0,0,0.08) !important; }
-.main-nav .nav-logo, .main-nav .nav-link, .main-nav .nav-cta { color: var(--charcoal) !important; }
-.main-nav .nav-link:hover { color: var(--green) !important; }
+/* ── Navbar blanche ── */
+.navbar { background: rgba(255,255,255,0.97) !important; box-shadow: 0 2px 20px rgba(0,0,0,0.08) !important; padding: 12px 0 !important; }
+.nav-logo-text,.nav-links a,.nav-login,.nav-user-name,.nav-dropdown-trigger { color: var(--charcoal) !important; }
+.hamburger span { background: var(--charcoal) !important; }
+.logo-header-wrap { background: rgba(13,122,69,0.08) !important; border-color: rgba(13,122,69,0.2) !important; }
 
-.detail-page { padding: 88px 0 60px; }
-.detail-grid { display: grid; grid-template-columns: 1fr 380px; gap: 32px; align-items: start; }
+/* ── Page layout ── */
+.dp-page { padding: 88px 0 80px; }
+.dp-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: #94a3b8;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+.dp-breadcrumb a { color: #0d7a45; text-decoration: none; font-weight: 600; }
+.dp-breadcrumb a:hover { color: #0a6038; }
+.dp-breadcrumb span { color: #cbd5e1; }
 
-.detail-img { width: 100%; border-radius: 16px; overflow: hidden; background: #f0f0ee; aspect-ratio: 4/3; }
-.detail-img img { width: 100%; height: 100%; object-fit: cover; }
-.detail-img-placeholder { width: 100%; height: 100%; min-height: 300px; display: flex; align-items: center; justify-content: center; font-size: 5rem; background: linear-gradient(135deg, #e8f5ee, #d1fae5); }
+.dp-grid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 36px;
+  align-items: start;
+}
 
-.detail-meta { display: flex; gap: 10px; flex-wrap: wrap; margin: 16px 0; }
-.detail-meta-tag { display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px; background: #f3f4f6; border-radius: 20px; font-size: 0.82rem; color: var(--charcoal); }
-.type-tag { font-weight: 700; }
-.type-tag.auction { background: #dbeafe; color: #1d4ed8; }
-.type-tag.buy_now { background: #fef3c7; color: #92400e; }
-.type-tag.both    { background: #f0fdf4; color: #166534; }
+/* ── Image ── */
+.dp-img-wrap {
+  border-radius: 20px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #e8f5ee, #d1fae5);
+  aspect-ratio: 16 / 9;
+  position: relative;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+}
+.dp-img-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.dp-img-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 6rem;
+}
+.dp-img-overlay {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 100px;
+  background: linear-gradient(to top, rgba(10,20,15,0.5), transparent);
+  border-radius: 0 0 20px 20px;
+}
+.dp-img-badges {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+.dp-img-stats {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: flex;
+  gap: 6px;
+}
+.dp-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  backdrop-filter: blur(4px);
+}
+.dp-badge-type.auction { background: rgba(29,78,216,0.82);  color: #fff; }
+.dp-badge-type.buy_now { background: rgba(180,83,9,0.82);   color: #fff; }
+.dp-badge-type.both    { background: rgba(22,101,52,0.82);  color: #fff; }
+.dp-badge-cat   { background: rgba(10,20,15,0.65); color: #fff; }
+.dp-badge-views { background: rgba(10,20,15,0.65); color: rgba(255,255,255,0.85); font-size: 0.7rem; }
 
-.ai-card { background: linear-gradient(135deg, #f0fdf4, #dcfce7); border: 1.5px solid var(--green); border-radius: 12px; padding: 18px 20px; margin-top: 20px; }
-.ai-card h4 { font-family: var(--font-display); font-weight: 700; color: var(--green-dark); margin-bottom: 12px; }
-.ai-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.ai-item label { font-size: 0.7rem; color: var(--gray); text-transform: uppercase; letter-spacing: 0.5px; display: block; }
-.ai-item span { font-weight: 700; color: var(--charcoal); }
+/* ── Info ── */
+.dp-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 800;
+  color: #0f172a;
+  margin: 20px 0 12px;
+  line-height: 1.25;
+}
+.dp-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+.dp-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  background: #f1f5f9;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  color: #475569;
+  font-weight: 500;
+}
 
-/* Bid card */
-.bid-card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); position: sticky; top: 88px; }
-.bid-current-price { font-family: var(--font-display); font-size: 2.4rem; font-weight: 800; color: var(--green); line-height: 1; }
-.bid-price-label { font-size: 0.78rem; color: var(--gray); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-.bid-countdown { font-size: 1.1rem; font-weight: 700; color: var(--orange); background: #fef3c7; padding: 8px 16px; border-radius: 8px; text-align: center; margin: 16px 0; }
-.bid-countdown.expired { color: #6b7280; background: #f3f4f6; }
-.reserve-note { font-size: 0.78rem; color: var(--gray); background: #f9fafb; border-radius: 6px; padding: 6px 10px; margin-bottom: 8px; }
+.dp-desc {
+  font-size: 0.95rem;
+  color: #475569;
+  line-height: 1.75;
+  margin-bottom: 24px;
+  padding: 18px 20px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border-left: 3px solid #0d7a45;
+}
 
-.bid-form { margin-top: 16px; }
-.bid-input { display: flex; gap: 8px; }
-.bid-input input { flex: 1; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: 10px; font-size: 1rem; font-weight: 600; outline: none; }
-.bid-input input:focus { border-color: var(--green); }
-.bid-error   { color: #ef4444; font-size: 0.82rem; margin-top: 6px; display: none; }
-.bid-success { color: var(--green); font-size: 0.82rem; margin-top: 6px; display: none; }
+/* ── AI card ── */
+.dp-ai {
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  border: 1.5px solid #bbf7d0;
+  border-radius: 14px;
+  padding: 18px 20px;
+  margin-bottom: 28px;
+}
+.dp-ai h4 {
+  font-family: var(--font-display);
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #166534;
+  margin: 0 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.dp-ai-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.dp-ai-item label { font-size: 0.68rem; color: #4ade80; text-transform: uppercase; letter-spacing: 0.5px; display: block; font-weight: 600; }
+.dp-ai-item span  { font-weight: 700; color: #14532d; font-size: 0.88rem; }
 
-.buynow-btn { width: 100%; padding: 13px; background: var(--orange); color: white; border: none; border-radius: 10px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: opacity 0.18s; margin-top: 12px; }
-.buynow-btn:hover { opacity: 0.9; }
+/* ── Bid history ── */
+.dp-history { margin-top: 32px; }
+.dp-history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.dp-history-header h4 {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+.dp-bid-row {
+  display: grid;
+  grid-template-columns: 36px 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  margin-bottom: 6px;
+  font-size: 0.85rem;
+  transition: background 0.15s;
+}
+.dp-bid-row:hover { background: #f8fafc; }
+.dp-bid-row.winning { background: #f0fdf4; }
+.dp-bid-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.dp-bid-row.winning .dp-bid-avatar { background: #0d7a45; color: #fff; }
+.dp-bid-name { font-weight: 600; color: #334155; font-size: 0.83rem; }
+.dp-bid-row.winning .dp-bid-name { color: #0d7a45; }
+.dp-bid-amount { font-family: var(--font-display); font-weight: 800; color: #1e293b; white-space: nowrap; }
+.dp-bid-row.winning .dp-bid-amount { color: #0d7a45; }
+.dp-bid-time { font-size: 0.72rem; color: #94a3b8; white-space: nowrap; }
+.dp-bid-crown { font-size: 0.8rem; }
 
-.seller-card { background: #f9fafb; border-radius: 12px; padding: 16px; margin-top: 16px; }
-.seller-card h5 { font-family: var(--font-display); font-weight: 700; font-size: 0.85rem; color: var(--gray); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+/* ── Bid card (sticky) ── */
+.dp-bid-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 6px 28px rgba(0,0,0,0.09);
+  border: 1px solid #f1f5f9;
+  position: sticky;
+  top: 88px;
+}
 
-.bids-history { margin-top: 28px; }
-.bids-history h4 { font-family: var(--font-display); font-weight: 700; color: var(--charcoal); margin-bottom: 12px; }
-.bid-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f5f2ed; font-size: 0.88rem; }
-.bid-row:last-child { border-bottom: none; }
-.bid-row.winning { color: var(--green); font-weight: 700; }
+.dp-card-price-label { font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.6px; font-weight: 600; margin-bottom: 4px; }
+.dp-card-price {
+  font-family: var(--font-display);
+  font-size: 2.4rem;
+  font-weight: 800;
+  color: #0d7a45;
+  line-height: 1;
+}
+.dp-card-price small { font-size: 1rem; font-weight: 600; color: #94a3b8; margin-left: 4px; }
+.dp-card-sub { font-size: 0.8rem; color: #94a3b8; margin-top: 4px; }
 
-.divider { border: none; border-top: 1px solid #f0ede8; margin: 24px 0; }
+/* Countdown */
+.dp-countdown {
+  font-size: 1rem;
+  font-weight: 800;
+  padding: 10px 16px;
+  border-radius: 10px;
+  text-align: center;
+  margin: 16px 0;
+  letter-spacing: 0.2px;
+}
+.dp-countdown.ok     { color: #15803d; background: #f0fdf4; border: 1px solid #bbf7d0; }
+.dp-countdown.soon   { color: #92400e; background: #fef3c7; border: 1px solid #fde68a; }
+.dp-countdown.urgent {
+  color: #dc2626; background: #fef2f2; border: 1px solid #fecaca;
+  animation: cd-pulse 1.2s ease-in-out infinite;
+}
+@keyframes cd-pulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(220,38,38,0.2); }
+  50%      { box-shadow: 0 0 0 8px rgba(220,38,38,0); }
+}
+.dp-countdown.expired { color: #6b7280; background: #f3f4f6; border: 1px solid #e5e7eb; }
+
+/* Bid form */
+.dp-bid-min { font-size: 0.8rem; color: #64748b; margin-bottom: 8px; }
+.dp-bid-min strong { color: #0d7a45; font-weight: 700; }
+
+.dp-quick-bids {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.dp-quick-btn {
+  padding: 5px 10px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 7px;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.dp-quick-btn:hover { border-color: #0d7a45; color: #0d7a45; background: #f0fdf4; }
+
+.dp-bid-input-row { display: flex; gap: 8px; }
+.dp-bid-input-row input {
+  flex: 1;
+  padding: 12px 14px;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.dp-bid-input-row input:focus { border-color: #0d7a45; }
+.dp-bid-submit {
+  padding: 12px 18px;
+  background: #0d7a45;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.dp-bid-submit:hover { background: #0a6038; }
+
+.dp-bid-feedback { font-size: 0.82rem; margin-top: 8px; display: none; padding: 6px 10px; border-radius: 7px; }
+.dp-bid-error   { color: #dc2626; background: #fef2f2; }
+.dp-bid-success { color: #15803d; background: #f0fdf4; }
+
+/* Buy now */
+.dp-buynow {
+  width: 100%;
+  padding: 13px;
+  background: linear-gradient(135deg, #ea580c, #dc2626);
+  color: #fff;
+  border: none;
+  border-radius: 11px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.18s, transform 0.18s;
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.dp-buynow:hover { opacity: 0.9; transform: translateY(-1px); }
+
+.dp-divider { border: none; border-top: 1px solid #f1f5f9; margin: 18px 0; }
+
+/* Seller card */
+.dp-seller {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+.dp-seller-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #94a3b8;
+  margin-bottom: 10px;
+}
+.dp-seller-row { display: flex; align-items: center; gap: 10px; }
+.dp-seller-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0d7a45, #16a34a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9rem;
+  font-family: var(--font-display);
+  flex-shrink: 0;
+}
+.dp-seller-name { font-weight: 700; font-size: 0.9rem; color: #1e293b; }
+.dp-seller-loc  { font-size: 0.75rem; color: #94a3b8; margin-top: 2px; }
+
+/* Status banners */
+.dp-status-banner {
+  border-radius: 10px;
+  padding: 12px 16px;
+  text-align: center;
+  font-size: 0.88rem;
+  font-weight: 600;
+  margin-top: 12px;
+}
+.dp-status-owner  { background: #fef9ec; color: #92400e; border: 1px solid #fde68a; }
+.dp-status-login  { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+.dp-status-closed { background: #f3f4f6; color: #6b7280; border: 1px solid #e5e7eb; }
+
+.dp-user-bid {
+  font-size: 0.8rem;
+  color: #64748b;
+  text-align: center;
+  margin-top: 10px;
+  padding: 8px;
+  background: #f0fdf4;
+  border-radius: 8px;
+}
+.dp-user-bid strong { color: #0d7a45; }
 
 @media (max-width: 900px) {
-  .detail-grid { grid-template-columns: 1fr; }
-  .bid-card { position: static; }
-  .detail-page { padding: 72px 0 40px; }
+  .dp-grid { grid-template-columns: 1fr; }
+  .dp-bid-card { position: static; }
+  .dp-page { padding: 80px 0 60px; }
 }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="detail-page">
+<div class="dp-page">
   <div class="container">
 
     <!-- BREADCRUMB -->
-    <div style="margin-bottom:24px;font-size:0.85rem;color:var(--gray);">
-      <a href="{% url 'marketplace' %}" style="color:var(--green);text-decoration:none;">Marketplace</a>
-      <span style="margin:0 8px;">›</span>
+    <div class="dp-breadcrumb">
+      <a href="{% url 'marketplace' %}">🏪 Marketplace</a>
+      <span>›</span>
       <span>{{ auction.listing.category.name|default:'Autre' }}</span>
-      <span style="margin:0 8px;">›</span>
-      <span>{{ auction.listing.title|truncatechars:40 }}</span>
+      <span>›</span>
+      <span style="color:#475569;font-weight:600;">{{ auction.listing.title|truncatechars:44 }}</span>
     </div>
 
-    <div class="detail-grid">
+    <div class="dp-grid">
 
-      <!-- COLONNE GAUCHE -->
+      <!-- ─── COLONNE GAUCHE ─── -->
       <div>
-        <div class="detail-img">
+
+        <!-- IMAGE HERO -->
+        <div class="dp-img-wrap">
           {% if auction.listing.photo %}
             <img src="{{ auction.listing.photo.url }}" alt="{{ auction.listing.title }}">
           {% else %}
-            <div class="detail-img-placeholder">{{ auction.listing.category.icon|default:'♻' }}</div>
+            <div class="dp-img-placeholder">{{ auction.listing.category.icon|default:'♻️' }}</div>
+          {% endif %}
+          <div class="dp-img-overlay"></div>
+
+          <div class="dp-img-badges">
+            {% if auction.auction_type == 'buy_now' %}
+              <span class="dp-badge dp-badge-type buy_now">⚡ Achat immédiat</span>
+            {% elif auction.auction_type == 'auction' %}
+              <span class="dp-badge dp-badge-type auction">🔨 Enchère</span>
+            {% else %}
+              <span class="dp-badge dp-badge-type both">🔨⚡ Enchère + Achat immédiat</span>
+            {% endif %}
+            <span class="dp-badge dp-badge-cat">{{ auction.listing.category.icon|default:'♻' }} {{ auction.listing.category.name|default:'Autre' }}</span>
+          </div>
+
+          <div class="dp-img-stats">
+            <span class="dp-badge dp-badge-views">👁 {{ auction.views_count }} vue{{ auction.views_count|pluralize }}</span>
+          </div>
+        </div>
+
+        <!-- TITRE + TAGS -->
+        <h1 class="dp-title">{{ auction.listing.title }}</h1>
+
+        <div class="dp-tags">
+          <span class="dp-tag">⚖️ {{ auction.listing.quantity_kg }} kg</span>
+          <span class="dp-tag">📍 {{ auction.listing.city|default:'Haïti' }}</span>
+          {% if auction.total_bids > 0 %}
+          <span class="dp-tag">🔨 {{ auction.total_bids }} enchère{{ auction.total_bids|pluralize }}</span>
           {% endif %}
         </div>
 
-        <h1 style="font-family:var(--font-display);font-size:1.8rem;font-weight:800;color:var(--charcoal);margin:20px 0 10px;">
-          {{ auction.listing.title }}
-        </h1>
-
-        <div class="detail-meta">
-          {% if auction.auction_type == 'buy_now' %}
-            <span class="detail-meta-tag type-tag buy_now">⚡ Achat immédiat</span>
-          {% elif auction.auction_type == 'auction' %}
-            <span class="detail-meta-tag type-tag auction">🔨 Enchère</span>
-          {% else %}
-            <span class="detail-meta-tag type-tag both">🔨⚡ Enchère + Achat immédiat</span>
-          {% endif %}
-          <span class="detail-meta-tag">{{ auction.listing.category.icon|default:'♻' }} {{ auction.listing.category.name|default:'Autre' }}</span>
-          <span class="detail-meta-tag">⚖️ {{ auction.listing.quantity_kg }} kg</span>
-          <span class="detail-meta-tag">📍 {{ auction.listing.city|default:'Haïti' }}</span>
-          <span class="detail-meta-tag">👁 {{ auction.views_count }} vue{{ auction.views_count|pluralize }}</span>
-        </div>
-
+        <!-- DESCRIPTION -->
         {% if auction.listing.description %}
-        <div style="color:var(--charcoal);line-height:1.7;margin-bottom:20px;">
-          {{ auction.listing.description|linebreaksbr }}
-        </div>
+        <div class="dp-desc">{{ auction.listing.description|linebreaksbr }}</div>
         {% endif %}
 
         <!-- ANALYSE IA -->
         {% if auction.listing.ai_analysis %}
-        <div class="ai-card">
+        <div class="dp-ai">
           <h4>🤖 Analyse IA EcoCycle</h4>
-          <div class="ai-grid">
+          <div class="dp-ai-grid">
             {% with a=auction.listing.ai_analysis %}
-            <div class="ai-item">
+            <div class="dp-ai-item">
               <label>Catégorie détectée</label>
               <span>{{ a.category|default:'—' }}</span>
             </div>
-            <div class="ai-item">
+            <div class="dp-ai-item">
               <label>Valeur estimée</label>
               <span>{{ a.estimated_value_htg|default:'—' }} HTG</span>
             </div>
-            <div class="ai-item">
+            <div class="dp-ai-item">
               <label>Recyclabilité</label>
               <span>{{ a.recyclability_score|default:'—' }}/10</span>
             </div>
-            <div class="ai-item">
+            <div class="dp-ai-item">
               <label>État</label>
               <span>{{ a.condition|default:'—' }}</span>
             </div>
             {% endwith %}
           </div>
           {% if auction.listing.ai_analysis.description %}
-          <p style="margin-top:12px;font-size:0.88rem;color:var(--gray);line-height:1.5;">
+          <p style="margin-top:12px;font-size:0.85rem;color:#166534;line-height:1.55;">
             {{ auction.listing.ai_analysis.description }}
           </p>
           {% endif %}
@@ -151,75 +470,86 @@
 
         <!-- HISTORIQUE ENCHÈRES -->
         {% if bids %}
-        <div class="bids-history">
-          <h4>📋 Historique des enchères ({{ auction.total_bids }})</h4>
+        <div class="dp-history">
+          <div class="dp-history-header">
+            <h4>📋 Historique des enchères</h4>
+            <span style="font-size:0.78rem;color:#94a3b8;">{{ auction.total_bids }} au total</span>
+          </div>
           {% for bid in bids %}
-          <div class="bid-row {% if bid.is_winning %}winning{% endif %}">
-            <span>{{ bid.bidder.first_name }} {{ bid.bidder.last_name|slice:":1" }}.</span>
-            <span>{{ bid.amount }} HTG</span>
-            <span style="color:var(--gray);font-size:0.78rem;">{{ bid.created_at|date:"d/m H:i" }}</span>
-            {% if bid.is_winning %}<span style="font-size:0.75rem;">👑 En tête</span>{% endif %}
+          <div class="dp-bid-row {% if bid.is_winning %}winning{% endif %}">
+            <div class="dp-bid-avatar">
+              {{ bid.bidder.first_name|slice:":1" }}{{ bid.bidder.last_name|slice:":1" }}
+            </div>
+            <div class="dp-bid-name">
+              {{ bid.bidder.first_name }} {{ bid.bidder.last_name|slice:":1" }}.
+            </div>
+            <div class="dp-bid-amount">{{ bid.amount }} HTG</div>
+            <div class="dp-bid-time">
+              {% if bid.is_winning %}<span class="dp-bid-crown">👑</span>{% endif %}
+              {{ bid.created_at|date:"d/m H:i" }}
+            </div>
           </div>
           {% endfor %}
         </div>
         {% endif %}
+
       </div>
 
-      <!-- COLONNE DROITE — BID CARD -->
+      <!-- ─── COLONNE DROITE (STICKY) ─── -->
       <div>
-        <div class="bid-card">
+        <div class="dp-bid-card">
 
+          <!-- PRIX -->
           {% if auction.auction_type == 'buy_now' %}
-            <!-- Prix fixe -->
-            <p class="bid-price-label">Prix fixe</p>
-            <div class="bid-current-price">{{ auction.buy_now_price }} HTG</div>
-
+            <p class="dp-card-price-label">Prix fixe</p>
+            <div class="dp-card-price">{{ auction.buy_now_price }}<small>HTG</small></div>
           {% else %}
-            <!-- Enchère en cours -->
-            <p class="bid-price-label">Prix actuel</p>
-            <div class="bid-current-price" id="current-price">{{ auction.current_price }} HTG</div>
-            <p style="font-size:0.82rem;color:var(--gray);margin-top:4px;">
-              {{ auction.total_bids }} enchère{{ auction.total_bids|pluralize }}
-            </p>
-
-            <div class="bid-countdown {% if not auction.is_active %}expired{% endif %}"
-                 id="detail-countdown"
-                 data-ends-at="{{ auction.ends_at|date:'c' }}">
-              {% if not auction.is_active %}Terminée{% else %}Calcul...{% endif %}
-            </div>
-
-            {% if auction.reserve_price %}
-            <div class="reserve-note">
-              🔒 Prix de réserve : non communiqué
-            </div>
-            {% endif %}
+            <p class="dp-card-price-label">Prix actuel</p>
+            <div class="dp-card-price" id="current-price">{{ auction.current_price|default:auction.starting_price }}<small>HTG</small></div>
+            <p class="dp-card-sub" id="bids-count-label">{{ auction.total_bids }} enchère{{ auction.total_bids|pluralize }}</p>
           {% endif %}
 
+          <!-- COUNTDOWN -->
+          {% if auction.auction_type != 'buy_now' %}
+          <div class="dp-countdown {% if not auction.is_active %}expired{% endif %}"
+               id="detail-countdown"
+               data-ends-at="{{ auction.ends_at|date:'c' }}">
+            {% if not auction.is_active %}⏱ Terminée{% else %}…{% endif %}
+          </div>
+          {% endif %}
+
+          {% if auction.reserve_price %}
+          <p style="font-size:0.75rem;color:#94a3b8;background:#f8fafc;padding:6px 10px;border-radius:7px;text-align:center;">
+            🔒 Prix de réserve non communiqué
+          </p>
+          {% endif %}
+
+          <!-- ACTIONS -->
           {% if auction.is_active %}
+
             {% if request.session.user_id and not is_owner %}
 
-              <!-- FORMULAIRE ENCHÈRE (si bidding autorisé) -->
               {% if auction.auction_type != 'buy_now' %}
-              <div class="bid-form">
-                <p style="font-size:0.82rem;color:var(--gray);margin-bottom:8px;">
-                  Enchère minimum : <strong id="min-bid-label" style="color:var(--charcoal);">{{ auction.current_price|add:10 }} HTG</strong>
-                </p>
-                <div class="bid-input">
+              <!-- ENCHÈRE -->
+              <div class="bid-form" style="margin-top:14px;">
+                <p class="dp-bid-min">Minimum : <strong id="min-bid-label">{{ auction.current_price|default:auction.starting_price }} HTG + 10</strong></p>
+                <div class="dp-quick-bids" id="quick-bids"></div>
+                <div class="dp-bid-input-row">
                   <input type="number" id="bid-amount"
-                         min="{{ auction.current_price|add:10 }}" step="10"
-                         placeholder="Votre offre en HTG">
-                  <button onclick="placeBid()" class="btn btn-primary">Enchérir</button>
+                         min="{{ auction.current_bid|floatformat:0 }}"
+                         step="10"
+                         placeholder="Montant HTG">
+                  <button class="dp-bid-submit" onclick="placeBid()">🔨 Enchérir</button>
                 </div>
-                <div class="bid-error"   id="bid-error"></div>
-                <div class="bid-success" id="bid-success"></div>
+                <div class="dp-bid-feedback dp-bid-error"   id="bid-error"></div>
+                <div class="dp-bid-feedback dp-bid-success" id="bid-success"></div>
               </div>
               {% endif %}
 
-              <!-- ACHAT IMMÉDIAT -->
               {% if auction.buy_now_price and auction.auction_type != 'auction' %}
               <form method="POST" action="{% url 'buy_now' auction.id %}" style="margin-top:{% if auction.auction_type == 'buy_now' %}0{% else %}12px{% endif %};">
                 {% csrf_token %}
-                <button type="submit" class="buynow-btn"
+                <button type="submit" class="dp-buynow"
                         onclick="return confirm('Confirmer l\'achat à {{ auction.buy_now_price }} HTG ?')">
                   ⚡ Acheter maintenant — {{ auction.buy_now_price }} HTG
                 </button>
@@ -227,50 +557,48 @@
               {% endif %}
 
               {% if user_bid and auction.auction_type != 'buy_now' %}
-              <p style="font-size:0.78rem;color:var(--gray);text-align:center;margin-top:10px;">
-                Votre enchère actuelle : <strong style="color:var(--green);">{{ user_bid.amount }} HTG</strong>
-                {% if user_bid.is_winning %}👑{% endif %}
-              </p>
+              <div class="dp-user-bid">
+                Votre enchère : <strong>{{ user_bid.amount }} HTG</strong>
+                {% if user_bid.is_winning %} · 👑 En tête{% endif %}
+              </div>
               {% endif %}
 
             {% elif is_owner %}
-              <div style="background:#fef3c7;border-radius:8px;padding:12px;text-align:center;font-size:0.88rem;color:#92400e;margin-top:12px;">
-                📦 C'est votre listing
-              </div>
+              <div class="dp-status-banner dp-status-owner">📦 C'est votre annonce</div>
+
             {% else %}
-              <a href="{% url 'web_login' %}?next={{ request.path }}" class="btn btn-primary btn-full" style="margin-top:12px;">
-                🔑 Se connecter pour {% if auction.auction_type == 'buy_now' %}acheter{% else %}enchérir{% endif %}
+              <a href="{% url 'web_login' %}?next={{ request.path }}" class="dp-buynow" style="margin-top:14px;display:flex;text-decoration:none;">
+                🔑 Connexion pour {% if auction.auction_type == 'buy_now' %}acheter{% else %}enchérir{% endif %}
               </a>
             {% endif %}
 
           {% else %}
-            <div style="background:#f3f4f6;border-radius:8px;padding:12px;text-align:center;font-size:0.88rem;color:var(--gray);margin-top:12px;">
+            <div class="dp-status-banner dp-status-closed">
               🔒 {% if auction.status == 'sold' %}Vendue{% else %}Enchère terminée{% endif %}
             </div>
             {% if auction.winner %}
-            <p style="font-size:0.78rem;color:var(--gray);text-align:center;margin-top:8px;">
-              Gagnant : {{ auction.winner.first_name }} {{ auction.winner.last_name|slice:":1" }}.
+            <p style="font-size:0.78rem;color:#94a3b8;text-align:center;margin-top:8px;">
+              Gagnant : <strong style="color:#0d7a45;">{{ auction.winner.first_name }} {{ auction.winner.last_name|slice:":1" }}.</strong>
             </p>
             {% endif %}
           {% endif %}
 
-          <hr class="divider">
+          <hr class="dp-divider">
 
           <!-- VENDEUR -->
-          <div class="seller-card">
-            <h5>Vendeur</h5>
-            <div style="display:flex;align-items:center;gap:10px;">
-              <div style="width:36px;height:36px;border-radius:50%;background:var(--green);
-                          display:flex;align-items:center;justify-content:center;
-                          color:white;font-weight:700;font-size:0.85rem;font-family:var(--font-display);">
+          <div class="dp-seller">
+            <div class="dp-seller-label">Vendeur</div>
+            <div class="dp-seller-row">
+              <div class="dp-seller-avatar">
                 {{ auction.seller.first_name|slice:":1" }}{{ auction.seller.last_name|slice:":1" }}
               </div>
               <div>
-                <div style="font-weight:600;font-size:0.9rem;">{{ auction.seller.full_name }}</div>
-                <div style="font-size:0.78rem;color:var(--gray);">📍 {{ auction.seller.city|default:'Haïti' }}</div>
+                <div class="dp-seller-name">{{ auction.seller.full_name }}</div>
+                <div class="dp-seller-loc">📍 {{ auction.seller.city|default:'Haïti' }}</div>
               </div>
             </div>
           </div>
+
         </div>
       </div>
 
@@ -282,53 +610,68 @@
 {% block extra_js %}
 <script>
 const AUCTION_ID = '{{ auction.id }}';
-{% if request.session.user_id %}
-const CSRF_TOKEN = '{{ csrf_token }}';
-{% endif %}
+{% if request.session.user_id %}const CSRF_TOKEN = '{{ csrf_token }}';{% endif %}
 
-/* Countdown */
-function formatCountdown(endsAt) {
-  const now  = new Date();
-  const end  = new Date(endsAt);
-  const diff = Math.max(0, Math.floor((end - now) / 1000));
-  if (diff === 0) return { text: 'Terminée', expired: true };
-  const d = Math.floor(diff / 86400);
-  const h = Math.floor((diff % 86400) / 3600);
-  const m = Math.floor((diff % 3600) / 60);
-  const s = diff % 60;
-  if (d > 0) return { text: `${d}j ${h}h ${m}m restants`, expired: false };
-  if (h > 0) return { text: `${h}h ${m}m ${s}s restants`, expired: false };
-  return { text: `${m}m ${s}s restants`, expired: false };
+/* ── Countdown ── */
+function urgencyClass(sec) {
+  if (sec <= 0) return 'expired';
+  if (sec < 3600) return 'urgent';
+  if (sec < 86400) return 'soon';
+  return 'ok';
 }
-
+function fmtCountdown(endsAt) {
+  const diff = Math.max(0, Math.floor((new Date(endsAt) - Date.now()) / 1000));
+  const cls  = urgencyClass(diff);
+  if (!diff) return { text: '⏱ Terminée', cls };
+  const d = Math.floor(diff / 86400), h = Math.floor((diff%86400)/3600),
+        m = Math.floor((diff%3600)/60), s = diff%60;
+  const text = d > 0 ? `⏱ ${d}j ${h}h ${m}m restants`
+             : h > 0 ? `⏱ ${h}h ${m}m ${s}s restants`
+             :         `⏱ ${m}m ${s}s restants`;
+  return { text, cls };
+}
 const cdEl = document.getElementById('detail-countdown');
 if (cdEl && cdEl.dataset.endsAt) {
   function tickDetail() {
-    const { text, expired } = formatCountdown(cdEl.dataset.endsAt);
+    const { text, cls } = fmtCountdown(cdEl.dataset.endsAt);
     cdEl.textContent = text;
-    cdEl.classList.toggle('expired', expired);
-    if (expired) clearInterval(cdTimer);
+    cdEl.className = `dp-countdown ${cls}`;
+    if (cls === 'expired') clearInterval(cdTimer);
   }
   tickDetail();
   const cdTimer = setInterval(tickDetail, 1000);
 }
 
-/* Place bid */
+/* ── Quick bid buttons ── */
+const bidInput = document.getElementById('bid-amount');
+function buildQuickBids() {
+  const wrap = document.getElementById('quick-bids');
+  if (!wrap || !bidInput) return;
+  const min = parseFloat(bidInput.min) + 10;
+  if (isNaN(min)) return;
+  const presets = [min, min+40, min+90, min+190];
+  wrap.innerHTML = presets.map(v =>
+    `<button type="button" class="dp-quick-btn" onclick="setQuick(${v})">${v.toLocaleString('fr')} HTG</button>`
+  ).join('');
+}
+function setQuick(val) {
+  if (bidInput) { bidInput.value = val; bidInput.focus(); }
+}
+buildQuickBids();
+
+/* ── Place bid ── */
 async function placeBid() {
-  const amount = parseFloat(document.getElementById('bid-amount').value);
+  const amount = parseFloat(bidInput?.value);
   const errEl  = document.getElementById('bid-error');
   const okEl   = document.getElementById('bid-success');
-  errEl.style.display = 'none';
-  okEl.style.display  = 'none';
+  errEl.style.display = 'none'; okEl.style.display = 'none';
 
   if (!amount || isNaN(amount)) {
     errEl.textContent = 'Entrez un montant valide.';
-    errEl.style.display = 'block';
-    return;
+    errEl.style.display = 'block'; return;
   }
-
   try {
-    const res = await fetch(`/marketplace/${AUCTION_ID}/bid/`, {
+    const res  = await fetch(`/marketplace/${AUCTION_ID}/bid/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
       body: JSON.stringify({ amount }),
@@ -336,14 +679,16 @@ async function placeBid() {
     const data = await res.json();
 
     if (data.success) {
-      const newPrice = parseFloat(data.new_price);
-      document.getElementById('current-price').textContent = newPrice.toLocaleString('fr') + ' HTG';
-      const minBid = newPrice + 10;
-      document.getElementById('bid-amount').min   = minBid;
-      document.getElementById('bid-amount').value = '';
+      const np = parseFloat(data.new_price);
+      document.getElementById('current-price').innerHTML = `${np.toLocaleString('fr')}<small>HTG</small>`;
+      const countLabel = document.getElementById('bids-count-label');
+      if (countLabel) countLabel.textContent = `${data.total_bids} enchère${data.total_bids > 1 ? 's' : ''}`;
+      bidInput.min   = np + 10;
+      bidInput.value = '';
       const minLabel = document.getElementById('min-bid-label');
-      if (minLabel) minLabel.textContent = minBid.toLocaleString('fr') + ' HTG';
-      okEl.textContent   = `✅ Enchère placée ! Nouveau prix : ${newPrice.toLocaleString('fr')} HTG`;
+      if (minLabel) minLabel.innerHTML = `Minimum : <strong>${(np+10).toLocaleString('fr')} HTG</strong>`;
+      buildQuickBids();
+      okEl.textContent   = `✅ Enchère placée ! Nouveau prix : ${np.toLocaleString('fr')} HTG`;
       okEl.style.display = 'block';
     } else {
       errEl.textContent   = data.error || "Erreur lors de l'enchère.";

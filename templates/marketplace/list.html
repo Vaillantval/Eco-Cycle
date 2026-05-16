@@ -5,168 +5,486 @@
 {% block meta_description %}Achetez et enchérissez sur des matériaux recyclables en Haïti.{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
 <style>
-/* Navbar blanche sur fond clair */
-.main-nav { background: white !important; box-shadow: 0 2px 12px rgba(0,0,0,0.08) !important; }
-.main-nav .nav-logo, .main-nav .nav-link, .main-nav .nav-cta { color: var(--charcoal) !important; }
-.main-nav .nav-link:hover { color: var(--green) !important; }
+/* ── Navbar blanche ── */
+.navbar { background: rgba(255,255,255,0.97) !important; box-shadow: 0 2px 20px rgba(0,0,0,0.08) !important; padding: 12px 0 !important; }
+.nav-logo-text,.nav-links a,.nav-login,.nav-user-name,.nav-dropdown-trigger { color: var(--charcoal) !important; }
+.hamburger span { background: var(--charcoal) !important; }
+.logo-header-wrap { background: rgba(13,122,69,0.08) !important; border-color: rgba(13,122,69,0.2) !important; }
 
-.marketplace-page { padding: 88px 0 60px; }
-.page-header { text-align: center; margin-bottom: 32px; }
-.page-header h1 { font-family: var(--font-display); font-size: 2.4rem; font-weight: 800; color: var(--charcoal); margin-bottom: 8px; }
-.page-header p  { color: var(--gray); font-size: 1rem; }
-.page-header-stats { display: flex; justify-content: center; gap: 24px; margin-top: 12px; flex-wrap: wrap; }
-.stat-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 14px; background: #f0fdf4; border: 1.5px solid #bbf7d0; border-radius: 20px; font-size: 0.82rem; font-weight: 600; color: var(--green-dark); }
+/* ── Hero ── */
+.mp-hero {
+  background: linear-gradient(135deg, #0a1f16 0%, #0d7a45 55%, #16a34a 100%);
+  padding: 100px 0 52px;
+  position: relative;
+  overflow: hidden;
+}
+.mp-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 70% 50%, rgba(74,222,128,0.12) 0%, transparent 60%);
+}
+.mp-hero-inner { position: relative; text-align: center; }
+.mp-hero h1 {
+  font-family: var(--font-display);
+  font-size: clamp(2rem,4.5vw,3rem);
+  font-weight: 800;
+  color: #fff;
+  margin: 0 0 10px;
+  text-shadow: 0 2px 20px rgba(0,0,0,0.2);
+}
+.mp-hero p { font-size: 1.05rem; color: rgba(255,255,255,0.72); margin: 0 0 26px; }
+.mp-hero-chips { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+.mp-hero-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.18);
+  backdrop-filter: blur(8px);
+  border-radius: 50px;
+  padding: 7px 16px;
+  font-size: 0.83rem;
+  font-weight: 600;
+  color: #fff;
+}
+.mp-hero-chip strong { color: #4ade80; }
 
-.filters-bar  { background: white; border-radius: 16px; padding: 20px 24px; margin-bottom: 32px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
-.filters-form { display: flex; flex-direction: column; gap: 14px; }
-.category-filters { display: flex; gap: 8px; flex-wrap: wrap; }
-.sort-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-.sort-row input, .sort-row select { padding: 9px 14px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 0.88rem; outline: none; background: white; }
-.sort-row input:focus, .sort-row select:focus { border-color: var(--green); }
+/* ── Filtres sticky ── */
+.mp-filters-wrap {
+  background: #fff;
+  border-bottom: 1px solid #f1f5f9;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.05);
+  position: sticky;
+  top: 68px;
+  z-index: 50;
+}
+.mp-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 0;
+}
+.mp-cat-pills { display: flex; gap: 7px; flex-wrap: wrap; align-items: center; }
+.mp-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  border-radius: 50px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1.5px solid transparent;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.mp-pill:hover  { background: #e2f5ec; color: #0d7a45; }
+.mp-pill.active { background: #0d7a45; color: #fff; border-color: #0d7a45; }
 
-.filter-btn { display: inline-flex; align-items: center; gap: 5px; padding: 7px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: 500; background: #f3f4f6; color: var(--charcoal); text-decoration: none; transition: all 0.18s; border: 2px solid transparent; }
-.filter-btn:hover  { background: #e8f5ee; color: var(--green); }
-.filter-btn.active { background: var(--green); color: white; border-color: var(--green); }
+.mp-search-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.mp-search-row input,
+.mp-search-row select {
+  padding: 8px 14px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 9px;
+  font-size: 0.85rem;
+  outline: none;
+  background: #f8fafc;
+  color: var(--charcoal);
+  transition: border-color 0.15s, background 0.15s;
+}
+.mp-search-row input:focus,
+.mp-search-row select:focus { border-color: #0d7a45; background: #fff; }
+.mp-search-row input { flex: 1; min-width: 150px; }
+.mp-filter-submit {
+  padding: 8px 20px;
+  background: #0d7a45;
+  color: #fff;
+  border: none;
+  border-radius: 9px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.mp-filter-submit:hover { background: #0a6038; }
 
-/* Grid */
-.auctions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; }
+/* ── Contenu ── */
+.mp-content { padding: 36px 0 80px; }
 
-.auction-card { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.07); transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column; }
-.auction-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
-.auction-img { position: relative; height: 200px; background: #f0f0ee; overflow: hidden; }
-.auction-img img { width: 100%; height: 100%; object-fit: cover; }
-.img-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; background: linear-gradient(135deg, #e8f5ee, #d1fae5); }
-.category-badge { position: absolute; top: 12px; left: 12px; background: rgba(0,0,0,0.6); color: white; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; backdrop-filter: blur(4px); }
-.type-badge { position: absolute; top: 12px; right: 12px; padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; }
-.type-badge.auction { background: #dbeafe; color: #1d4ed8; }
-.type-badge.buy_now { background: #fef3c7; color: #92400e; }
-.type-badge.both    { background: #f0fdf4; color: #166534; }
+.mp-results-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.mp-results-count { font-size: 0.85rem; color: #64748b; }
+.mp-results-count strong { color: #1e293b; font-weight: 700; }
 
-.auction-body { padding: 18px 20px; flex: 1; display: flex; flex-direction: column; gap: 8px; }
-.auction-body h3 { font-family: var(--font-display); font-size: 1rem; font-weight: 700; color: var(--charcoal); line-height: 1.3; margin: 0; }
-.auction-city, .auction-weight { color: var(--gray); font-size: 0.82rem; margin: 0; }
-.auction-price-row { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 4px; }
-.price-label { display: block; font-size: 0.72rem; color: var(--gray); text-transform: uppercase; letter-spacing: 0.5px; }
-.price { font-family: var(--font-display); font-size: 1.3rem; font-weight: 800; color: var(--green); }
-.bids-count { font-size: 0.82rem; color: var(--gray); font-weight: 500; }
-.countdown { font-size: 0.82rem; font-weight: 600; color: var(--orange); background: #fef3c7; padding: 4px 10px; border-radius: 6px; text-align: center; }
-.countdown.expired { color: #6b7280; background: #f3f4f6; }
+/* ── Grid ── */
+.mp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 22px;
+}
 
-.empty-state { grid-column: 1 / -1; text-align: center; padding: 60px 20px; }
-.empty-state p { font-size: 1.2rem; color: var(--gray); margin-bottom: 20px; }
+/* ── Card ── */
+.mp-card {
+  background: #fff;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+  border: 1px solid #f1f5f9;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.22s cubic-bezier(0.4,0,0.2,1), box-shadow 0.22s;
+  text-decoration: none;
+}
+.mp-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 14px 36px rgba(0,0,0,0.11);
+}
 
-.pagination { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 40px; }
-.page-btn { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: white; color: var(--charcoal); text-decoration: none; box-shadow: 0 2px 8px rgba(0,0,0,0.08); font-weight: 700; transition: all 0.18s; }
-.page-btn:hover { background: var(--green); color: white; }
+.mp-card-img {
+  position: relative;
+  height: 215px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #e8f5ee, #d1fae5);
+  flex-shrink: 0;
+}
+.mp-card-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+.mp-card:hover .mp-card-img img { transform: scale(1.05); }
+.mp-card-img-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 4.5rem;
+}
+.mp-card-img-overlay {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 90px;
+  background: linear-gradient(to top, rgba(10,20,15,0.55), transparent);
+}
 
-@media (max-width: 640px) {
-  .marketplace-page { padding: 72px 0 40px; }
-  .page-header h1 { font-size: 1.8rem; }
-  .auctions-grid { grid-template-columns: 1fr; }
+/* Image badges */
+.mp-card-top { position: absolute; top: 12px; left: 12px; right: 12px; display: flex; justify-content: space-between; align-items: flex-start; }
+.mp-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  backdrop-filter: blur(4px);
+  white-space: nowrap;
+}
+.mp-badge-cat { background: rgba(10,20,15,0.65); color: #fff; }
+.mp-badge-hot {
+  background: rgba(220,38,38,0.88);
+  color: #fff;
+  animation: pulse-hot 2s ease-in-out infinite;
+}
+@keyframes pulse-hot {
+  0%,100% { box-shadow: 0 0 0 0 rgba(220,38,38,0.4); }
+  50%      { box-shadow: 0 0 0 6px rgba(220,38,38,0); }
+}
+.mp-badge-type {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+}
+.mp-badge-type.auction { background: rgba(29,78,216,0.82); color: #fff; }
+.mp-badge-type.buy_now { background: rgba(180,83,9,0.82);  color: #fff; }
+.mp-badge-type.both    { background: rgba(22,101,52,0.82); color: #fff; }
+
+/* Card body */
+.mp-card-body { padding: 15px 17px 17px; display: flex; flex-direction: column; flex: 1; gap: 5px; }
+.mp-card-meta {
+  font-size: 0.73rem;
+  color: #94a3b8;
+  font-weight: 500;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mp-card-title {
+  font-family: var(--font-display);
+  font-size: 0.96rem;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1.35;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.mp-card-price-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-top: 5px;
+}
+.mp-price-label { font-size: 0.67rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; display: block; }
+.mp-price-val {
+  font-family: var(--font-display);
+  font-size: 1.28rem;
+  font-weight: 800;
+  color: #0d7a45;
+  line-height: 1;
+}
+.mp-price-val small { font-size: 0.62rem; font-weight: 600; color: #94a3b8; }
+.mp-bids-tag {
+  font-size: 0.73rem;
+  color: #64748b;
+  background: #f1f5f9;
+  border-radius: 20px;
+  padding: 3px 9px;
+  font-weight: 600;
+}
+
+/* Countdown */
+.mp-countdown {
+  font-size: 0.79rem;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 7px;
+  text-align: center;
+  margin-top: 2px;
+}
+.mp-countdown.ok     { color: #15803d; background: #f0fdf4; }
+.mp-countdown.soon   { color: #92400e; background: #fef3c7; }
+.mp-countdown.urgent { color: #dc2626; background: #fef2f2; }
+.mp-countdown.expired { color: #6b7280; background: #f3f4f6; }
+
+/* CTAs */
+.mp-card-cta { display: flex; gap: 7px; margin-top: 7px; }
+.mp-cta-main {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 14px;
+  background: #0d7a45;
+  color: #fff;
+  border-radius: 10px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+.mp-cta-main:hover { background: #0a6038; color: #fff; }
+.mp-cta-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 12px;
+  background: #fff7ed;
+  color: #92400e;
+  border: 1.5px solid #fed7aa;
+  border-radius: 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.mp-cta-secondary:hover { background: #ffedd5; color: #92400e; }
+
+/* Empty state */
+.mp-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 80px 20px;
+  background: #fff;
+  border-radius: 20px;
+  border: 2px dashed #e2e8f0;
+}
+.mp-empty-icon { font-size: 3.5rem; margin-bottom: 16px; }
+.mp-empty h3  { font-family: var(--font-display); font-size: 1.3rem; font-weight: 700; color: #334155; margin-bottom: 8px; }
+.mp-empty p   { color: #94a3b8; font-size: 0.9rem; margin-bottom: 24px; }
+
+/* Pagination */
+.mp-pagination { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 48px; }
+.mp-page-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #fff;
+  color: #475569;
+  text-decoration: none;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.08);
+  font-weight: 700;
+  font-size: 1rem;
+  border: 1.5px solid #e2e8f0;
+  transition: all 0.15s;
+}
+.mp-page-btn:hover { background: #0d7a45; color: #fff; border-color: #0d7a45; }
+.mp-page-info { font-size: 0.85rem; color: #64748b; padding: 0 10px; }
+
+@media (max-width: 768px) {
+  .mp-hero { padding: 88px 0 36px; }
+  .mp-grid { grid-template-columns: 1fr; }
+  .mp-filters-wrap { top: 62px; }
+  .mp-card-img { height: 180px; }
 }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="marketplace-page">
-  <div class="container">
 
-    <div class="page-header">
+<!-- ── HERO ── -->
+<div class="mp-hero">
+  <div class="container">
+    <div class="mp-hero-inner">
       <h1>🏪 Marketplace EcoCycle</h1>
       <p>Achetez et enchérissez sur des matériaux recyclables en Haïti</p>
-      {% if auctions.paginator.count %}
-      <div class="page-header-stats">
-        <span class="stat-chip">♻️ {{ auctions.paginator.count }} annonce{{ auctions.paginator.count|pluralize }} active{{ auctions.paginator.count|pluralize }}</span>
+      <div class="mp-hero-chips">
+        <span class="mp-hero-chip">♻️ <strong>{{ auctions.paginator.count }}</strong> annonce{{ auctions.paginator.count|pluralize }}</span>
+        <span class="mp-hero-chip">🔨 Enchères en temps réel</span>
+        <span class="mp-hero-chip">⚡ Achat immédiat disponible</span>
+        <span class="mp-hero-chip">🔒 Paiement sécurisé</span>
       </div>
-      {% endif %}
     </div>
+  </div>
+</div>
 
-    <!-- FILTRES -->
-    <div class="filters-bar">
-      <form method="GET" class="filters-form">
-        <div class="category-filters">
-          <a href="?{% if active_sort %}sort={{ active_sort }}{% endif %}"
-             class="filter-btn {% if not active_category %}active{% endif %}">
-            🌐 Tout
-          </a>
-          {% for cat in categories %}
-          <a href="?category={{ cat.slug }}{% if active_sort %}&sort={{ active_sort }}{% endif %}"
-             class="filter-btn {% if active_category == cat.slug %}active{% endif %}">
-            {{ cat.icon }} {{ cat.name }}
-          </a>
-          {% endfor %}
-        </div>
-        <div class="sort-row">
-          <input type="text" name="city" value="{{ city_filter }}"
-                 placeholder="🔍 Filtrer par ville...">
-          {% if active_category %}<input type="hidden" name="category" value="{{ active_category }}">{% endif %}
-          <select name="sort" onchange="this.form.submit()">
-            <option value="-created_at" {% if active_sort == '-created_at' %}selected{% endif %}>Plus récent</option>
-            <option value="price_asc"   {% if active_sort == 'price_asc'   %}selected{% endif %}>Prix croissant</option>
-            <option value="price_desc"  {% if active_sort == 'price_desc'  %}selected{% endif %}>Prix décroissant</option>
-            <option value="ending_soon" {% if active_sort == 'ending_soon' %}selected{% endif %}>Fin proche</option>
-          </select>
-          <button type="submit" class="btn btn-outline btn-sm">Filtrer</button>
-        </div>
-      </form>
+<!-- ── FILTRES STICKY ── -->
+<div class="mp-filters-wrap">
+  <div class="container">
+    <form method="GET" class="mp-filters">
+      <div class="mp-cat-pills">
+        <a href="?{% if active_sort %}sort={{ active_sort }}{% endif %}"
+           class="mp-pill {% if not active_category %}active{% endif %}">🌐 Tout</a>
+        {% for cat in categories %}
+        <a href="?category={{ cat.slug }}{% if active_sort %}&sort={{ active_sort }}{% endif %}"
+           class="mp-pill {% if active_category == cat.slug %}active{% endif %}">
+          {{ cat.icon }} {{ cat.name }}
+        </a>
+        {% endfor %}
+      </div>
+      <div class="mp-search-row">
+        <input type="text" name="city" value="{{ city_filter }}" placeholder="🔍 Filtrer par ville…">
+        {% if active_category %}<input type="hidden" name="category" value="{{ active_category }}">{% endif %}
+        <select name="sort" onchange="this.form.submit()">
+          <option value="-created_at" {% if active_sort == '-created_at' %}selected{% endif %}>Plus récent</option>
+          <option value="price_asc"   {% if active_sort == 'price_asc'   %}selected{% endif %}>Prix croissant</option>
+          <option value="price_desc"  {% if active_sort == 'price_desc'  %}selected{% endif %}>Prix décroissant</option>
+          <option value="ending_soon" {% if active_sort == 'ending_soon' %}selected{% endif %}>Fin proche</option>
+        </select>
+        <button type="submit" class="mp-filter-submit">Filtrer</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ── GRILLE ── -->
+<div class="mp-content">
+  <div class="container">
+
+    {% if auctions.object_list %}
+    <div class="mp-results-bar">
+      <span class="mp-results-count">
+        <strong>{{ auctions.paginator.count }}</strong> résultat{{ auctions.paginator.count|pluralize }}
+        {% if active_category %} · catégorie <strong>{{ active_category }}</strong>{% endif %}
+        {% if city_filter %} · <strong>{{ city_filter }}</strong>{% endif %}
+      </span>
     </div>
+    {% endif %}
 
-    <!-- GRILLE -->
-    <div class="auctions-grid">
+    <div class="mp-grid">
       {% for auction in auctions %}
-      <div class="auction-card">
-        <div class="auction-img">
+      <div class="mp-card">
+
+        <!-- IMAGE -->
+        <div class="mp-card-img">
           {% if auction.listing.photo %}
             <img src="{{ auction.listing.photo.url }}" alt="{{ auction.listing.title }}" loading="lazy">
           {% else %}
-            <div class="img-placeholder">{{ auction.listing.category.icon|default:'♻' }}</div>
+            <div class="mp-card-img-placeholder">{{ auction.listing.category.icon|default:'♻️' }}</div>
           {% endif %}
-          <span class="category-badge">{{ auction.listing.category.name|default:'Autre' }}</span>
+          <div class="mp-card-img-overlay"></div>
+
+          <div class="mp-card-top">
+            <span class="mp-badge mp-badge-cat">{{ auction.listing.category.name|default:'Autre' }}</span>
+            {% if auction.total_bids >= 3 %}
+            <span class="mp-badge mp-badge-hot">🔥 Hot</span>
+            {% endif %}
+          </div>
+
           {% if auction.auction_type == 'buy_now' %}
-            <span class="type-badge buy_now">⚡ Achat immédiat</span>
+            <span class="mp-badge mp-badge-type buy_now">⚡ Achat immédiat</span>
           {% elif auction.auction_type == 'auction' %}
-            <span class="type-badge auction">🔨 Enchère</span>
+            <span class="mp-badge mp-badge-type auction">🔨 Enchère</span>
           {% else %}
-            <span class="type-badge both">🔨⚡ Enchère + Achat</span>
+            <span class="mp-badge mp-badge-type both">🔨⚡ Enchère + Achat</span>
           {% endif %}
         </div>
-        <div class="auction-body">
-          <h3>{{ auction.listing.title }}</h3>
-          <p class="auction-city">📍 {{ auction.listing.city|default:'Haïti' }}</p>
-          <p class="auction-weight">⚖️ {{ auction.listing.quantity_kg }} kg</p>
-          <div class="auction-price-row">
+
+        <!-- BODY -->
+        <div class="mp-card-body">
+          <p class="mp-card-meta">⚖️ {{ auction.listing.quantity_kg }} kg · 📍 {{ auction.listing.city|default:'Haïti' }}</p>
+          <h3 class="mp-card-title">{{ auction.listing.title }}</h3>
+
+          <div class="mp-card-price-row">
             <div>
               {% if auction.auction_type == 'buy_now' %}
-                <span class="price-label">Prix fixe</span>
-                <span class="price">{{ auction.buy_now_price }} HTG</span>
+                <span class="mp-price-label">Prix fixe</span>
+                <span class="mp-price-val">{{ auction.buy_now_price }} <small>HTG</small></span>
               {% else %}
-                <span class="price-label">Prix actuel</span>
-                <span class="price">{{ auction.current_price }} HTG</span>
+                <span class="mp-price-label">Prix actuel</span>
+                <span class="mp-price-val">{{ auction.current_price|default:auction.starting_price }} <small>HTG</small></span>
               {% endif %}
             </div>
             {% if auction.auction_type != 'buy_now' %}
-              <span class="bids-count">{{ auction.total_bids }} enchère{{ auction.total_bids|pluralize }}</span>
+            <span class="mp-bids-tag">{{ auction.total_bids }} enchère{{ auction.total_bids|pluralize }}</span>
             {% endif %}
           </div>
+
           {% if auction.auction_type != 'buy_now' %}
-          <div class="countdown" data-ends-at="{{ auction.ends_at|date:'c' }}">Calcul...</div>
+          <div class="mp-countdown" data-ends-at="{{ auction.ends_at|date:'c' }}">…</div>
           {% endif %}
-          <a href="{% url 'auction_detail' auction.id %}" class="btn btn-primary btn-full" style="margin-top:4px;">
-            {% if auction.auction_type == 'buy_now' %}Acheter maintenant →{% else %}Voir l'enchère →{% endif %}
-          </a>
-          {% if auction.buy_now_price and auction.auction_type == 'both' %}
-          <a href="{% url 'auction_detail' auction.id %}" class="btn btn-outline btn-full btn-sm">
-            ⚡ Acheter — {{ auction.buy_now_price }} HTG
-          </a>
-          {% endif %}
+
+          <div class="mp-card-cta">
+            <a href="{% url 'auction_detail' auction.id %}" class="mp-cta-main">
+              {% if auction.auction_type == 'buy_now' %}⚡ Acheter{% else %}🔨 Enchérir{% endif %} →
+            </a>
+            {% if auction.buy_now_price and auction.auction_type == 'both' %}
+            <a href="{% url 'auction_detail' auction.id %}" class="mp-cta-secondary">
+              ⚡ {{ auction.buy_now_price }} HTG
+            </a>
+            {% endif %}
+          </div>
         </div>
+
       </div>
       {% empty %}
-      <div class="empty-state">
-        <div style="font-size:3rem;margin-bottom:16px;">♻️</div>
-        <p>Aucune annonce active pour le moment.</p>
+      <div class="mp-empty">
+        <div class="mp-empty-icon">♻️</div>
+        <h3>Aucune annonce active</h3>
+        <p>Aucune annonce ne correspond à vos critères pour le moment.</p>
         {% if request.session.user_id %}
           <a href="{% url 'submit_waste' %}" class="btn btn-primary">Soumettre un déchet</a>
         {% else %}
@@ -178,44 +496,48 @@
 
     <!-- PAGINATION -->
     {% if auctions.has_other_pages %}
-    <div class="pagination">
+    <div class="mp-pagination">
       {% if auctions.has_previous %}
-        <a href="?page={{ auctions.previous_page_number }}{% if active_category %}&category={{ active_category }}{% endif %}{% if active_sort %}&sort={{ active_sort }}{% endif %}{% if city_filter %}&city={{ city_filter }}{% endif %}" class="page-btn">←</a>
+        <a href="?page={{ auctions.previous_page_number }}{% if active_category %}&category={{ active_category }}{% endif %}{% if active_sort %}&sort={{ active_sort }}{% endif %}{% if city_filter %}&city={{ city_filter }}{% endif %}" class="mp-page-btn">←</a>
       {% endif %}
-      <span style="color:var(--gray);font-size:0.9rem;">
-        Page {{ auctions.number }} / {{ auctions.paginator.num_pages }}
-      </span>
+      <span class="mp-page-info">Page {{ auctions.number }} / {{ auctions.paginator.num_pages }}</span>
       {% if auctions.has_next %}
-        <a href="?page={{ auctions.next_page_number }}{% if active_category %}&category={{ active_category }}{% endif %}{% if active_sort %}&sort={{ active_sort }}{% endif %}{% if city_filter %}&city={{ city_filter }}{% endif %}" class="page-btn">→</a>
+        <a href="?page={{ auctions.next_page_number }}{% if active_category %}&category={{ active_category }}{% endif %}{% if active_sort %}&sort={{ active_sort }}{% endif %}{% if city_filter %}&city={{ city_filter }}{% endif %}" class="mp-page-btn">→</a>
       {% endif %}
     </div>
     {% endif %}
 
   </div>
 </div>
+
 {% endblock %}
 
 {% block extra_js %}
 <script>
-function formatCountdown(endsAt) {
-  const now  = new Date();
-  const end  = new Date(endsAt);
-  const diff = Math.max(0, Math.floor((end - now) / 1000));
-  if (diff === 0) return { text: 'Terminée', expired: true };
+function urgencyClass(sec) {
+  if (sec <= 0)     return 'expired';
+  if (sec < 3600)   return 'urgent';
+  if (sec < 86400)  return 'soon';
+  return 'ok';
+}
+function fmtCountdown(endsAt) {
+  const diff = Math.max(0, Math.floor((new Date(endsAt) - Date.now()) / 1000));
+  const cls  = urgencyClass(diff);
+  if (!diff) return { text: '⏱ Terminée', cls };
   const d = Math.floor(diff / 86400);
   const h = Math.floor((diff % 86400) / 3600);
   const m = Math.floor((diff % 3600) / 60);
   const s = diff % 60;
-  if (d > 0) return { text: `${d}j ${h}h restants`, expired: false };
-  if (h > 0) return { text: `${h}h ${m}m restants`, expired: false };
-  return { text: `${m}m ${s}s restants`, expired: false };
+  const text = d > 0 ? `⏱ ${d}j ${h}h restants`
+             : h > 0 ? `⏱ ${h}h ${m}m restants`
+             :         `⏱ ${m}m ${s}s restants`;
+  return { text, cls };
 }
-
 function tickAll() {
-  document.querySelectorAll('.countdown[data-ends-at]').forEach(el => {
-    const { text, expired } = formatCountdown(el.dataset.endsAt);
+  document.querySelectorAll('.mp-countdown[data-ends-at]').forEach(el => {
+    const { text, cls } = fmtCountdown(el.dataset.endsAt);
     el.textContent = text;
-    el.classList.toggle('expired', expired);
+    el.className = `mp-countdown ${cls}`;
   });
 }
 tickAll();
