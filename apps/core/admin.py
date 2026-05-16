@@ -26,7 +26,7 @@ class SiteConfigurationAdmin(admin.ModelAdmin):
             'classes': ('collapse',),
         }),
         ('📱 Application mobile', {
-            'fields': ('android_apk_url', 'ios_store_url', 'android_direct_apk'),
+            'fields': ('android_direct_apk', 'ios_direct_ipa'),
             'classes': ('collapse',),
         }),
         ('🔍 SEO & Footer', {
