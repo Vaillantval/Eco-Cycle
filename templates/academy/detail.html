@@ -204,7 +204,7 @@
           <div style="padding:24px;">
 
             {% if enrollment %}
-              {% if enrollment.payment_status == 'pending' %}
+              {% if enrollment.payment_status == 'pending' and not course.is_free %}
               <!-- PAIEMENT EN ATTENTE -->
               <div style="text-align:center;padding:8px 0 16px;">
                 <div style="font-size:2.2rem;margin-bottom:8px;">⏳</div>

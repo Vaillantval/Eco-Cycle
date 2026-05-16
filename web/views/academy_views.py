@@ -47,6 +47,10 @@ class CourseDetailView(View):
                 user = User.objects.get(id=request.session['user_id'])
                 enrollment = Enrollment.objects.filter(user=user, course=course).first()
                 if enrollment:
+                    # Corriger en base si le cours est gratuit mais l'inscription est encore pending
+                    if course.is_free and enrollment.payment_status == 'pending':
+                        enrollment.payment_status = 'free'
+                        enrollment.save(update_fields=['payment_status'])
                     completed_ids = set(str(l.id) for l in enrollment.completed_lessons.all())
             except User.DoesNotExist:
                 pass
@@ -78,10 +82,14 @@ class EnrollCourseView(LoginRequiredMixin, View):
             # Cours payant — rediriger vers le checkout
             return redirect('course_checkout', slug=slug)
 
-        _, created = Enrollment.objects.get_or_create(
+        enrollment, created = Enrollment.objects.get_or_create(
             user=user, course=course,
             defaults={'payment_status': 'free'},
         )
+        # Corriger une inscription "pending" si le cours est devenu gratuit
+        if not created and enrollment.payment_status == 'pending':
+            enrollment.payment_status = 'free'
+            enrollment.save(update_fields=['payment_status'])
         if created:
             messages.success(request, f'Inscrit au cours « {course.title} » !')
         else:
