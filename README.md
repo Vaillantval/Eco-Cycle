@@ -10,32 +10,34 @@ API REST Django + Interface Web pour la plateforme de recyclage intelligent EcoC
 - **Celery 5.4.0** + **Redis** — tâches asynchrones et planifiées
 - **JWT** via `djangorestframework-simplejwt` — pour l'app mobile Flutter
 - **Sessions Django** — authentification pour l'interface web
-- **Cloudinary** — stockage des photos de déchets
-- **Claude Vision API** (Anthropic `>=0.49.0`) — analyse IA des déchets par photo
-- **Resend** — emails transactionnels
+- **Stockage médias** — volume local Railway (fichiers vidéo, thumbnails, avatars)
+- **Claude Vision API** (Anthropic) — analyse IA des déchets par photo
+- **Resend** — emails transactionnels (certificats, contact, newsletter)
 - **Firebase FCM** — notifications push
 - **Whitenoise** + **Gunicorn gthread** — fichiers statiques et serveur WSGI
-- Déploiement sur **Railway** (web + celery-worker)
+- Déploiement sur **Railway** (5 services : web, celery-worker, celery-beat, Redis, PostgreSQL)
 
 ## Architecture
 
 ```
 ecocycle/
 ├── apps/
-│   ├── accounts/       # Utilisateurs (UUID, email auth, rôles)
-│   ├── waste/          # Annonces de déchets + analyse IA
+│   ├── accounts/       # Utilisateurs (UUID, email auth, rôles: user/collector/admin)
+│   ├── waste/          # Annonces de déchets + analyse IA Claude Vision
 │   ├── marketplace/    # Enchères et achats immédiats
 │   ├── collections/    # Demandes de ramassage physique
-│   ├── notifications/  # Notifications DB + email + push
+│   ├── notifications/  # Notifications DB + email (Resend) + push (FCM) + tâches Celery
 │   ├── impact/         # CO2 économisé, leaderboard
-│   ├── academy/        # Cours et certificats
+│   ├── academy/        # Cours, leçons multi-vidéos, inscriptions, certificats PDF
 │   ├── blog/           # Articles
-│   └── core/           # Contact, newsletter
-├── web/                # Interface web (vues Django Templates)
+│   └── core/           # Contact, newsletter, SiteConfiguration
+├── web/                # Interface web (Django Templates + sessions)
 │   ├── views/
 │   │   ├── auth_views.py       # Connexion / inscription / déconnexion
-│   │   ├── dashboard_views.py  # Dashboard utilisateur / collecteur / admin
-│   │   └── page_views.py       # Pages publiques statiques
+│   │   ├── dashboard_views.py  # Dashboard utilisateur
+│   │   ├── academy_views.py    # Cours, leçons, inscriptions, certificats
+│   │   ├── admin_views.py      # Panel admin complet
+│   │   └── page_views.py       # Pages publiques
 │   └── urls.py
 ├── config/
 │   ├── settings/
@@ -45,49 +47,41 @@ ecocycle/
 │   ├── celery.py
 │   └── urls.py
 ├── templates/
-│   ├── base.html               # Layout principal avec navbar dropdown
-│   ├── home.html               # Page d'accueil (Hero + Stats + Marketplace)
-│   ├── pages/                  # Pages publiques dédiées
-│   │   ├── comment_ca_marche.html
-│   │   ├── fonctionnalites.html
-│   │   ├── notre_impact.html
-│   │   ├── faq.html
-│   │   └── contact.html
-│   ├── auth/                   # Login, register
-│   ├── dashboard/              # Dashboard et sous-pages
-│   ├── marketplace/            # Marketplace web
-│   ├── academy/                # Cours web
-│   └── blog/                   # Blog web
+│   ├── base.html
+│   ├── pages/                  # comment_ca_marche, fonctionnalites, notre_impact, faq, contact
+│   ├── auth/                   # login, register, reset password, verify email
+│   ├── dashboard/              # overview, listings, orders, impact, pickups, profile, certificates
+│   ├── marketplace/
+│   ├── academy/                # list, detail, lesson_detail
+│   ├── blog/
+│   ├── admin_panel/            # dashboard, listings, users, orders, pickups, blog, academy, config…
+│   └── emails/                 # certificate_earned, admin_course_completed, contact_alert…
 ├── static/
-│   ├── css/
-│   │   ├── main.css            # Styles globaux + navbar + hero
-│   │   └── dashboard.css       # Styles dashboard
+│   ├── css/main.css
+│   ├── css/dashboard.css
 │   └── js/main.js
-├── railway.toml                # Service web
-└── railway-celery.toml         # Service Celery worker
+├── railway.toml                # Service web (Gunicorn)
+├── railway-celery.toml         # Service Celery worker
+└── railway-beat.toml           # Service Celery Beat (tâches planifiées)
 ```
 
 ## Interface web
 
-L'interface web (`/`) utilise les sessions Django (indépendante du JWT Flutter). Elle inclut :
-
-**Navigation** — Navbar fixe avec menus dropdown hover (La Plateforme, Apprendre) + menu mobile overlay.
-
-**Pages publiques**
+### Pages publiques
 
 | URL | Page |
 |---|---|
-| `/` | Accueil — Hero, stats live, marketplace teaser |
+| `/` | Accueil — Hero, stats live, marketplace teaser, slider admin |
 | `/comment-ca-marche/` | Fonctionnement étape par étape |
 | `/fonctionnalites/` | Grille de fonctionnalités + app mobile |
 | `/notre-impact/` | Statistiques live (DB) + témoignages |
-| `/faq/` | Accordion FAQ + teaser contact |
-| `/contact/` | Formulaire de contact (GET/POST) |
+| `/faq/` | Accordion FAQ |
+| `/contact/` | Formulaire de contact (email async Celery) |
 | `/marketplace/` | Enchères publiques |
-| `/academy/` | Cours disponibles |
+| `/academy/` | Catalogue de cours |
 | `/blog/` | Articles |
 
-**Dashboard utilisateur**
+### Dashboard utilisateur
 
 | URL | Page |
 |---|---|
@@ -95,26 +89,81 @@ L'interface web (`/`) utilise les sessions Django (indépendante du JWT Flutter)
 | `/dashboard/listings/` | Mes déchets soumis |
 | `/dashboard/listings/submit/` | Soumettre un déchet (analyse IA) |
 | `/dashboard/pickups/` | Mes demandes de ramassage |
+| `/dashboard/pickups/request/` | Nouvelle demande |
 | `/dashboard/pickups/<id>/` | Détail ramassage + timeline statut |
-| `/dashboard/impact/` | Mon impact environnemental + progression |
 | `/dashboard/orders/` | Mes commandes |
+| `/dashboard/impact/` | Mon impact environnemental |
+| `/dashboard/certificates/` | Mes certificats + téléchargement PDF |
 | `/dashboard/profile/` | Mon profil |
-| `/dashboard/academy/` | Mes formations |
-| `/dashboard/blog/` | Blog |
+| `/academy/<slug>/` | Détail cours (inscription) |
+| `/academy/<slug>/lessons/<id>/` | Lecteur leçon (vidéo + contenu + nav + mark-complete) |
 
-**Dashboard collecteur** — liste de collectes assignées, mise à jour statuts.
+### Dashboard collecteur
 
-**Panel admin** — gestion des annonces, utilisateurs, ramassages, commandes.
+| URL | Page |
+|---|---|
+| `/collector/` | Dashboard collecteur |
+| `/collector/pickups/` | Collectes assignées |
+| `/collector/pickups/<id>/` | Détail + mise à jour statut |
+| `/collector/profile/` | Profil collecteur |
+
+### Panel admin
+
+| URL | Page |
+|---|---|
+| `/panel/` | Dashboard admin (stats, KPIs) |
+| `/panel/listings/` | Toutes les annonces |
+| `/panel/listings/<id>/` | Revue / approbation annonce |
+| `/panel/pickups/` | Tous les ramassages |
+| `/panel/pickups/<id>/` | Détail + assignation collecteur |
+| `/panel/users/` | Gestion utilisateurs |
+| `/panel/users/<id>/` | Détail utilisateur |
+| `/panel/orders/` | Toutes les commandes |
+| `/panel/orders/<id>/` | Détail commande |
+| `/panel/blog/` | Gestion articles |
+| `/panel/blog/create/` | Créer un article |
+| `/panel/blog/<id>/edit/` | Éditer un article |
+| `/panel/blog/categories/` | Catégories blog |
+| `/panel/academy/` | Gestion cours |
+| `/panel/academy/create/` | Créer un cours |
+| `/panel/academy/<id>/` | Détail cours + liste leçons |
+| `/panel/academy/<course_id>/lessons/create/` | Créer leçon + première vidéo |
+| `/panel/academy/<course_id>/lessons/<id>/edit/` | Éditer leçon + CRUD vidéos |
+| `/panel/academy/enrollments/` | Toutes les inscriptions |
+| `/panel/academy/certificates/` | Tous les certificats + PDF |
+| `/panel/newsletters/` | Abonnés newsletter |
+| `/panel/contacts/` | Messages de contact |
+| `/panel/config/` | Configuration du site (SiteConfiguration) |
+| `/panel/sliders/` | Slides de la page d'accueil |
+
+## Academy — e-learning
+
+Le module Academy gère des cours structurés en leçons multi-vidéos.
+
+**Modèles :**
+- `Course` : titre, description, niveau, thumbnail, is_free, is_published, durée auto-calculée
+- `Lesson` : titre, contenu Markdown, ordre, durée auto-calculée (somme des vidéos)
+- `LessonVideo` : fichier MP4/WebM **ou** URL externe (YouTube, Vimeo, autre), embed automatique
+- `Enrollment` : progression par leçon, `progress_percent`, `is_completed`
+- `Certificate` : délivré automatiquement à 100% de progression, PDF téléchargeable
+
+**Flux completion :**
+```
+User mark-complete dernière leçon
+  → Enrollment.update_progress()
+  → 100% → Certificate créé
+  → Celery task: email certificat au user + notification admins
+```
 
 ## API REST
 
-L'API REST (`/api/`) est destinée à l'application mobile Flutter et utilise JWT.
+L'API (`/api/`) est destinée à l'application mobile Flutter et utilise JWT.
 
 ### Authentification — `/api/auth/`
 
 | Méthode | Endpoint | Description |
 |---|---|---|
-| POST | `/register/` | Inscription (retourne JWT immédiatement) |
+| POST | `/register/` | Inscription |
 | POST | `/login/` | Connexion |
 | POST | `/logout/` | Déconnexion (blacklist refresh token) |
 | GET/PATCH | `/profile/` | Profil utilisateur |
@@ -169,65 +218,23 @@ L'API REST (`/api/`) est destinée à l'application mobile Flutter et utilise JW
 | `/api/contact/` | Formulaire de contact |
 | `/api/newsletter/` | Abonnement newsletter (double opt-in) |
 
-## Installation locale
-
-**Prérequis :** Python 3.11+, Redis (optionnel en dev)
-
-```bash
-# Cloner et créer le venv
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# Dépendances
-pip install -r requirements.txt
-
-# Variables d'environnement
-cp .env.example .env
-# Éditer .env avec vos valeurs (voir section Variables d'environnement)
-
-# Migrations et données initiales
-python manage.py migrate
-python manage.py seed_waste_categories
-
-# Superutilisateur
-python init_site.py  # ou manage.py createsuperuser
-
-# Serveur de développement
-python manage.py runserver
-```
-
-L'interface web est sur `http://localhost:8000`, l'API sur `http://localhost:8000/api/`.
-
-## Variables d'environnement
-
-| Variable | Requis | Description |
-|---|---|---|
-| `SECRET_KEY` | Oui | Clé secrète Django (50+ caractères) |
-| `DATABASE_URL` | Oui | URL PostgreSQL (Railway la génère automatiquement) |
-| `REDIS_URL` | Oui | URL Redis (Railway la génère automatiquement) |
-| `CLOUDINARY_CLOUD_NAME` | Oui | Nom du cloud Cloudinary |
-| `CLOUDINARY_API_KEY` | Oui | Clé API Cloudinary |
-| `CLOUDINARY_API_SECRET` | Oui | Secret Cloudinary |
-| `RESEND_API_KEY` | Oui | Clé API Resend (emails) |
-| `ANTHROPIC_API_KEY` | Oui | Clé API Anthropic (analyse IA) |
-| `FIREBASE_CREDENTIALS_B64` | Oui | JSON Firebase encodé en base64 (push) |
-| `ALLOWED_HOSTS` | Prod | Domaines autorisés, séparés par virgule |
-| `FRONTEND_URL` | Non | URL du frontend (défaut : `http://localhost:8000`) |
-| `ADMIN_EMAIL` | Non | Email admin (défaut : `admin@ecocycle.ht`) |
-
-```bash
-# Encoder les credentials Firebase pour Railway
-base64 -i firebase-credentials.json | tr -d '\n'
-# Coller la sortie dans FIREBASE_CREDENTIALS_B64
-```
-
 ## Tâches asynchrones (Celery)
+
+### Tâches planifiées
 
 | Tâche | Fréquence |
 |---|---|
 | Clôture des enchères expirées | Toutes les 5 minutes |
 | Annulation des ramassages non assignés après 72h | Toutes les heures |
 | Rapport hebdomadaire admin | Lundi 8h (heure Haïti) |
+
+### Tâches déclenchées par événement
+
+| Tâche | Déclencheur |
+|---|---|
+| `notify_course_completed` | Utilisateur termine un cours → email certificat + alerte admins |
+| `notify_contact_message` | Formulaire de contact soumis → alerte admins |
+| `notify_newsletter_signup` | Inscription newsletter → email confirmation double opt-in |
 
 ```bash
 # Lancer en développement
@@ -237,47 +244,94 @@ celery -A config beat --loglevel=info     # terminal 3
 
 ## Déploiement Railway
 
-Deux services définis :
+Trois services définis :
 
 | Fichier | Service | Commande |
 |---|---|---|
 | `railway.toml` | Web (Gunicorn) | `migrate` + `init_site.py` + `gunicorn gthread` |
 | `railway-celery.toml` | Celery Worker | `celery -A config worker` |
+| `railway-beat.toml` | Celery Beat | `celery -A config beat --scheduler DatabaseScheduler` |
 
 ```bash
 # 1. Créer un projet Railway avec PostgreSQL + Redis
 # 2. Connecter le dépôt GitHub
-# 3. Ajouter les variables d'environnement dans le dashboard Railway
+# 3. Ajouter les variables d'environnement (voir ci-dessous)
 # 4. Déployer le service web (railway.toml)
-# 5. Créer un second service "celery-worker" pointant sur railway-celery.toml
-# 6. Seeder les catégories
+# 5. Créer un second service pointant sur railway-celery.toml
+# 6. Créer un troisième service pointant sur railway-beat.toml
+# 7. Seeder les catégories de déchets
 railway run python manage.py seed_waste_categories
 ```
 
 Le superutilisateur est créé automatiquement au démarrage via `init_site.py` (variables `ADMIN_EMAIL` / `ADMIN_PASSWORD`).
 
+## Installation locale
+
+**Prérequis :** Python 3.11+, Redis (optionnel en dev)
+
+```bash
+python -m venv venv
+source venv/bin/activate
+
+pip install -r requirements.txt
+
+cp .env.example .env
+# Éditer .env
+
+python manage.py migrate
+python manage.py seed_waste_categories
+python init_site.py
+
+python manage.py runserver
+```
+
+Interface web : `http://localhost:8000` — API : `http://localhost:8000/api/`
+
+## Variables d'environnement
+
+| Variable | Requis | Description |
+|---|---|---|
+| `SECRET_KEY` | Oui | Clé secrète Django (50+ caractères) |
+| `DATABASE_URL` | Oui | URL PostgreSQL (Railway la génère automatiquement) |
+| `REDIS_URL` | Oui | URL Redis (Railway la génère automatiquement) |
+| `RESEND_API_KEY` | Oui | Clé API Resend (emails transactionnels) |
+| `ANTHROPIC_API_KEY` | Oui | Clé API Anthropic (analyse IA photo déchets) |
+| `FIREBASE_CREDENTIALS_B64` | Oui | JSON Firebase encodé en base64 (push) |
+| `ALLOWED_HOSTS` | Prod | Domaines autorisés, séparés par virgule |
+| `FRONTEND_URL` | Non | URL du frontend (défaut : `http://localhost:8000`) |
+| `ADMIN_EMAIL` | Non | Email admin (défaut : `admin@ecocycle.ht`) |
+| `ADMIN_PASSWORD` | Non | Mot de passe admin initial |
+| `RESEND_FROM_EMAIL` | Non | Expéditeur email (défaut : `noreply@ecocycle.ht`) |
+
+```bash
+# Encoder les credentials Firebase
+base64 -i firebase-credentials.json | tr -d '\n'
+# Coller la sortie dans FIREBASE_CREDENTIALS_B64
+```
+
 ## Modèles de données principaux
 
 ```
 User (UUID, email, rôle: user/collector/admin)
-├── WasteListing (photo, analyse IA, statut)
-│   └── Auction → Bid / Order → ImpactRecord
+├── WasteListing (photo, analyse IA, statut) → Auction → Bid / Order → ImpactRecord
 ├── PickupRequest (statut, historique JSON) → ImpactRecord
-├── Enrollment → Certificate
+├── Enrollment → LessonProgress → Certificate (PDF)
 └── UserImpactSummary (CO2 total, rang communauté)
+
+Course → Lesson → LessonVideo (fichier ou URL YouTube/Vimeo)
+SiteConfiguration (singleton: slider, liens app, contact)
 ```
 
 ## Flux principal
 
 ```
 Photo mobile / web
-    → POST /api/waste/analyze/ (analyse IA Claude Vision)
-    → POST /api/waste/listings/ (draft)
-    → Admin approuve → statut: approved
-    → Création Auction sur le marketplace
-    → Enchère gagnante / achat immédiat → Order
-    → Tâche Celery: ImpactRecord (CO2 calculé)
-    → Notifications email + push FCM
+  → POST /api/waste/analyze/ (analyse IA Claude Vision)
+  → POST /api/waste/listings/ (draft)
+  → Admin approuve → statut: approved
+  → Création Auction sur le marketplace
+  → Enchère gagnante / achat immédiat → Order
+  → Tâche Celery: ImpactRecord (CO2 calculé) + notifications
 ```
 
 ## Catégories de déchets
@@ -299,8 +353,7 @@ Photo mobile / web
 - HTTPS forcé en production (`SECURE_SSL_REDIRECT`) + HSTS 1 an
 - Headers : `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, XSS filter
 - Throttling API : 100 req/jour (anonyme), 1000 req/jour (authentifié), 20 req/heure (analyse IA)
-- Mots de passe validés par Django (longueur, complexité)
-- Noms d'URL séparés entre API (`/api/`) et web (templates) pour éviter les conflits de résolution
+- Noms d'URL distincts entre API (`apps/*/urls.py`) et web (`web/urls.py`) pour éviter les conflits de résolution `{% url %}`
 
 ## Licence
 
