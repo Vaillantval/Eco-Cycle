@@ -7,9 +7,9 @@
 
 <!-- FILTRES -->
 <div class="filter-bar">
-  <a href="{% url 'collector_pickups' %}" class="filter-btn {% if not status_filter %}active{% endif %}">Tous</a>
+  <a href="{% url 'web_collector_pickups' %}" class="filter-btn {% if not status_filter %}active{% endif %}">Tous</a>
   {% for val, label in status_choices %}
-  <a href="{% url 'collector_pickups' %}?status={{ val }}"
+  <a href="{% url 'web_collector_pickups' %}?status={{ val }}"
      class="filter-btn {% if status_filter == val %}active{% endif %}">
     {{ label }}
   </a>
