@@ -9,6 +9,17 @@
   <link rel="stylesheet" href="/static/css/main.css">
   <link rel="stylesheet" href="/static/css/dashboard.css">
   <style>
+    @keyframes recycle-spin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+    .recycle-spin {
+      display: inline-block;
+      animation: recycle-spin 4s linear infinite;
+      transform-origin: center;
+      will-change: transform;
+    }
+
     /* Reset styles du site public qui polluent le panel */
     .navbar { display:none !important; }
     body { padding-top:0 !important; margin-top:0 !important; }
@@ -320,7 +331,7 @@
         <small style="color:#94a3b8;">Admin Panel</small>
       </div>
       {% else %}
-      <div class="brand-icon">♻️</div>
+      <div class="brand-icon"><span class="recycle-spin">♻️</span></div>
       <div>
         <span>EcoCycle</span>
         <small>Admin Panel</small>
