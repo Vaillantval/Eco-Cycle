@@ -1,0 +1,90 @@
+{% extends 'admin_panel/base_admin.html' %}
+
+{% block title %}Catégories Blog — Admin EcoCycle{% endblock %}
+{% block page_title %}Catégories du Blog{% endblock %}
+
+{% block topbar_actions %}
+<a href="{% url 'admin_blog' %}" class="btn-admin-sm btn-view">← Retour au blog</a>
+{% endblock %}
+
+{% block admin_content %}
+
+<div style="display:grid;grid-template-columns:1fr 360px;gap:20px;align-items:start;">
+
+  <!-- LISTE -->
+  <div class="admin-card">
+    <div class="admin-card-header">
+      <span class="admin-card-title">📂 Catégories ({{ categories|length }})</span>
+    </div>
+    {% if categories %}
+    <table class="admin-table">
+      <thead>
+        <tr><th>Nom</th><th>Slug</th><th>Articles</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for cat in categories %}
+        <tr>
+          <td><strong>{{ cat.name }}</strong></td>
+          <td style="font-family:monospace;font-size:0.78rem;color:#64748b;">{{ cat.slug }}</td>
+          <td style="font-size:0.82rem;">{{ cat.posts.count }}</td>
+          <td>
+            <!-- Éditer inline -->
+            <button onclick="document.getElementById('edit-{{ cat.id }}').style.display='block';this.style.display='none';"
+                    class="btn-admin-sm btn-view">✏️ Éditer</button>
+            <form id="edit-{{ cat.id }}" method="POST" style="display:none;margin-top:6px;">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="edit">
+              <input type="hidden" name="cat_id" value="{{ cat.id }}">
+              <div style="display:flex;gap:6px;align-items:center;">
+                <input type="text" name="name" value="{{ cat.name }}"
+                       style="flex:1;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px;font-size:0.85rem;">
+                <button type="submit" class="btn-admin-sm btn-approve">✓</button>
+                <button type="button" class="btn-admin-sm btn-view"
+                  onclick="this.closest('form').style.display='none';this.closest('td').querySelector('button').style.display='inline-flex';">
+                  ✕
+                </button>
+              </div>
+            </form>
+            <!-- Supprimer -->
+            <form method="POST" style="display:inline;margin-left:4px;">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="delete">
+              <input type="hidden" name="cat_id" value="{{ cat.id }}">
+              <button type="submit" class="btn-admin-sm btn-reject"
+                onclick="return confirm('Supprimer « {{ cat.name }} » ? Les articles liés ne seront pas supprimés.')">🗑</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div style="padding:32px;text-align:center;color:#94a3b8;">
+      <p>Aucune catégorie créée.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- CRÉER -->
+  <div class="admin-card">
+    <div class="admin-card-header"><span class="admin-card-title">➕ Nouvelle catégorie</span></div>
+    <div style="padding:20px;">
+      <form method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="create">
+        <div style="margin-bottom:12px;">
+          <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:6px;">Nom de la catégorie</label>
+          <input type="text" name="name" required placeholder="Ex: Recyclage, Écologie..."
+                 style="width:100%;padding:9px 14px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
+          <div style="font-size:0.72rem;color:#94a3b8;margin-top:4px;">Le slug sera généré automatiquement.</div>
+        </div>
+        <button type="submit" class="btn-admin-sm btn-admin-primary" style="width:100%;justify-content:center;padding:10px;">
+          ➕ Créer la catégorie
+        </button>
+      </form>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

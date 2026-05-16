@@ -1,0 +1,124 @@
+{% extends 'admin_panel/base_admin.html' %}
+
+{% block title %}{% if post %}Éditer{% else %}Nouvel article{% endif %} — Blog Admin{% endblock %}
+{% block page_title %}{% if post %}Éditer l'article{% else %}Nouvel article{% endif %}{% endblock %}
+
+{% block topbar_actions %}
+<a href="{% url 'admin_blog' %}" class="btn-admin-sm btn-view">← Retour</a>
+{% if post %}
+<a href="/blog/{{ post.slug }}/" target="_blank" class="btn-admin-sm btn-view">👁 Aperçu</a>
+{% endif %}
+{% endblock %}
+
+{% block admin_content %}
+
+<form method="POST" enctype="multipart/form-data">
+{% csrf_token %}
+
+<div style="display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start;">
+
+  <!-- CONTENU PRINCIPAL -->
+  <div>
+    <div class="admin-card" style="margin-bottom:16px;">
+      <div class="admin-card-header"><span class="admin-card-title">📝 Contenu</span></div>
+      <div style="padding:20px;display:flex;flex-direction:column;gap:16px;">
+
+        <div>
+          <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:6px;">Titre *</label>
+          <input type="text" name="title" value="{{ post.title|default:data.title|default:'' }}" required
+                 style="width:100%;padding:9px 14px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.95rem;font-weight:600;">
+        </div>
+
+        <div>
+          <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:6px;">Extrait * <span style="font-weight:400;">(affiché dans la liste — max 500 cars)</span></label>
+          <textarea name="excerpt" rows="3" required
+                    style="width:100%;padding:9px 14px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;resize:vertical;">{{ post.excerpt|default:data.excerpt|default:'' }}</textarea>
+        </div>
+
+        <div>
+          <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:6px;">Contenu * <span style="font-weight:400;">(Markdown ou texte brut)</span></label>
+          <textarea name="content" rows="20" required
+                    style="width:100%;padding:9px 14px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;font-family:monospace;resize:vertical;">{{ post.content|default:data.content|default:'' }}</textarea>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- PANNEAU LATÉRAL -->
+  <div>
+
+    <!-- Publication -->
+    <div class="admin-card" style="margin-bottom:16px;">
+      <div class="admin-card-header"><span class="admin-card-title">📤 Publication</span></div>
+      <div style="padding:16px 20px;display:flex;flex-direction:column;gap:12px;">
+        <div>
+          <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:6px;">Statut</label>
+          <select name="status" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
+            <option value="draft" {% if not post or post.status == 'draft' %}selected{% endif %}>Brouillon</option>
+            <option value="published" {% if post and post.status == 'published' %}selected{% endif %}>Publié</option>
+          </select>
+        </div>
+        {% if post and post.published_at %}
+        <div style="font-size:0.78rem;color:#64748b;">
+          Publié le : {{ post.published_at|date:"d/m/Y à H:i" }}
+        </div>
+        {% endif %}
+        <button type="submit" class="btn-admin-sm btn-admin-primary" style="width:100%;justify-content:center;padding:10px;font-size:0.88rem;">
+          💾 {% if post %}Mettre à jour{% else %}Créer l'article{% endif %}
+        </button>
+      </div>
+    </div>
+
+    <!-- Métadonnées -->
+    <div class="admin-card" style="margin-bottom:16px;">
+      <div class="admin-card-header"><span class="admin-card-title">🏷️ Métadonnées</span></div>
+      <div style="padding:16px 20px;display:flex;flex-direction:column;gap:12px;">
+        <div>
+          <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:6px;">Catégorie</label>
+          <select name="category" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
+            <option value="">— Aucune —</option>
+            {% for cat in categories %}
+            <option value="{{ cat.id }}" {% if post and post.category_id == cat.id %}selected{% endif %}>{{ cat.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:6px;">Temps de lecture (minutes)</label>
+          <input type="number" name="read_time_minutes" value="{{ post.read_time_minutes|default:'5' }}" min="1"
+                 style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
+        </div>
+      </div>
+    </div>
+
+    <!-- Image de couverture -->
+    <div class="admin-card">
+      <div class="admin-card-header"><span class="admin-card-title">🖼️ Image de couverture</span></div>
+      <div style="padding:16px 20px;">
+        {% if post and post.cover_image %}
+        <img src="{{ post.cover_image.url }}" style="width:100%;border-radius:8px;margin-bottom:10px;max-height:160px;object-fit:cover;" alt="">
+        {% endif %}
+        <input type="file" name="cover_image" accept="image/*" style="font-size:0.82rem;">
+        <div style="font-size:0.72rem;color:#94a3b8;margin-top:6px;">Recommandé : 1200×630 px (ratio 16:9)</div>
+      </div>
+    </div>
+
+    <!-- Infos readonly si edit -->
+    {% if post %}
+    <div class="admin-card" style="margin-top:16px;">
+      <div style="padding:14px 20px;font-size:0.78rem;color:#94a3b8;display:flex;flex-direction:column;gap:4px;">
+        <div>ID : {{ post.id }}</div>
+        <div>Slug : {{ post.slug }}</div>
+        <div>Vues : {{ post.views }}</div>
+        <div>Créé le : {{ post.created_at|date:"d/m/Y H:i" }}</div>
+        <div>Modifié le : {{ post.updated_at|date:"d/m/Y H:i" }}</div>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+</form>
+
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends 'admin_panel/base_admin.html' %}
+
+{% block title %}Certificats Academy — Admin EcoCycle{% endblock %}
+{% block page_title %}Certificats Academy{% endblock %}
+
+{% block topbar_actions %}
+<a href="{% url 'admin_academy' %}" class="btn-admin-sm btn-view">← Cours</a>
+<a href="{% url 'admin_academy_enrollments' %}" class="btn-admin-sm btn-view">👥 Inscriptions</a>
+{% endblock %}
+
+{% block admin_content %}
+
+<!-- RECHERCHE -->
+<div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
+  <form method="GET" style="display:flex;gap:8px;align-items:center;flex:1;min-width:220px;">
+    <input type="text" name="q" value="{{ search }}" placeholder="Rechercher par email ou titre de cours..."
+           style="flex:1;padding:7px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.85rem;">
+    <button type="submit" class="btn-admin-sm btn-view">🔍</button>
+    {% if search %}
+    <a href="{% url 'admin_academy_certificates' %}" class="btn-admin-sm btn-reject">✕ Reset</a>
+    {% endif %}
+  </form>
+</div>
+
+<div class="admin-card">
+  <div class="admin-card-header">
+    <span class="admin-card-title">🏆 Certificats ({{ certificates|length }})</span>
+  </div>
+  {% if certificates %}
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>Utilisateur</th>
+        <th>Cours</th>
+        <th>Émis le</th>
+        <th>ID</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for cert in certificates %}
+      <tr>
+        <td>
+          <strong>{{ cert.user.full_name }}</strong>
+          <div style="font-size:0.72rem;color:#94a3b8;">{{ cert.user.email }}</div>
+        </td>
+        <td>
+          <a href="{% url 'admin_academy_course_detail' pk=cert.course.id %}" style="color:#0d7a45;font-weight:600;">
+            {{ cert.course.title|truncatechars:44 }}
+          </a>
+        </td>
+        <td style="font-size:0.82rem;color:#64748b;">{{ cert.issued_at|date:"d/m/Y" }}</td>
+        <td style="font-size:0.82rem;color:#94a3b8;">
+          <span style="font-family:monospace;font-size:0.75rem;">{{ cert.id }}</span>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div style="padding:40px;text-align:center;color:#94a3b8;">
+    <div style="font-size:2rem;margin-bottom:8px;">🏆</div>
+    <p>Aucun certificat trouvé{% if search %} pour « {{ search }} »{% endif %}.</p>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

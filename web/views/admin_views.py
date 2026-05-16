@@ -7,8 +7,8 @@ from apps.accounts.models import User
 from apps.waste.models import WasteListing
 from apps.collections.models import PickupRequest
 from apps.marketplace.models import Order, Auction
-from apps.blog.models import Post
-from apps.academy.models import Course
+from apps.blog.models import Post, BlogCategory
+from apps.academy.models import Course, Lesson, Enrollment, Certificate
 from apps.core.models import ContactMessage, NewsletterSubscriber, SiteConfiguration
 
 
@@ -254,24 +254,36 @@ class AdminOrderDetailView(AdminRequiredMixin, View):
         return redirect('admin_order_detail', pk=pk)
 
 
+# ══════════════════════════════════════════════════════
+#  BLOG
+# ══════════════════════════════════════════════════════
+
 class AdminBlogView(AdminRequiredMixin, View):
     def get(self, request):
         admin = self.get_current_user(request)
-        status_filter = request.GET.get('status', '')
+        status_filter   = request.GET.get('status', '')
+        category_filter = request.GET.get('category', '')
+        search          = request.GET.get('q', '')
         posts = Post.objects.select_related('author', 'category').order_by('-created_at')
         if status_filter:
             posts = posts.filter(status=status_filter)
+        if category_filter:
+            posts = posts.filter(category_id=category_filter)
+        if search:
+            posts = posts.filter(title__icontains=search) | posts.filter(excerpt__icontains=search)
         return render(request, 'admin_panel/blog.html', {
             'user': admin,
             'posts': posts,
             'status_filter': status_filter,
+            'category_filter': category_filter,
+            'search': search,
+            'categories': BlogCategory.objects.order_by('name'),
         })
 
     def post(self, request):
         post_id = request.POST.get('post_id')
         action  = request.POST.get('action')
         post = get_object_or_404(Post, pk=post_id)
-
         if action == 'publish':
             post.status = 'published'
             post.published_at = timezone.now()
@@ -285,31 +297,331 @@ class AdminBlogView(AdminRequiredMixin, View):
             title = post.title
             post.delete()
             messages.warning(request, f'Article « {title} » supprimé.')
-
         return redirect('admin_blog')
 
+
+class AdminBlogCreateView(AdminRequiredMixin, View):
+    def get(self, request):
+        admin = self.get_current_user(request)
+        return render(request, 'admin_panel/blog_form.html', {
+            'user': admin,
+            'categories': BlogCategory.objects.order_by('name'),
+            'post': None,
+        })
+
+    def post(self, request):
+        admin = self.get_current_user(request)
+        title   = request.POST.get('title', '').strip()
+        excerpt = request.POST.get('excerpt', '').strip()
+        content = request.POST.get('content', '').strip()
+        if not title or not excerpt or not content:
+            messages.error(request, 'Titre, extrait et contenu sont obligatoires.')
+            return render(request, 'admin_panel/blog_form.html', {
+                'user': admin,
+                'categories': BlogCategory.objects.order_by('name'),
+                'post': None,
+                'data': request.POST,
+            })
+        post = Post(
+            author=admin,
+            title=title,
+            excerpt=excerpt,
+            content=content,
+            category_id=request.POST.get('category') or None,
+            read_time_minutes=request.POST.get('read_time_minutes') or 5,
+            status=request.POST.get('status', 'draft'),
+        )
+        if request.FILES.get('cover_image'):
+            post.cover_image = request.FILES['cover_image']
+        if post.status == 'published':
+            post.published_at = timezone.now()
+        post.save()
+        messages.success(request, f'Article « {post.title} » créé.')
+        return redirect('admin_blog_edit', pk=post.id)
+
+
+class AdminBlogEditView(AdminRequiredMixin, View):
+    def get(self, request, pk):
+        admin = self.get_current_user(request)
+        post = get_object_or_404(Post, pk=pk)
+        return render(request, 'admin_panel/blog_form.html', {
+            'user': admin,
+            'post': post,
+            'categories': BlogCategory.objects.order_by('name'),
+        })
+
+    def post(self, request, pk):
+        admin = self.get_current_user(request)
+        post = get_object_or_404(Post, pk=pk)
+        title   = request.POST.get('title', '').strip()
+        excerpt = request.POST.get('excerpt', '').strip()
+        content = request.POST.get('content', '').strip()
+        if not title or not excerpt or not content:
+            messages.error(request, 'Titre, extrait et contenu sont obligatoires.')
+            return render(request, 'admin_panel/blog_form.html', {
+                'user': admin,
+                'post': post,
+                'categories': BlogCategory.objects.order_by('name'),
+            })
+        old_status = post.status
+        post.title            = title
+        post.excerpt          = excerpt
+        post.content          = content
+        post.category_id      = request.POST.get('category') or None
+        post.read_time_minutes = request.POST.get('read_time_minutes') or 5
+        post.status           = request.POST.get('status', 'draft')
+        if request.FILES.get('cover_image'):
+            post.cover_image = request.FILES['cover_image']
+        if post.status == 'published' and old_status != 'published':
+            post.published_at = timezone.now()
+        post.save()
+        messages.success(request, f'Article « {post.title} » mis à jour.')
+        return redirect('admin_blog_edit', pk=post.id)
+
+
+class AdminBlogCategoriesView(AdminRequiredMixin, View):
+    def get(self, request):
+        admin = self.get_current_user(request)
+        return render(request, 'admin_panel/blog_categories.html', {
+            'user': admin,
+            'categories': BlogCategory.objects.order_by('name'),
+        })
+
+    def post(self, request):
+        action = request.POST.get('action')
+        if action == 'create':
+            name = request.POST.get('name', '').strip()
+            if name:
+                from django.utils.text import slugify
+                BlogCategory.objects.get_or_create(
+                    slug=slugify(name), defaults={'name': name}
+                )
+                messages.success(request, f'Catégorie « {name} » créée.')
+            else:
+                messages.error(request, 'Le nom est requis.')
+        elif action == 'edit':
+            cat_id = request.POST.get('cat_id')
+            cat = get_object_or_404(BlogCategory, pk=cat_id)
+            name = request.POST.get('name', '').strip()
+            if name:
+                cat.name = name
+                cat.save()
+                messages.success(request, 'Catégorie mise à jour.')
+        elif action == 'delete':
+            cat_id = request.POST.get('cat_id')
+            cat = get_object_or_404(BlogCategory, pk=cat_id)
+            cat.delete()
+            messages.warning(request, 'Catégorie supprimée.')
+        return redirect('admin_blog_categories')
+
+
+# ══════════════════════════════════════════════════════
+#  ACADEMY
+# ══════════════════════════════════════════════════════
 
 class AdminAcademyView(AdminRequiredMixin, View):
     def get(self, request):
         admin = self.get_current_user(request)
+        level_filter     = request.GET.get('level', '')
+        published_filter = request.GET.get('published', '')
+        free_filter      = request.GET.get('free', '')
+        search           = request.GET.get('q', '')
         courses = Course.objects.prefetch_related('lessons', 'enrollments').order_by('-created_at')
+        if level_filter:
+            courses = courses.filter(level=level_filter)
+        if published_filter == '1':
+            courses = courses.filter(is_published=True)
+        elif published_filter == '0':
+            courses = courses.filter(is_published=False)
+        if free_filter == '1':
+            courses = courses.filter(is_free=True)
+        elif free_filter == '0':
+            courses = courses.filter(is_free=False)
+        if search:
+            courses = courses.filter(title__icontains=search)
         return render(request, 'admin_panel/academy.html', {
             'user': admin,
             'courses': courses,
+            'level_filter': level_filter,
+            'published_filter': published_filter,
+            'free_filter': free_filter,
+            'search': search,
+            'level_choices': Course.LEVEL_CHOICES,
         })
 
     def post(self, request):
         course_id = request.POST.get('course_id')
         action    = request.POST.get('action')
         course = get_object_or_404(Course, pk=course_id)
-
         if action == 'toggle_publish':
             course.is_published = not course.is_published
             course.save()
             state = 'publié' if course.is_published else 'dépublié'
             messages.success(request, f'Cours « {course.title} » {state}.')
-
+        elif action == 'delete':
+            title = course.title
+            course.delete()
+            messages.warning(request, f'Cours « {title} » supprimé.')
         return redirect('admin_academy')
+
+
+class AdminAcademyCourseCreateView(AdminRequiredMixin, View):
+    def get(self, request):
+        admin = self.get_current_user(request)
+        return render(request, 'admin_panel/academy_course_form.html', {
+            'user': admin,
+            'course': None,
+            'level_choices': Course.LEVEL_CHOICES,
+        })
+
+    def post(self, request):
+        admin = self.get_current_user(request)
+        title = request.POST.get('title', '').strip()
+        description = request.POST.get('description', '').strip()
+        if not title or not description:
+            messages.error(request, 'Titre et description sont obligatoires.')
+            return render(request, 'admin_panel/academy_course_form.html', {
+                'user': admin, 'course': None, 'level_choices': Course.LEVEL_CHOICES,
+            })
+        course = Course(
+            title=title,
+            description=description,
+            level=request.POST.get('level', 'beginner'),
+            duration_minutes=request.POST.get('duration_minutes') or 0,
+            is_published=bool(request.POST.get('is_published')),
+            is_free=bool(request.POST.get('is_free', True)),
+        )
+        if request.FILES.get('thumbnail'):
+            course.thumbnail = request.FILES['thumbnail']
+        course.save()
+        messages.success(request, f'Cours « {course.title} » créé.')
+        return redirect('admin_academy_course_detail', pk=course.id)
+
+
+class AdminAcademyCourseDetailView(AdminRequiredMixin, View):
+    """Détail cours + gestion des leçons."""
+    def get(self, request, pk):
+        admin = self.get_current_user(request)
+        course = get_object_or_404(Course, pk=pk)
+        lessons = course.lessons.order_by('order')
+        enrollments = Enrollment.objects.filter(course=course).select_related('user').order_by('-enrolled_at')[:20]
+        return render(request, 'admin_panel/academy_course_detail.html', {
+            'user': admin,
+            'course': course,
+            'lessons': lessons,
+            'enrollments': enrollments,
+            'level_choices': Course.LEVEL_CHOICES,
+        })
+
+    def post(self, request, pk):
+        course = get_object_or_404(Course, pk=pk)
+        action = request.POST.get('action')
+
+        if action == 'update_course':
+            title = request.POST.get('title', '').strip()
+            description = request.POST.get('description', '').strip()
+            if not title or not description:
+                messages.error(request, 'Titre et description requis.')
+                return redirect('admin_academy_course_detail', pk=pk)
+            course.title          = title
+            course.description    = description
+            course.level          = request.POST.get('level', 'beginner')
+            course.duration_minutes = request.POST.get('duration_minutes') or 0
+            course.is_published   = bool(request.POST.get('is_published'))
+            course.is_free        = bool(request.POST.get('is_free'))
+            if request.FILES.get('thumbnail'):
+                course.thumbnail = request.FILES['thumbnail']
+            course.save()
+            messages.success(request, 'Cours mis à jour.')
+
+        elif action == 'add_lesson':
+            lesson_title = request.POST.get('lesson_title', '').strip()
+            if lesson_title:
+                Lesson.objects.create(
+                    course=course,
+                    title=lesson_title,
+                    content=request.POST.get('lesson_content', ''),
+                    video_url=request.POST.get('lesson_video_url', ''),
+                    order=request.POST.get('lesson_order') or 0,
+                    duration_minutes=request.POST.get('lesson_duration') or 0,
+                )
+                messages.success(request, f'Leçon « {lesson_title} » ajoutée.')
+            else:
+                messages.error(request, 'Le titre de la leçon est requis.')
+
+        elif action == 'delete_lesson':
+            lesson_id = request.POST.get('lesson_id')
+            lesson = get_object_or_404(Lesson, pk=lesson_id, course=course)
+            title = lesson.title
+            lesson.delete()
+            messages.warning(request, f'Leçon « {title} » supprimée.')
+
+        elif action == 'toggle_publish':
+            course.is_published = not course.is_published
+            course.save()
+            state = 'publié' if course.is_published else 'dépublié'
+            messages.success(request, f'Cours {state}.')
+
+        return redirect('admin_academy_course_detail', pk=pk)
+
+
+class AdminAcademyLessonEditView(AdminRequiredMixin, View):
+    def get(self, request, course_pk, lesson_pk):
+        admin = self.get_current_user(request)
+        course = get_object_or_404(Course, pk=course_pk)
+        lesson = get_object_or_404(Lesson, pk=lesson_pk, course=course)
+        return render(request, 'admin_panel/academy_lesson_form.html', {
+            'user': admin,
+            'course': course,
+            'lesson': lesson,
+        })
+
+    def post(self, request, course_pk, lesson_pk):
+        course = get_object_or_404(Course, pk=course_pk)
+        lesson = get_object_or_404(Lesson, pk=lesson_pk, course=course)
+        lesson.title            = request.POST.get('title', '').strip() or lesson.title
+        lesson.content          = request.POST.get('content', '')
+        lesson.video_url        = request.POST.get('video_url', '')
+        lesson.order            = request.POST.get('order') or lesson.order
+        lesson.duration_minutes = request.POST.get('duration_minutes') or 0
+        lesson.save()
+        messages.success(request, f'Leçon « {lesson.title} » mise à jour.')
+        return redirect('admin_academy_course_detail', pk=course_pk)
+
+
+class AdminAcademyEnrollmentsView(AdminRequiredMixin, View):
+    def get(self, request):
+        admin = self.get_current_user(request)
+        course_filter    = request.GET.get('course', '')
+        completed_filter = request.GET.get('completed', '')
+        enrollments = Enrollment.objects.select_related('user', 'course').order_by('-enrolled_at')
+        if course_filter:
+            enrollments = enrollments.filter(course_id=course_filter)
+        if completed_filter == '1':
+            enrollments = enrollments.filter(is_completed=True)
+        elif completed_filter == '0':
+            enrollments = enrollments.filter(is_completed=False)
+        return render(request, 'admin_panel/academy_enrollments.html', {
+            'user': admin,
+            'enrollments': enrollments,
+            'course_filter': course_filter,
+            'completed_filter': completed_filter,
+            'courses': Course.objects.order_by('title'),
+        })
+
+
+class AdminAcademyCertificatesView(AdminRequiredMixin, View):
+    def get(self, request):
+        admin = self.get_current_user(request)
+        search = request.GET.get('q', '')
+        certs = Certificate.objects.select_related('user', 'course').order_by('-issued_at')
+        if search:
+            certs = certs.filter(user__email__icontains=search) | certs.filter(course__title__icontains=search)
+        return render(request, 'admin_panel/academy_certificates.html', {
+            'user': admin,
+            'certificates': certs,
+            'search': search,
+        })
 
 
 class AdminNewslettersView(AdminRequiredMixin, View):

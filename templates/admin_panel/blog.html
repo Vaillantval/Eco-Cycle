@@ -4,15 +4,37 @@
 {% block page_title %}Gestion du Blog{% endblock %}
 
 {% block topbar_actions %}
-<a href="/admin/blog/post/add/" target="_blank" class="btn-admin-sm btn-admin-primary">+ Nouvel article</a>
+<a href="{% url 'admin_blog_categories' %}" class="btn-admin-sm btn-view">📂 Catégories</a>
+<a href="{% url 'admin_blog_create' %}" class="btn-admin-sm btn-admin-primary">+ Nouvel article</a>
 {% endblock %}
 
 {% block admin_content %}
 
+<!-- RECHERCHE + FILTRES -->
+<div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
+  <form method="GET" style="display:flex;gap:8px;align-items:center;flex:1;min-width:260px;">
+    <input type="text" name="q" value="{{ search }}" placeholder="Rechercher un article..."
+           style="flex:1;padding:7px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.85rem;">
+    {% if status_filter %}<input type="hidden" name="status" value="{{ status_filter }}">{% endif %}
+    {% if category_filter %}<input type="hidden" name="category" value="{{ category_filter }}">{% endif %}
+    <button type="submit" class="btn-admin-sm btn-view">🔍</button>
+    {% if search or status_filter or category_filter %}
+    <a href="{% url 'admin_blog' %}" class="btn-admin-sm btn-reject">✕ Reset</a>
+    {% endif %}
+  </form>
+</div>
+
 <div class="filter-bar">
-  <a href="{% url 'admin_blog' %}" class="filter-btn {% if not status_filter %}active{% endif %}">Tous</a>
-  <a href="{% url 'admin_blog' %}?status=published" class="filter-btn {% if status_filter == 'published' %}active{% endif %}">Publiés</a>
-  <a href="{% url 'admin_blog' %}?status=draft"     class="filter-btn {% if status_filter == 'draft' %}active{% endif %}">Brouillons</a>
+  <a href="{% url 'admin_blog' %}{% if search %}?q={{ search }}{% endif %}" class="filter-btn {% if not status_filter %}active{% endif %}">Tous</a>
+  <a href="{% url 'admin_blog' %}?status=published{% if search %}&q={{ search }}{% endif %}" class="filter-btn {% if status_filter == 'published' %}active{% endif %}">Publiés</a>
+  <a href="{% url 'admin_blog' %}?status=draft{% if search %}&q={{ search }}{% endif %}"     class="filter-btn {% if status_filter == 'draft' %}active{% endif %}">Brouillons</a>
+  {% if categories %}
+  <span style="color:#e2e8f0;margin:0 4px;">|</span>
+  {% for cat in categories %}
+  <a href="{% url 'admin_blog' %}?category={{ cat.id }}{% if status_filter %}&status={{ status_filter }}{% endif %}"
+     class="filter-btn {% if category_filter == cat.id|stringformat:'s' %}active{% endif %}">{{ cat.name }}</a>
+  {% endfor %}
+  {% endif %}
 </div>
 
 <div class="admin-card">
@@ -27,6 +49,7 @@
         <th>Titre</th>
         <th>Auteur</th>
         <th>Catégorie</th>
+        <th>Lecture</th>
         <th>Vues</th>
         <th>Statut</th>
         <th>Date</th>
@@ -37,11 +60,13 @@
       {% for post in posts %}
       <tr>
         <td>
-          <strong>{{ post.title|truncatechars:50 }}</strong>
+          <strong>{{ post.title|truncatechars:48 }}</strong>
+          <div style="font-size:0.72rem;color:#94a3b8;margin-top:2px;">{{ post.excerpt|truncatechars:60 }}</div>
         </td>
-        <td>{{ post.author.full_name }}</td>
-        <td>{{ post.category.name|default:"—" }}</td>
-        <td>{{ post.views }}</td>
+        <td style="font-size:0.82rem;">{{ post.author.full_name }}</td>
+        <td style="font-size:0.82rem;">{{ post.category.name|default:"—" }}</td>
+        <td style="font-size:0.82rem;color:#64748b;">{{ post.read_time_minutes }} min</td>
+        <td style="font-size:0.82rem;">{{ post.views }}</td>
         <td>
           <span style="padding:2px 10px;border-radius:12px;font-size:0.72rem;font-weight:700;
             {% if post.status == 'published' %}background:#dcfce7;color:#15803d;
@@ -50,17 +75,18 @@
           </span>
         </td>
         <td style="color:#94a3b8;font-size:0.78rem;">{{ post.created_at|date:"d/m/Y" }}</td>
-        <td>
+        <td style="white-space:nowrap;">
+          <a href="{% url 'admin_blog_edit' pk=post.id %}" class="btn-admin-sm btn-view">✏️ Éditer</a>
           <form method="POST" style="display:inline;">
             {% csrf_token %}
             <input type="hidden" name="post_id" value="{{ post.id }}">
             {% if post.status == 'draft' %}
-              <button name="action" value="publish" class="btn-admin-sm btn-approve">Publier</button>
+              <button name="action" value="publish" class="btn-admin-sm btn-approve">▶ Publier</button>
             {% else %}
-              <button name="action" value="unpublish" class="btn-admin-sm btn-view">Dépublier</button>
+              <button name="action" value="unpublish" class="btn-admin-sm btn-view">⏸ Brouillon</button>
             {% endif %}
             <button name="action" value="delete" class="btn-admin-sm btn-reject"
-              onclick="return confirm('Supprimer cet article ?')">🗑</button>
+              onclick="return confirm('Supprimer « {{ post.title|truncatechars:30 }} » ?')">🗑</button>
           </form>
         </td>
       </tr>
@@ -71,7 +97,7 @@
   <div style="padding:40px;text-align:center;color:#94a3b8;">
     <div style="font-size:2rem;margin-bottom:8px;">📝</div>
     <p>Aucun article trouvé.</p>
-    <a href="/admin/blog/post/add/" target="_blank" class="btn-admin-sm btn-admin-primary" style="display:inline-flex;margin-top:12px;">
+    <a href="{% url 'admin_blog_create' %}" class="btn-admin-sm btn-admin-primary" style="display:inline-flex;margin-top:12px;">
       + Créer le premier article
     </a>
   </div>

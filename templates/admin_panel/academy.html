@@ -4,16 +4,50 @@
 {% block page_title %}Gestion de l'Academy{% endblock %}
 
 {% block topbar_actions %}
-<a href="/admin/academy/course/add/" target="_blank" class="btn-admin-sm btn-admin-primary">+ Nouveau cours</a>
+<a href="{% url 'admin_academy_enrollments' %}" class="btn-admin-sm btn-view">📋 Inscriptions</a>
+<a href="{% url 'admin_academy_certificates' %}" class="btn-admin-sm btn-view">🏆 Certificats</a>
+<a href="{% url 'admin_academy_create' %}" class="btn-admin-sm btn-admin-primary">+ Nouveau cours</a>
 {% endblock %}
 
 {% block admin_content %}
+
+<!-- RECHERCHE + FILTRES -->
+<div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
+  <form method="GET" style="display:flex;gap:8px;align-items:center;flex:1;min-width:220px;">
+    <input type="text" name="q" value="{{ search }}" placeholder="Rechercher un cours..."
+           style="flex:1;padding:7px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.85rem;">
+    {% if level_filter %}<input type="hidden" name="level" value="{{ level_filter }}">{% endif %}
+    {% if published_filter %}<input type="hidden" name="published" value="{{ published_filter }}">{% endif %}
+    {% if free_filter %}<input type="hidden" name="free" value="{{ free_filter }}">{% endif %}
+    <button type="submit" class="btn-admin-sm btn-view">🔍</button>
+    {% if search or level_filter or published_filter or free_filter %}
+    <a href="{% url 'admin_academy' %}" class="btn-admin-sm btn-reject">✕ Reset</a>
+    {% endif %}
+  </form>
+</div>
+
+<div class="filter-bar">
+  <a href="{% url 'admin_academy' %}{% if search %}?q={{ search }}{% endif %}" class="filter-btn {% if not level_filter %}active{% endif %}">Tous niveaux</a>
+  {% for val, label in level_choices %}
+  <a href="{% url 'admin_academy' %}?level={{ val }}{% if search %}&q={{ search }}{% endif %}"
+     class="filter-btn {% if level_filter == val %}active{% endif %}">{{ label }}</a>
+  {% endfor %}
+  <span style="color:#e2e8f0;margin:0 4px;">|</span>
+  <a href="{% url 'admin_academy' %}?published=1{% if search %}&q={{ search }}{% endif %}"
+     class="filter-btn {% if published_filter == '1' %}active{% endif %}">Publiés</a>
+  <a href="{% url 'admin_academy' %}?published=0{% if search %}&q={{ search }}{% endif %}"
+     class="filter-btn {% if published_filter == '0' %}active{% endif %}">Brouillons</a>
+  <span style="color:#e2e8f0;margin:0 4px;">|</span>
+  <a href="{% url 'admin_academy' %}?free=1{% if search %}&q={{ search }}{% endif %}"
+     class="filter-btn {% if free_filter == '1' %}active{% endif %}">Gratuits</a>
+  <a href="{% url 'admin_academy' %}?free=0{% if search %}&q={{ search }}{% endif %}"
+     class="filter-btn {% if free_filter == '0' %}active{% endif %}">Payants</a>
+</div>
 
 <div class="admin-card">
   <div class="admin-card-header">
     <span class="admin-card-title">🎓 Cours ({{ courses|length }})</span>
   </div>
-
   {% if courses %}
   <table class="admin-table">
     <thead>
@@ -23,7 +57,7 @@
         <th>Leçons</th>
         <th>Inscrits</th>
         <th>Durée</th>
-        <th>Gratuit</th>
+        <th>Accès</th>
         <th>Statut</th>
         <th>Actions</th>
       </tr>
@@ -31,12 +65,15 @@
     <tbody>
       {% for course in courses %}
       <tr>
-        <td><strong>{{ course.title|truncatechars:45 }}</strong></td>
+        <td>
+          <strong>{{ course.title|truncatechars:44 }}</strong>
+          <div style="font-size:0.72rem;color:#94a3b8;margin-top:2px;">{{ course.description|truncatechars:60 }}</div>
+        </td>
         <td>{{ course.get_level_display }}</td>
-        <td style="text-align:center;">{{ course.lessons.count }}</td>
-        <td style="text-align:center;">{{ course.enrollments.count }}</td>
-        <td>{{ course.duration_minutes }} min</td>
-        <td style="text-align:center;">{% if course.is_free %}✅{% else %}💰{% endif %}</td>
+        <td style="text-align:center;font-weight:600;">{{ course.lessons.count }}</td>
+        <td style="text-align:center;font-weight:600;">{{ course.enrollments.count }}</td>
+        <td style="font-size:0.82rem;color:#64748b;">{{ course.duration_minutes }} min</td>
+        <td style="text-align:center;">{% if course.is_free %}<span style="color:#15803d;font-weight:700;">Gratuit</span>{% else %}<span style="color:#c2410c;font-weight:700;">Payant</span>{% endif %}</td>
         <td>
           <span style="padding:2px 10px;border-radius:12px;font-size:0.72rem;font-weight:700;
             {% if course.is_published %}background:#dcfce7;color:#15803d;
@@ -44,15 +81,17 @@
             {% if course.is_published %}Publié{% else %}Brouillon{% endif %}
           </span>
         </td>
-        <td>
+        <td style="white-space:nowrap;">
+          <a href="{% url 'admin_academy_course_detail' pk=course.id %}" class="btn-admin-sm btn-view">✏️ Gérer</a>
           <form method="POST" style="display:inline;">
             {% csrf_token %}
             <input type="hidden" name="course_id" value="{{ course.id }}">
             <button name="action" value="toggle_publish" class="btn-admin-sm {% if course.is_published %}btn-view{% else %}btn-approve{% endif %}">
-              {% if course.is_published %}Dépublier{% else %}Publier{% endif %}
+              {% if course.is_published %}⏸{% else %}▶{% endif %}
             </button>
+            <button name="action" value="delete" class="btn-admin-sm btn-reject"
+              onclick="return confirm('Supprimer « {{ course.title|truncatechars:30 }} » et toutes ses leçons ?')">🗑</button>
           </form>
-          <a href="/admin/academy/course/{{ course.id }}/change/" target="_blank" class="btn-admin-sm btn-view">✏️</a>
         </td>
       </tr>
       {% endfor %}
@@ -61,8 +100,8 @@
   {% else %}
   <div style="padding:40px;text-align:center;color:#94a3b8;">
     <div style="font-size:2rem;margin-bottom:8px;">🎓</div>
-    <p>Aucun cours créé.</p>
-    <a href="/admin/academy/course/add/" target="_blank" class="btn-admin-sm btn-admin-primary" style="display:inline-flex;margin-top:12px;">
+    <p>Aucun cours trouvé.</p>
+    <a href="{% url 'admin_academy_create' %}" class="btn-admin-sm btn-admin-primary" style="display:inline-flex;margin-top:12px;">
       + Créer le premier cours
     </a>
   </div>

@@ -1,0 +1,217 @@
+{% extends 'admin_panel/base_admin.html' %}
+
+{% block title %}{{ course.title }} — Academy Admin{% endblock %}
+{% block page_title %}{{ course.title|truncatechars:40 }}{% endblock %}
+
+{% block topbar_actions %}
+<a href="{% url 'admin_academy' %}" class="btn-admin-sm btn-view">← Retour</a>
+<form method="POST" style="display:inline;">
+  {% csrf_token %}
+  <button name="action" value="toggle_publish" class="btn-admin-sm {% if course.is_published %}btn-view{% else %}btn-approve{% endif %}">
+    {% if course.is_published %}⏸ Dépublier{% else %}▶ Publier{% endif %}
+  </button>
+</form>
+{% endblock %}
+
+{% block admin_content %}
+
+<div style="display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start;">
+
+  <!-- GAUCHE : leçons -->
+  <div>
+
+    <!-- LISTE DES LEÇONS -->
+    <div class="admin-card" style="margin-bottom:16px;">
+      <div class="admin-card-header">
+        <span class="admin-card-title">📚 Leçons ({{ lessons|length }})</span>
+      </div>
+
+      {% if lessons %}
+      <table class="admin-table">
+        <thead>
+          <tr><th>#</th><th>Titre</th><th>Durée</th><th>Vidéo</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+          {% for lesson in lessons %}
+          <tr>
+            <td style="font-weight:700;color:#64748b;">{{ lesson.order }}</td>
+            <td>
+              <strong>{{ lesson.title }}</strong>
+              <div style="font-size:0.72rem;color:#94a3b8;margin-top:2px;">{{ lesson.content|truncatechars:60 }}</div>
+            </td>
+            <td style="font-size:0.82rem;color:#64748b;">{{ lesson.duration_minutes }} min</td>
+            <td>
+              {% if lesson.video_url %}
+              <a href="{{ lesson.video_url }}" target="_blank" class="btn-admin-sm btn-view" style="font-size:0.72rem;">▶ Voir</a>
+              {% else %}—{% endif %}
+            </td>
+            <td style="white-space:nowrap;">
+              <a href="{% url 'admin_academy_lesson_edit' course_pk=course.id lesson_pk=lesson.id %}" class="btn-admin-sm btn-view">✏️</a>
+              <form method="POST" style="display:inline;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="delete_lesson">
+                <input type="hidden" name="lesson_id" value="{{ lesson.id }}">
+                <button type="submit" class="btn-admin-sm btn-reject"
+                  onclick="return confirm('Supprimer la leçon « {{ lesson.title|truncatechars:30 }} » ?')">🗑</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div style="padding:24px;text-align:center;color:#94a3b8;font-size:0.85rem;">
+        Aucune leçon. Ajoutez la première ci-dessous.
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- AJOUTER UNE LEÇON -->
+    <div class="admin-card">
+      <div class="admin-card-header"><span class="admin-card-title">➕ Ajouter une leçon</span></div>
+      <div style="padding:20px;">
+        <form method="POST">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="add_lesson">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+            <div>
+              <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Titre *</label>
+              <input type="text" name="lesson_title" required placeholder="Ex: Introduction au recyclage..."
+                     style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.85rem;">
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+              <div>
+                <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Ordre</label>
+                <input type="number" name="lesson_order" value="{{ lessons|length|add:1 }}" min="0"
+                       style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.85rem;">
+              </div>
+              <div>
+                <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Durée (min)</label>
+                <input type="number" name="lesson_duration" value="0" min="0"
+                       style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.85rem;">
+              </div>
+            </div>
+          </div>
+          <div style="margin-bottom:12px;">
+            <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">URL Vidéo (optionnel)</label>
+            <input type="url" name="lesson_video_url" placeholder="https://youtube.com/watch?v=..."
+                   style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.85rem;">
+          </div>
+          <div style="margin-bottom:14px;">
+            <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Contenu de la leçon</label>
+            <textarea name="lesson_content" rows="6" placeholder="Texte de la leçon (Markdown supporté)..."
+                      style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.85rem;font-family:monospace;resize:vertical;"></textarea>
+          </div>
+          <button type="submit" class="btn-admin-sm btn-approve" style="width:100%;justify-content:center;padding:9px;">
+            ➕ Ajouter la leçon
+          </button>
+        </form>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- DROITE : éditer les infos du cours -->
+  <div>
+    <div class="admin-card" style="margin-bottom:16px;">
+      <div class="admin-card-header"><span class="admin-card-title">✏️ Modifier le cours</span></div>
+      <div style="padding:16px 20px;">
+        <form method="POST" enctype="multipart/form-data">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="update_course">
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <div>
+              <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Titre</label>
+              <input type="text" name="title" value="{{ course.title }}" required
+                     style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
+            </div>
+            <div>
+              <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Description</label>
+              <textarea name="description" rows="4" required
+                        style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.85rem;resize:vertical;">{{ course.description }}</textarea>
+            </div>
+            <div>
+              <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Niveau</label>
+              <select name="level" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
+                {% for val, label in level_choices %}
+                <option value="{{ val }}" {% if course.level == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div>
+              <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Durée (min)</label>
+              <input type="number" name="duration_minutes" value="{{ course.duration_minutes }}" min="0"
+                     style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
+            </div>
+            <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;cursor:pointer;">
+              <input type="checkbox" name="is_free" value="1" {% if course.is_free %}checked{% endif %} style="width:15px;height:15px;">
+              Cours gratuit
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;cursor:pointer;">
+              <input type="checkbox" name="is_published" value="1" {% if course.is_published %}checked{% endif %} style="width:15px;height:15px;">
+              Publié
+            </label>
+            <div>
+              <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Miniature</label>
+              {% if course.thumbnail %}
+              <img src="{{ course.thumbnail.url }}" style="width:100%;border-radius:6px;margin-bottom:6px;max-height:100px;object-fit:cover;">
+              {% endif %}
+              <input type="file" name="thumbnail" accept="image/*" style="font-size:0.8rem;">
+            </div>
+            <button type="submit" class="btn-admin-sm btn-admin-primary" style="width:100%;justify-content:center;padding:9px;">
+              💾 Sauvegarder
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="admin-card" style="margin-bottom:16px;">
+      <div class="admin-card-header"><span class="admin-card-title">📊 Statistiques</span></div>
+      <div style="padding:14px 20px;display:flex;flex-direction:column;gap:8px;font-size:0.85rem;color:#334155;">
+        <div style="display:flex;justify-content:space-between;">
+          <span>Leçons</span><strong>{{ lessons|length }}</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;">
+          <span>Inscrits</span><strong>{{ enrollments|length }}+</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;">
+          <span>Créé le</span><span style="color:#94a3b8;">{{ course.created_at|date:"d/m/Y" }}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;">
+          <span>Slug</span><span style="font-family:monospace;font-size:0.78rem;color:#94a3b8;">{{ course.slug }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- DERNIERS INSCRITS -->
+    {% if enrollments %}
+    <div class="admin-card">
+      <div class="admin-card-header"><span class="admin-card-title">👥 Derniers inscrits</span></div>
+      <div style="padding:0;">
+        {% for enr in enrollments %}
+        <div style="padding:10px 16px;border-bottom:1px solid #f8fafc;display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-size:0.82rem;font-weight:600;">{{ enr.user.full_name }}</div>
+            <div style="font-size:0.72rem;color:#94a3b8;">{{ enr.enrolled_at|date:"d/m/Y" }}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:0.78rem;font-weight:700;color:{% if enr.is_completed %}#15803d{% else %}#64748b{% endif %};">
+              {{ enr.progress_percent }}%
+            </div>
+            {% if enr.is_completed %}<div style="font-size:0.65rem;color:#15803d;">✅ Terminé</div>{% endif %}
+          </div>
+        </div>
+        {% endfor %}
+        <div style="padding:10px 16px;text-align:center;">
+          <a href="{% url 'admin_academy_enrollments' %}?course={{ course.id }}" style="font-size:0.8rem;color:#0d7a45;">Voir toutes les inscriptions →</a>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+{% endblock %}

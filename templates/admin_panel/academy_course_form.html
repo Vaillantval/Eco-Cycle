@@ -1,0 +1,84 @@
+{% extends 'admin_panel/base_admin.html' %}
+
+{% block title %}Nouveau cours — Academy Admin{% endblock %}
+{% block page_title %}Nouveau cours{% endblock %}
+
+{% block topbar_actions %}
+<a href="{% url 'admin_academy' %}" class="btn-admin-sm btn-view">← Retour</a>
+{% endblock %}
+
+{% block admin_content %}
+
+<form method="POST" enctype="multipart/form-data">
+{% csrf_token %}
+
+<div style="display:grid;grid-template-columns:1fr 280px;gap:20px;align-items:start;">
+
+  <div>
+    <div class="admin-card">
+      <div class="admin-card-header"><span class="admin-card-title">🎓 Informations du cours</span></div>
+      <div style="padding:20px;display:flex;flex-direction:column;gap:16px;">
+
+        <div>
+          <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:6px;">Titre *</label>
+          <input type="text" name="title" value="{{ course.title|default:'' }}" required
+                 style="width:100%;padding:9px 14px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.95rem;font-weight:600;">
+        </div>
+
+        <div>
+          <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:6px;">Description *</label>
+          <textarea name="description" rows="6" required
+                    style="width:100%;padding:9px 14px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;resize:vertical;">{{ course.description|default:'' }}</textarea>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="admin-card" style="margin-bottom:16px;">
+      <div class="admin-card-header"><span class="admin-card-title">⚙️ Paramètres</span></div>
+      <div style="padding:16px 20px;display:flex;flex-direction:column;gap:14px;">
+        <div>
+          <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:6px;">Niveau</label>
+          <select name="level" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
+            {% for val, label in level_choices %}
+            <option value="{{ val }}" {% if course and course.level == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:6px;">Durée totale (minutes)</label>
+          <input type="number" name="duration_minutes" value="{{ course.duration_minutes|default:'0' }}" min="0"
+                 style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;font-size:0.88rem;cursor:pointer;">
+          <input type="checkbox" name="is_free" value="1" {% if not course or course.is_free %}checked{% endif %} style="width:16px;height:16px;">
+          Cours gratuit
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:0.88rem;cursor:pointer;">
+          <input type="checkbox" name="is_published" value="1" {% if course and course.is_published %}checked{% endif %} style="width:16px;height:16px;">
+          Publier immédiatement
+        </label>
+      </div>
+    </div>
+
+    <div class="admin-card" style="margin-bottom:16px;">
+      <div class="admin-card-header"><span class="admin-card-title">🖼️ Miniature</span></div>
+      <div style="padding:16px 20px;">
+        {% if course and course.thumbnail %}
+        <img src="{{ course.thumbnail.url }}" style="width:100%;border-radius:8px;margin-bottom:8px;max-height:120px;object-fit:cover;" alt="">
+        {% endif %}
+        <input type="file" name="thumbnail" accept="image/*" style="font-size:0.82rem;">
+      </div>
+    </div>
+
+    <button type="submit" name="action" value="update_course" class="btn-admin-sm btn-admin-primary" style="width:100%;justify-content:center;padding:10px;font-size:0.88rem;">
+      💾 Créer le cours
+    </button>
+  </div>
+
+</div>
+</form>
+
+{% endblock %}
