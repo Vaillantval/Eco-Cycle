@@ -842,10 +842,6 @@ class AdminAcademyLessonCreateView(AdminRequiredMixin, View):
         video_url  = request.POST.get('video_url', '').strip()
         if video_file or video_url:
             duration = int(request.POST.get('video_duration') or 0)
-            if not duration and video_url:
-                duration, yt_err = _get_youtube_duration_minutes(video_url)
-                if yt_err:
-                    messages.warning(request, f'Durée YouTube non détectée (renseigne-la manuellement) : {yt_err}')
             LessonVideo.objects.create(
                 lesson           = lesson,
                 title            = request.POST.get('video_title', '').strip(),
@@ -887,10 +883,6 @@ class AdminAcademyLessonEditView(AdminRequiredMixin, View):
             video_url  = request.POST.get('video_url', '').strip()
             if video_file or video_url:
                 duration = int(request.POST.get('video_duration') or 0)
-                if not duration and video_url:
-                    duration, yt_err = _get_youtube_duration_minutes(video_url)
-                    if yt_err:
-                        messages.warning(request, f'Durée YouTube non détectée (renseigne-la manuellement) : {yt_err}')
                 LessonVideo.objects.create(
                     lesson           = lesson,
                     title            = request.POST.get('video_title', '').strip(),
@@ -922,10 +914,6 @@ class AdminAcademyLessonEditView(AdminRequiredMixin, View):
                 if url_val and video.video_file:
                     video.video_file = None
             duration = int(request.POST.get('video_duration') or 0)
-            if not duration and video.video_url:
-                duration, yt_err = _get_youtube_duration_minutes(video.video_url)
-                if yt_err:
-                    messages.warning(request, f'Durée YouTube non détectée (renseigne-la manuellement) : {yt_err}')
             video.duration_minutes = duration
             video.save()
             messages.success(request, 'Vidéo mise à jour.')

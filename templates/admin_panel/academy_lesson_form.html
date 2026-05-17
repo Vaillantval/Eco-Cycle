@@ -464,11 +464,18 @@ document.getElementById('newVideoUrl').addEventListener('blur', function () {
 
 // ── Cartes vidéo existantes ────────────────────────────────────────────────────
 document.querySelectorAll('.vs-url input[name="video_url"]').forEach(function (urlInput) {
+  // Détection au blur (quand l'admin modifie l'URL)
   urlInput.addEventListener('blur', function () {
     const form = this.closest('form');
     const durInput = form.querySelector('input[name="video_duration"]');
     if (durInput) detectUrlDuration(this.value.trim(), durInput);
   });
+  // Auto-détection au chargement si URL YouTube présente et durée = 0
+  const form = urlInput.closest('form');
+  const durInput = form && form.querySelector('input[name="video_duration"]');
+  if (durInput && parseInt(durInput.value || 0) === 0 && urlInput.value.trim()) {
+    detectUrlDuration(urlInput.value.trim(), durInput);
+  }
 });
 
 document.querySelectorAll('.vs-file input[name="video_file"]').forEach(function (fileInput) {
