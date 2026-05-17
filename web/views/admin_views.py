@@ -1386,8 +1386,8 @@ def _get_youtube_duration_minutes(url: str) -> tuple[int, str]:
 
     # Primary: fetch the YouTube watch page and extract lengthSeconds from embedded JSON
     try:
-        import urllib.request
-        req = urllib.request.Request(
+        import requests as _requests
+        resp = _requests.get(
             f'https://www.youtube.com/watch?v={vid_id}',
             headers={
                 'User-Agent': (
@@ -1397,9 +1397,9 @@ def _get_youtube_duration_minutes(url: str) -> tuple[int, str]:
                 ),
                 'Accept-Language': 'fr-FR,fr;q=0.9,en;q=0.8',
             },
+            timeout=10,
         )
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            html = resp.read().decode('utf-8', errors='replace')
+        html = resp.text
         m = re.search(r'"lengthSeconds":"(\d+)"', html)
         if not m:
             m = re.search(r'"approxDurationMs":"(\d+)"', html)
