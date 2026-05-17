@@ -1,7 +1,7 @@
 from datetime import timedelta
 from django.views.generic import View
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.contrib import messages
 from django.utils import timezone
 from web.mixins import AdminRequiredMixin, LoginRequiredMixin
@@ -823,6 +823,9 @@ class AdminAcademyLessonCreateView(AdminRequiredMixin, View):
         video_file = request.FILES.get('video_file')
         video_url  = request.POST.get('video_url', '').strip()
         if video_file or video_url:
+            duration = int(request.POST.get('video_duration') or 0)
+            if not duration and video_url:
+                duration = _get_youtube_duration_minutes(video_url)
             LessonVideo.objects.create(
                 lesson           = lesson,
                 title            = request.POST.get('video_title', '').strip(),
@@ -830,7 +833,7 @@ class AdminAcademyLessonCreateView(AdminRequiredMixin, View):
                 video_url        = video_url,
                 allow_download   = request.POST.get('video_allow_download') == '1',
                 order            = 1,
-                duration_minutes = request.POST.get('video_duration') or 0,
+                duration_minutes = duration,
             )
         messages.success(request, f'Leçon « {lesson.title} » créée.')
         return redirect('admin_academy_lesson_edit', course_pk=course_pk, lesson_pk=lesson.pk)
@@ -859,6 +862,9 @@ class AdminAcademyLessonEditView(AdminRequiredMixin, View):
             video_file = request.FILES.get('video_file')
             video_url  = request.POST.get('video_url', '').strip()
             if video_file or video_url:
+                duration = int(request.POST.get('video_duration') or 0)
+                if not duration and video_url:
+                    duration = _get_youtube_duration_minutes(video_url)
                 LessonVideo.objects.create(
                     lesson           = lesson,
                     title            = request.POST.get('video_title', '').strip(),
@@ -866,7 +872,7 @@ class AdminAcademyLessonEditView(AdminRequiredMixin, View):
                     video_url        = video_url,
                     allow_download   = request.POST.get('video_allow_download') == '1',
                     order            = request.POST.get('video_order') or lesson.videos.count() + 1,
-                    duration_minutes = request.POST.get('video_duration') or 0,
+                    duration_minutes = duration,
                 )
                 messages.success(request, 'Vidéo ajoutée.')
             else:
@@ -875,10 +881,9 @@ class AdminAcademyLessonEditView(AdminRequiredMixin, View):
 
         if action == 'update_video':
             video = get_object_or_404(LessonVideo, pk=request.POST.get('video_id'), lesson=lesson)
-            video.title            = request.POST.get('video_title', '').strip()
-            video.order            = int(request.POST.get('video_order') or video.order)
-            video.duration_minutes = int(request.POST.get('video_duration') or 0)
-            video.allow_download   = request.POST.get('video_allow_download') == '1'
+            video.title          = request.POST.get('video_title', '').strip()
+            video.order          = int(request.POST.get('video_order') or video.order)
+            video.allow_download = request.POST.get('video_allow_download') == '1'
             source = request.POST.get('video_source', 'url')
             if source == 'file':
                 new_file = request.FILES.get('video_file')
@@ -890,6 +895,10 @@ class AdminAcademyLessonEditView(AdminRequiredMixin, View):
                 video.video_url = url_val
                 if url_val and video.video_file:
                     video.video_file = None
+            duration = int(request.POST.get('video_duration') or 0)
+            if not duration and video.video_url:
+                duration = _get_youtube_duration_minutes(video.video_url)
+            video.duration_minutes = duration
             video.save()
             messages.success(request, 'Vidéo mise à jour.')
             return redirect('admin_academy_lesson_edit', course_pk=course_pk, lesson_pk=lesson_pk)
@@ -1294,3 +1303,39 @@ class AdminCertificatePDFView(AdminRequiredMixin, View):
         response = HttpResponse(buf, content_type='application/pdf')
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
         return response
+
+
+def _get_youtube_duration_minutes(url: str) -> int:
+    """Return duration in minutes for a YouTube URL using yt-dlp. Returns 0 on failure."""
+    import re
+    if not re.search(r'(?:youtube\.com|youtu\.be)', url):
+        return 0
+    try:
+        import yt_dlp
+        ydl_opts = {
+            'quiet': True,
+            'skip_download': True,
+            'extract_flat': False,
+            'no_warnings': True,
+        }
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+            seconds = info.get('duration') or 0
+            return max(1, round(seconds / 60)) if seconds else 0
+    except Exception:
+        return 0
+
+
+class AdminVideoDurationView(AdminRequiredMixin, View):
+    """AJAX endpoint: POST {"url": "..."} → {"duration_minutes": N}"""
+    def post(self, request):
+        import json
+        try:
+            body = json.loads(request.body)
+            url = body.get('url', '').strip()
+        except Exception:
+            return JsonResponse({'error': 'invalid json'}, status=400)
+        if not url:
+            return JsonResponse({'duration_minutes': 0})
+        minutes = _get_youtube_duration_minutes(url)
+        return JsonResponse({'duration_minutes': minutes})

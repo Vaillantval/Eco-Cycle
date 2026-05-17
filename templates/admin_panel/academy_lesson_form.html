@@ -148,7 +148,7 @@
         </div>
         <div>
           <label style="font-size:0.75rem;font-weight:600;color:#64748b;display:block;margin-bottom:5px;">Durée (min)</label>
-          <input type="number" name="video_duration" value="0" min="0"
+          <input type="number" name="video_duration" id="newVideoDuration" value="0" min="0"
                  style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
         </div>
       </div>
@@ -160,7 +160,7 @@
         </div>
         <div>
           <label style="font-size:0.75rem;font-weight:600;color:#64748b;display:block;margin-bottom:5px;">🔗 URL externe (YouTube, Vimeo…)</label>
-          <input type="url" name="video_url" placeholder="https://youtube.com/watch?v=..."
+          <input type="url" name="video_url" id="newVideoUrl" placeholder="https://youtube.com/watch?v=..."
                  style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
         </div>
       </div>
@@ -337,10 +337,65 @@ function toggleVideoSrc(radio) {
   }
 }
 
-// ── Toggle "Autoriser le téléchargement vidéo" (formulaire ajout) ──────────────
+// ── Auto-détection durée ───────────────────────────────────────────────────────
+
+function detectFileDuration(fileInput, durationInput) {
+  const file = fileInput.files[0];
+  if (!file) return;
+  const vid = document.createElement('video');
+  vid.preload = 'metadata';
+  vid.src = URL.createObjectURL(file);
+  vid.onloadedmetadata = function () {
+    URL.revokeObjectURL(vid.src);
+    const minutes = Math.max(1, Math.round(vid.duration / 60));
+    durationInput.value = minutes;
+  };
+}
+
+function detectUrlDuration(url, durationInput) {
+  if (!url || !/youtube\.com|youtu\.be/.test(url)) return;
+  const csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
+  const origPlaceholder = durationInput.placeholder;
+  durationInput.placeholder = '⏳';
+  fetch('/panel/api/video-duration/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
+    body: JSON.stringify({ url }),
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.duration_minutes > 0) durationInput.value = data.duration_minutes;
+    durationInput.placeholder = origPlaceholder;
+  })
+  .catch(() => { durationInput.placeholder = origPlaceholder; });
+}
+
+// ── Formulaire "Ajouter une vidéo" ────────────────────────────────────────────
 document.getElementById('videoFileInput').addEventListener('change', function () {
   document.getElementById('videoDownloadToggle').style.display =
     this.files.length > 0 ? 'block' : 'none';
+  detectFileDuration(this, document.getElementById('newVideoDuration'));
+});
+
+document.getElementById('newVideoUrl').addEventListener('blur', function () {
+  detectUrlDuration(this.value.trim(), document.getElementById('newVideoDuration'));
+});
+
+// ── Cartes vidéo existantes ────────────────────────────────────────────────────
+document.querySelectorAll('.vs-url input[name="video_url"]').forEach(function (urlInput) {
+  urlInput.addEventListener('blur', function () {
+    const form = this.closest('form');
+    const durInput = form.querySelector('input[name="video_duration"]');
+    if (durInput) detectUrlDuration(this.value.trim(), durInput);
+  });
+});
+
+document.querySelectorAll('.vs-file input[name="video_file"]').forEach(function (fileInput) {
+  fileInput.addEventListener('change', function () {
+    const form = this.closest('form');
+    const durInput = form.querySelector('input[name="video_duration"]');
+    if (durInput) detectFileDuration(this, durInput);
+  });
 });
 
 // Met à jour le style visuel des labels radio PDF + affiche/cache la ligne "remplacer"

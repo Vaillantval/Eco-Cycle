@@ -24,6 +24,7 @@ from .views.admin_views import (
     AdminAcademyEnrollmentsView, AdminAcademyCertificatesView,
     AdminNewslettersView, AdminContactsView, AdminSiteConfigView,
     AdminSlidersView, AdminCertificatePDFView, CertificatePDFView,
+    AdminVideoDurationView,
 )
 from .views.collector_views import (
     CollectorDashboardView, CollectorPickupsView,
@@ -213,6 +214,8 @@ urlpatterns = [
          AdminSlidersView.as_view(), name='admin_sliders'),
     path('panel/certificates/<uuid:cert_id>/pdf/',
          AdminCertificatePDFView.as_view(), name='admin_certificate_pdf'),
+    path('panel/api/video-duration/',
+         AdminVideoDurationView.as_view(), name='admin_video_duration'),
 
     # Maintenance
     path('maintenance/',
