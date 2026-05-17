@@ -99,47 +99,82 @@
       </div>
     </div>
 
-    <!-- HISTORIQUE ENCHÈRES -->
-    {% if bids %}
+    <!-- HISTORIQUE BIDS -->
     <div class="admin-card">
       <div class="admin-card-header">
-        <div class="admin-card-title">📋 Enchères placées ({{ bids|length }})</div>
+        <div class="admin-card-title">🔨 Historique des offres</div>
+        <span style="font-size:0.78rem;font-weight:700;color:#64748b;background:#f1f5f9;padding:3px 10px;border-radius:20px;">
+          {{ bids|length }} offre{{ bids|length|pluralize }}
+        </span>
       </div>
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>Enchérisseur</th>
-            <th>Montant</th>
-            <th>Date</th>
-            <th>Statut</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for bid in bids %}
-          <tr {% if bid.is_winning %}style="background:#f0fdf4;"{% endif %}>
-            <td>
-              <div style="font-weight:600;font-size:0.84rem;">{{ bid.bidder.full_name }}</div>
-              <div style="font-size:0.72rem;color:#94a3b8;">{{ bid.bidder.email }}</div>
-            </td>
-            <td style="font-weight:700;color:#0f172a;">{{ bid.amount }} HTG</td>
-            <td style="font-size:0.78rem;color:#64748b;">{{ bid.created_at|date:"d/m/Y H:i" }}</td>
-            <td>
-              {% if bid.is_winning %}
-                <span style="padding:2px 8px;border-radius:10px;font-size:0.72rem;font-weight:700;background:#dcfce7;color:#15803d;">👑 En tête</span>
-              {% else %}
-                <span style="font-size:0.78rem;color:#94a3b8;">Surenchérie</span>
-              {% endif %}
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+
+      {% if bids %}
+      <div style="padding:8px 0;">
+        {% for bid in bids %}
+        <div style="display:flex;align-items:center;gap:14px;padding:14px 20px;
+                    border-bottom:1px solid #f8fafc;
+                    {% if bid.is_winning %}background:linear-gradient(90deg,#f0fdf4,#fff);{% endif %}
+                    position:relative;">
+
+          <!-- Rang -->
+          <div style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+                      font-size:0.7rem;font-weight:800;flex-shrink:0;
+                      {% if forloop.counter == 1 %}background:#fef9c3;color:#854d0e;border:2px solid #fde047;
+                      {% elif forloop.counter == 2 %}background:#f1f5f9;color:#475569;border:2px solid #cbd5e1;
+                      {% elif forloop.counter == 3 %}background:#fef3c7;color:#92400e;border:2px solid #fcd34d;
+                      {% else %}background:#f8fafc;color:#94a3b8;border:1px solid #e2e8f0;{% endif %}">
+            #{{ forloop.counter }}
+          </div>
+
+          <!-- Avatar -->
+          <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#16a34a,#0d9488);
+                      display:flex;align-items:center;justify-content:center;color:#fff;
+                      font-size:0.72rem;font-weight:800;flex-shrink:0;letter-spacing:0.5px;">
+            {{ bid.bidder.first_name|slice:":1" }}{{ bid.bidder.last_name|slice:":1" }}
+          </div>
+
+          <!-- Identité -->
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:700;font-size:0.84rem;color:#0f172a;">{{ bid.bidder.full_name }}</div>
+            <div style="font-size:0.72rem;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ bid.bidder.email }}</div>
+          </div>
+
+          <!-- Montant -->
+          <div style="text-align:right;flex-shrink:0;">
+            <div style="font-size:1.05rem;font-weight:800;
+                        {% if bid.is_winning %}color:#15803d;{% else %}color:#334155;{% endif %}">
+              {{ bid.amount|floatformat:0 }} HTG
+            </div>
+            <div style="font-size:0.7rem;color:#94a3b8;">{{ bid.created_at|date:"d/m/Y H:i" }}</div>
+          </div>
+
+          <!-- Badge -->
+          <div style="width:80px;text-align:center;flex-shrink:0;">
+            {% if bid.is_winning %}
+              <span style="display:inline-flex;align-items:center;gap:3px;padding:3px 10px;
+                           border-radius:20px;font-size:0.7rem;font-weight:700;
+                           background:#dcfce7;color:#15803d;border:1px solid #bbf7d0;">
+                👑 En tête
+              </span>
+            {% else %}
+              <span style="font-size:0.72rem;color:#94a3b8;">Surenchérie</span>
+            {% endif %}
+          </div>
+
+        </div>
+        {% endfor %}
+      </div>
+
+      {% else %}
+      <div style="padding:48px 20px;text-align:center;">
+        <div style="font-size:2.5rem;margin-bottom:12px;">🔨</div>
+        <div style="font-size:0.88rem;color:#94a3b8;font-weight:500;">Aucune offre placée sur cette enchère.</div>
+        {% if auction.status == 'active' %}
+        <div style="font-size:0.78rem;color:#cbd5e1;margin-top:6px;">L'enchère est active — les offres apparaîtront ici en temps réel.</div>
+        {% endif %}
+      </div>
+      {% endif %}
     </div>
-    {% else %}
-    <div class="admin-card" style="padding:24px;text-align:center;color:#94a3b8;font-size:0.88rem;">
-      Aucune enchère placée sur cette annonce.
-    </div>
-    {% endif %}
 
   </div>
 
