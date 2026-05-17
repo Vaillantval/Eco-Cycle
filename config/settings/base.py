@@ -182,6 +182,7 @@ CACHES = {
 RESEND_API_KEY = config('RESEND_API_KEY', default='')
 RESEND_FROM_EMAIL = config('RESEND_FROM_EMAIL', default='noreply@ecocycle.ht')
 RESEND_FROM_NAME = config('RESEND_FROM_NAME', default='EcoCycle Haiti')
+YOUTUBE_API_KEY = config('YOUTUBE_API_KEY', default='')
 ANTHROPIC_API_KEY = config('ANTHROPIC_API_KEY', default='')
 FIREBASE_CREDENTIALS_PATH = config('FIREBASE_CREDENTIALS_PATH', default='firebase-credentials.json')
 FIREBASE_CREDENTIALS_B64 = config('FIREBASE_CREDENTIALS_B64', default='')

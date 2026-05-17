@@ -387,20 +387,6 @@ function detectFileDuration(fileInput, durationInput) {
   };
 }
 
-// ── YouTube IFrame API — détection durée côté navigateur (pas de blocage IP serveur) ──
-var _ytApiReady = false;
-var _ytApiLoading = false;
-
-function onYouTubeIframeAPIReady() { _ytApiReady = true; }
-
-function _loadYouTubeAPI() {
-  if (_ytApiLoading || _ytApiReady) return;
-  _ytApiLoading = true;
-  var s = document.createElement('script');
-  s.src = 'https://www.youtube.com/iframe_api';
-  document.head.appendChild(s);
-}
-
 function _showYtWarn(durationInput) {
   const label = durationInput.closest('div')?.querySelector('label');
   if (label && !label.querySelector('.yt-warn')) {
@@ -413,59 +399,27 @@ function _showYtWarn(durationInput) {
 }
 
 function detectUrlDuration(url, durationInput) {
-  if (!url) return;
-  const m = url.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
-  if (!m) return;
-  const videoId = m[1];
-  _loadYouTubeAPI();
-
-  // Attendre que l'API YouTube soit prête (max ~6 s)
-  function tryCreate(attempts) {
-    if (attempts <= 0) { _showYtWarn(durationInput); return; }
-    if (!_ytApiReady || typeof YT === 'undefined' || !YT.Player) {
-      setTimeout(() => tryCreate(attempts - 1), 300);
-      return;
+  if (!url || !/youtube\.com|youtu\.be/.test(url)) return;
+  const csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
+  durationInput.placeholder = '⏳';
+  fetch('/panel/api/video-duration/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
+    body: JSON.stringify({ url }),
+  })
+  .then(r => r.json())
+  .then(data => {
+    durationInput.placeholder = '0';
+    if (data.duration_minutes > 0) {
+      durationInput.value = data.duration_minutes;
+      // Retirer l'avertissement si présent
+      const warn = durationInput.closest('div')?.querySelector('.yt-warn');
+      if (warn) warn.remove();
+    } else {
+      _showYtWarn(durationInput);
     }
-    const container = document.createElement('div');
-    container.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;';
-    document.body.appendChild(container);
-    var done = false;
-    function finish(secs) {
-      if (done) return; done = true;
-      const mins = secs ? Math.max(1, Math.round(secs / 60)) : 0;
-      durationInput.value = mins;
-      if (!mins) _showYtWarn(durationInput);
-      try { player.destroy(); } catch(e) {}
-      container.remove();
-    }
-    var player;
-    try {
-      player = new YT.Player(container, {
-        videoId,
-        width: 1, height: 1,
-        playerVars: { autoplay: 0, mute: 1 },
-        events: {
-          onReady(e) {
-            // cueVideoById force le chargement des métadonnées
-            e.target.cueVideoById(videoId);
-            // Polling : getDuration() devient > 0 dès que les métadonnées sont prêtes
-            var polls = 0;
-            var poll = setInterval(function() {
-              var secs = e.target.getDuration();
-              if (secs > 0 || ++polls > 30) {
-                clearInterval(poll);
-                finish(secs);
-              }
-            }, 200);
-          },
-          onError() { finish(0); }
-        }
-      });
-      // Sécurité absolue : 10s max
-      setTimeout(function() { if (!done) finish(player && player.getDuration ? player.getDuration() : 0); }, 10000);
-    } catch(err) { _showYtWarn(durationInput); container.remove(); }
-  }
-  tryCreate(20);
+  })
+  .catch(() => { durationInput.placeholder = '0'; });
 }
 
 // ── Formulaire "Ajouter une vidéo" ────────────────────────────────────────────
@@ -488,10 +442,10 @@ document.querySelectorAll('.vs-url input[name="video_url"]').forEach(function (u
     if (durInput) detectUrlDuration(this.value.trim(), durInput);
   });
   // Auto-détection au chargement si URL YouTube présente et durée = 0
-  const form = urlInput.closest('form');
-  const durInput = form && form.querySelector('input[name="video_duration"]');
-  if (durInput && parseInt(durInput.value || 0) === 0 && urlInput.value.trim()) {
-    detectUrlDuration(urlInput.value.trim(), durInput);
+  const form2 = urlInput.closest('form');
+  const durInput2 = form2 && form2.querySelector('input[name="video_duration"]');
+  if (durInput2 && parseInt(durInput2.value || 0) === 0 && urlInput.value.trim()) {
+    detectUrlDuration(urlInput.value.trim(), durInput2);
   }
 });
 

@@ -842,6 +842,10 @@ class AdminAcademyLessonCreateView(AdminRequiredMixin, View):
         video_url  = request.POST.get('video_url', '').strip()
         if video_file or video_url:
             duration = int(request.POST.get('video_duration') or 0)
+            if not duration and video_url:
+                duration, yt_err = _get_youtube_duration_minutes(video_url)
+                if yt_err:
+                    messages.warning(request, f'Durée non détectée automatiquement : {yt_err}')
             LessonVideo.objects.create(
                 lesson           = lesson,
                 title            = request.POST.get('video_title', '').strip(),
@@ -883,6 +887,10 @@ class AdminAcademyLessonEditView(AdminRequiredMixin, View):
             video_url  = request.POST.get('video_url', '').strip()
             if video_file or video_url:
                 duration = int(request.POST.get('video_duration') or 0)
+                if not duration and video_url:
+                    duration, yt_err = _get_youtube_duration_minutes(video_url)
+                    if yt_err:
+                        messages.warning(request, f'Durée non détectée automatiquement : {yt_err}')
                 LessonVideo.objects.create(
                     lesson           = lesson,
                     title            = request.POST.get('video_title', '').strip(),
@@ -914,6 +922,10 @@ class AdminAcademyLessonEditView(AdminRequiredMixin, View):
                 if url_val and video.video_file:
                     video.video_file = None
             duration = int(request.POST.get('video_duration') or 0)
+            if not duration and video.video_url:
+                duration, yt_err = _get_youtube_duration_minutes(video.video_url)
+                if yt_err:
+                    messages.warning(request, f'Durée non détectée automatiquement : {yt_err}')
             video.duration_minutes = duration
             video.save()
             messages.success(request, 'Vidéo mise à jour.')
@@ -1360,65 +1372,44 @@ class AdminCertificatePDFView(AdminRequiredMixin, View):
 
 
 def _get_youtube_duration_minutes(url: str) -> tuple[int, str]:
-    """Return (duration_minutes, error_message) for a YouTube URL.
-
-    Primary: scrape the watch page for lengthSeconds (no auth needed for public videos).
-    Fallback: yt-dlp (may fail if YouTube requires sign-in).
-    """
+    """Return (duration_minutes, error_message) via YouTube Data API v3."""
     import re, logging
+    from django.conf import settings
     logger = logging.getLogger(__name__)
+
     yt = re.search(r'(?:youtube\.com/(?:watch\?v=|shorts/|live/)|youtu\.be/)([A-Za-z0-9_-]{11})', url)
     if not yt:
         return 0, ''
     vid_id = yt.group(1)
 
-    # Primary: fetch the YouTube watch page and extract lengthSeconds from embedded JSON
+    api_key = getattr(settings, 'YOUTUBE_API_KEY', '')
+    if not api_key:
+        return 0, 'YOUTUBE_API_KEY non configurée'
+
     try:
         import requests as _requests
         resp = _requests.get(
-            f'https://www.youtube.com/watch?v={vid_id}',
-            headers={
-                'User-Agent': (
-                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
-                    'AppleWebKit/537.36 (KHTML, like Gecko) '
-                    'Chrome/124.0.0.0 Safari/537.36'
-                ),
-                'Accept-Language': 'fr-FR,fr;q=0.9,en;q=0.8',
-            },
+            'https://www.googleapis.com/youtube/v3/videos',
+            params={'part': 'contentDetails', 'id': vid_id, 'key': api_key},
             timeout=10,
         )
-        html = resp.text
-        m = re.search(r'"lengthSeconds":"(\d+)"', html)
-        if not m:
-            m = re.search(r'"approxDurationMs":"(\d+)"', html)
-            if m:
-                seconds = int(m.group(1)) // 1000
-            else:
-                seconds = 0
-        else:
-            seconds = int(m.group(1))
-        if seconds:
-            return max(1, round(seconds / 60)), ''
+        resp.raise_for_status()
+        data = resp.json()
+        items = data.get('items', [])
+        if not items:
+            return 0, f'Vidéo introuvable : {vid_id}'
+        duration_iso = items[0]['contentDetails']['duration']
+        # Parse ISO 8601 : PT1H3M29S
+        m = re.match(r'PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?', duration_iso)
+        total_seconds = (
+            int(m.group(1) or 0) * 3600 +
+            int(m.group(2) or 0) * 60 +
+            int(m.group(3) or 0)
+        ) if m else 0
+        minutes = max(1, round(total_seconds / 60)) if total_seconds else 0
+        return minutes, ''
     except Exception as e:
-        logger.warning('YouTube page scrape failed for %s: %s', vid_id, e)
-
-    # Fallback: yt-dlp
-    try:
-        import yt_dlp
-        ydl_opts = {
-            'quiet': True,
-            'skip_download': True,
-            'extract_flat': False,
-            'no_warnings': True,
-            'noplaylist': True,
-        }
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=False)
-            seconds = info.get('duration') or 0
-            minutes = max(1, round(seconds / 60)) if seconds else 0
-            return minutes, ''
-    except Exception as e:
-        logger.warning('yt-dlp failed for %s: %s', vid_id, e)
+        logger.warning('YouTube API failed for %s: %s', vid_id, e)
         return 0, str(e)
 
 
