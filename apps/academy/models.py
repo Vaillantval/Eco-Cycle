@@ -135,7 +135,7 @@ class LessonVideo(models.Model):
         lesson.sync_duration()
 
     def embed_url(self):
-        """Return an embeddable URL for YouTube/Vimeo, or None for direct files."""
+        """Return an embeddable URL for YouTube/Vimeo/TikTok, or None for direct files."""
         url = self.video_url
         if not url:
             return None
@@ -147,6 +147,10 @@ class LessonVideo(models.Model):
         vm = re.search(r'vimeo\.com/(\d+)', url)
         if vm:
             return f'https://player.vimeo.com/video/{vm.group(1)}?api=1'
+        # TikTok
+        tt = re.search(r'tiktok\.com/@[^/]+/video/(\d+)', url)
+        if tt:
+            return f'https://www.tiktok.com/embed/v2/{tt.group(1)}'
         return None
 
     def is_youtube(self):
@@ -154,6 +158,9 @@ class LessonVideo(models.Model):
 
     def is_vimeo(self):
         return bool(re.search(r'vimeo\.com', self.video_url or ''))
+
+    def is_tiktok(self):
+        return bool(re.search(r'tiktok\.com', self.video_url or ''))
 
 
 class Enrollment(models.Model):
