@@ -2,6 +2,45 @@
 
 {% block title %}Dashboard — EcoCycle Haiti{% endblock %}
 
+{% block extra_css %}
+{{ block.super }}
+<style>
+.auc-live-card {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.auc-live-card:hover {
+  box-shadow: 0 4px 16px rgba(22,163,74,0.12);
+  transform: translateY(-2px);
+  border-color: #bbf7d0;
+}
+.auc-live-img {
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #e2e8f0;
+}
+.auc-live-img img { width: 100%; height: 100%; object-fit: cover; }
+.auc-live-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; }
+.auc-live-body { flex: 1; min-width: 0; }
+.auc-live-title { font-weight: 600; font-size: 0.84rem; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
+.auc-live-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.auc-live-bids { font-size: 0.75rem; color: #64748b; background: #f1f5f9; padding: 2px 7px; border-radius: 20px; }
+.auc-live-countdown { font-size: 0.75rem; font-weight: 600; color: #16a34a; }
+.auc-live-countdown.soon  { color: #d97706; }
+.auc-live-countdown.urgent { color: #dc2626; }
+.auc-live-countdown.expired { color: #94a3b8; }
+</style>
+{% endblock %}
+
 {% block dashboard_content %}
 <div class="dashboard-header">
   <div>
@@ -34,6 +73,41 @@
     <div class="stat-card-label">Rang communauté</div>
   </div>
 </div>
+
+<!-- ENCHÈRES ACTIVES -->
+{% if active_auctions %}
+<div class="data-card" style="margin-bottom:24px;">
+  <div class="data-card-header">
+    <span class="data-card-title">🔥 Mes enchères en cours</span>
+    <a href="{% url 'marketplace' %}" style="font-size:0.82rem;color:var(--green);text-decoration:none;">Voir le marketplace →</a>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;padding:4px 0;">
+    {% for auction in active_auctions %}
+    <a href="{% url 'auction_detail' auction.pk %}" style="text-decoration:none;">
+      <div class="auc-live-card">
+        <div class="auc-live-img">
+          {% if auction.listing.photo %}
+            <img src="{{ auction.listing.photo.url }}" alt="">
+          {% elif auction.listing.photo_url %}
+            <img src="{{ auction.listing.photo_url }}" alt="">
+          {% else %}
+            <div class="auc-live-placeholder">{{ auction.listing.category.icon|default:'♻️' }}</div>
+          {% endif %}
+        </div>
+        <div class="auc-live-body">
+          <div class="auc-live-title">{{ auction.listing.title|truncatechars:32 }}</div>
+          <div class="auc-live-meta">
+            <span style="color:var(--green);font-weight:700;font-size:1rem;">{{ auction.current_price|floatformat:0 }} HTG</span>
+            <span class="auc-live-bids">{{ auction.total_bids }} offre{{ auction.total_bids|pluralize }}</span>
+          </div>
+          <div class="auc-live-countdown" data-ends="{{ auction.ends_at|date:'c' }}">—</div>
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
 
 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
 
@@ -101,4 +175,34 @@
   </div>
 
 </div>
+
+{% if active_auctions %}
+<script>
+(function () {
+  function fmt(sec) {
+    if (sec <= 0) return { text: 'Expirée', cls: 'expired' };
+    const d = Math.floor(sec / 86400);
+    const h = Math.floor((sec % 86400) / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = sec % 60;
+    let text, cls;
+    if (d > 0)      { text = d + 'j ' + h + 'h';  cls = 'ok'; }
+    else if (h > 0) { text = h + 'h ' + m + 'min'; cls = h < 2 ? 'soon' : 'ok'; }
+    else            { text = m + 'min ' + s + 's';  cls = m < 10 ? 'urgent' : 'soon'; }
+    return { text, cls };
+  }
+  function tick() {
+    const now = Date.now();
+    document.querySelectorAll('.auc-live-countdown[data-ends]').forEach(el => {
+      const sec = Math.max(0, Math.round((new Date(el.dataset.ends).getTime() - now) / 1000));
+      const { text, cls } = fmt(sec);
+      el.textContent = '⏱ ' + text;
+      el.className = 'auc-live-countdown ' + cls;
+    });
+  }
+  tick();
+  setInterval(tick, 1000);
+})();
+</script>
+{% endif %}
 {% endblock %}

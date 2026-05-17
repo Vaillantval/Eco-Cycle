@@ -4,7 +4,7 @@ from django.http import HttpResponse
 from django.contrib import messages
 from web.mixins import LoginRequiredMixin
 from apps.waste.models import WasteListing, WasteCategory
-from apps.marketplace.models import Order
+from apps.marketplace.models import Order, Auction
 from apps.impact.models import UserImpactSummary, ImpactRecord
 from apps.notifications.models import Notification
 from apps.academy.models import Certificate
@@ -12,16 +12,24 @@ from apps.academy.models import Certificate
 
 class DashboardOverviewView(LoginRequiredMixin, View):
     def get(self, request):
+        from django.utils import timezone
         user = self.get_current_user(request)
         summary, _ = UserImpactSummary.objects.get_or_create(user=user)
         notifications   = Notification.objects.filter(user=user, is_read=False)[:5]
         recent_listings = WasteListing.objects.filter(user=user).order_by('-created_at')[:5]
+        active_auctions = (
+            Auction.objects
+            .filter(seller=user, status='active', ends_at__gt=timezone.now())
+            .select_related('listing', 'listing__category')
+            .order_by('ends_at')
+        )
 
         return render(request, 'dashboard/overview.html', {
             'user': user,
             'summary': summary,
             'notifications': notifications,
             'recent_listings': recent_listings,
+            'active_auctions': active_auctions,
             'listings_count': WasteListing.objects.filter(user=user).count(),
             'pending_count':  WasteListing.objects.filter(user=user, status='pending_review').count(),
         })
@@ -31,7 +39,7 @@ class MyListingsView(LoginRequiredMixin, View):
     def get(self, request):
         user          = self.get_current_user(request)
         status_filter = request.GET.get('status', '')
-        listings = WasteListing.objects.filter(user=user).select_related('category').order_by('-created_at')
+        listings = WasteListing.objects.filter(user=user).select_related('category', 'auction').order_by('-created_at')
         if status_filter:
             listings = listings.filter(status=status_filter)
         return render(request, 'dashboard/my_listings.html', {

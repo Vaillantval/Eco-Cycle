@@ -35,6 +35,7 @@
           <th>Catégorie</th>
           <th>Poids</th>
           <th>Statut</th>
+          <th>Enchère</th>
           <th>Valeur IA</th>
           <th>Date</th>
         </tr>
@@ -55,6 +56,26 @@
           <td style="color:var(--gray);">{{ listing.category.name|default:"—" }}</td>
           <td>{{ listing.quantity_kg }} kg</td>
           <td><span class="status-badge status-{{ listing.status }}">{{ listing.get_status_display }}</span></td>
+          <td>
+            {% if listing.auction %}
+              {% if listing.auction.status == 'active' %}
+                <a href="{% url 'auction_detail' listing.auction.pk %}"
+                   style="display:inline-flex;align-items:center;gap:5px;font-size:0.78rem;font-weight:700;
+                          color:#16a34a;background:#f0fdf4;border:1px solid #bbf7d0;
+                          border-radius:20px;padding:3px 10px;text-decoration:none;">
+                  🔥 {{ listing.auction.current_price|floatformat:0 }} HTG · {{ listing.auction.total_bids }} offre{{ listing.auction.total_bids|pluralize }}
+                </a>
+              {% elif listing.auction.status == 'sold' %}
+                <span style="font-size:0.78rem;font-weight:700;color:#16a34a;">✅ Vendue</span>
+              {% elif listing.auction.status == 'closed' %}
+                <span style="font-size:0.78rem;color:#94a3b8;">Clôturée</span>
+              {% else %}
+                <span style="font-size:0.78rem;color:#94a3b8;">{{ listing.auction.get_status_display }}</span>
+              {% endif %}
+            {% else %}
+              <span style="font-size:0.78rem;color:#cbd5e1;">—</span>
+            {% endif %}
+          </td>
           <td>
             {% if listing.ai_analysis %}
               <span style="color:var(--green);font-weight:600;">
