@@ -951,13 +951,16 @@ class AdminAcademyLessonEditView(AdminRequiredMixin, View):
                 lesson.content = request.POST.get('content', '')
         # Durée manuelle (PDF) — ignorée si la leçon a des vidéos (sync_duration fait foi)
         if not lesson.videos.exists():
-            manual_duration = request.POST.get('lesson_duration')
-            if manual_duration is not None:
-                lesson.duration_minutes = int(manual_duration or 0)
+            manual_duration = int(request.POST.get('lesson_duration') or 0)
+            if manual_duration:
+                # L'admin a saisi une valeur non nulle → elle prime
+                lesson.duration_minutes = manual_duration
             elif pdf_reading_duration:
+                # Pas de saisie manuelle, mais on vient d'extraire un PDF → durée auto
                 lesson.duration_minutes = pdf_reading_duration
+            # Si les deux sont 0 → on ne touche pas à la durée existante
         lesson.save()
-        if pdf_reading_duration and not request.POST.get('lesson_duration'):
+        if pdf_reading_duration and not int(request.POST.get('lesson_duration') or 0):
             messages.info(request, f'Durée de lecture estimée automatiquement : {pdf_reading_duration} min.')
         messages.success(request, f'Leçon « {lesson.title} » mise à jour.')
         return redirect('admin_academy_lesson_edit', course_pk=course_pk, lesson_pk=lesson_pk)

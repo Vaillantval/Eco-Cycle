@@ -219,9 +219,12 @@
             <input type="file" name="pdf_file" accept=".pdf,application/pdf"
                    style="width:100%;padding:7px 10px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.82rem;background:#fafafa;">
             {% if lesson and lesson.pdf_file %}
-            <div style="margin-top:6px;font-size:0.73rem;color:#64748b;display:flex;align-items:center;gap:6px;">
+            <div style="margin-top:6px;font-size:0.73rem;color:#64748b;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
               <span>📎 PDF actuel :</span>
               <a href="{{ lesson.pdf_file.url }}" target="_blank" style="color:#0d7a45;font-weight:600;text-decoration:none;">Voir / Télécharger</a>
+              {% if lesson.duration_minutes and not videos %}
+              <span style="background:#eff6ff;color:#2563eb;border-radius:6px;padding:2px 8px;font-weight:700;">⏱ ~{{ lesson.duration_minutes }} min de lecture</span>
+              {% endif %}
             </div>
             {% endif %}
           </div>
