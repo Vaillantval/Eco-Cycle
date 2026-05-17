@@ -958,9 +958,9 @@ class AdminAcademyLessonEditView(AdminRequiredMixin, View):
         lesson.title              = request.POST.get('title', '').strip() or lesson.title
         lesson.order              = request.POST.get('order') or lesson.order
         lesson.pdf_allow_download = request.POST.get('pdf_allow_download') == '1'
+        old_pdf_mode              = lesson.pdf_display_mode
         lesson.pdf_display_mode   = request.POST.get('pdf_display_mode', lesson.pdf_display_mode)
         pdf_file                  = request.FILES.get('pdf_file')
-        replace_content           = request.POST.get('replace_content') == '1'
         pdf_auto_duration = 0
         if pdf_file:
             # Supprimer l'ancien fichier PDF du stockage avant d'assigner le nouveau
@@ -983,7 +983,20 @@ class AdminAcademyLessonEditView(AdminRequiredMixin, View):
             lesson.pdf_file = pdf_file
         else:
             if lesson.pdf_display_mode == 'extract':
-                lesson.content = request.POST.get('content', '')
+                if old_pdf_mode == 'embed' and lesson.pdf_file:
+                    # Passage visionneuse → texte sans nouveau PDF : extraire depuis le PDF existant
+                    with lesson.pdf_file.open('rb') as f:
+                        extracted = _extract_pdf_text(f)
+                    with lesson.pdf_file.open('rb') as f:
+                        pdf_auto_duration = _get_pdf_reading_duration_minutes(f)
+                    if extracted:
+                        lesson.content = extracted
+                        messages.info(request, f'Texte extrait du PDF existant ({len(extracted)} caractères).')
+                    else:
+                        lesson.content = request.POST.get('content', '')
+                        messages.warning(request, 'Aucun texte n\'a pu être extrait du PDF existant.')
+                else:
+                    lesson.content = request.POST.get('content', '')
         # Durée de lecture — priorité : manuel > PDF (pages) > texte direct (mots)
         manual_pdf = int(request.POST.get('lesson_duration') or 0)
         if manual_pdf:
@@ -1359,11 +1372,49 @@ class AdminCertificatePDFView(AdminRequiredMixin, View):
 
 
 def _get_youtube_duration_minutes(url: str) -> tuple[int, str]:
-    """Return (duration_minutes, error_message) for a YouTube URL using yt-dlp."""
+    """Return (duration_minutes, error_message) for a YouTube URL.
+
+    Primary: scrape the watch page for lengthSeconds (no auth needed for public videos).
+    Fallback: yt-dlp (may fail if YouTube requires sign-in).
+    """
     import re, logging
     logger = logging.getLogger(__name__)
-    if not re.search(r'(?:youtube\.com|youtu\.be)', url):
+    yt = re.search(r'(?:youtube\.com/(?:watch\?v=|shorts/|live/)|youtu\.be/)([A-Za-z0-9_-]{11})', url)
+    if not yt:
         return 0, ''
+    vid_id = yt.group(1)
+
+    # Primary: fetch the YouTube watch page and extract lengthSeconds from embedded JSON
+    try:
+        import urllib.request
+        req = urllib.request.Request(
+            f'https://www.youtube.com/watch?v={vid_id}',
+            headers={
+                'User-Agent': (
+                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+                    'AppleWebKit/537.36 (KHTML, like Gecko) '
+                    'Chrome/124.0.0.0 Safari/537.36'
+                ),
+                'Accept-Language': 'fr-FR,fr;q=0.9,en;q=0.8',
+            },
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            html = resp.read().decode('utf-8', errors='replace')
+        m = re.search(r'"lengthSeconds":"(\d+)"', html)
+        if not m:
+            m = re.search(r'"approxDurationMs":"(\d+)"', html)
+            if m:
+                seconds = int(m.group(1)) // 1000
+            else:
+                seconds = 0
+        else:
+            seconds = int(m.group(1))
+        if seconds:
+            return max(1, round(seconds / 60)), ''
+    except Exception as e:
+        logger.warning('YouTube page scrape failed for %s: %s', vid_id, e)
+
+    # Fallback: yt-dlp
     try:
         import yt_dlp
         ydl_opts = {
@@ -1379,7 +1430,7 @@ def _get_youtube_duration_minutes(url: str) -> tuple[int, str]:
             minutes = max(1, round(seconds / 60)) if seconds else 0
             return minutes, ''
     except Exception as e:
-        logger.warning('yt-dlp failed for %s: %s', url, e)
+        logger.warning('yt-dlp failed for %s: %s', vid_id, e)
         return 0, str(e)
 
 
