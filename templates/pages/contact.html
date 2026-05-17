@@ -84,16 +84,31 @@
           <div class="form-row">
             <div class="form-group">
               <label>Prénom</label>
+              {% if contact_user %}
+              <input type="text" name="first_name" value="{{ contact_user.first_name }}" readonly
+                     style="background:#f1f5f9;cursor:not-allowed;color:#64748b;" required>
+              {% else %}
               <input type="text" name="first_name" placeholder="Marie" required>
+              {% endif %}
             </div>
             <div class="form-group">
               <label>Nom</label>
+              {% if contact_user %}
+              <input type="text" name="last_name" value="{{ contact_user.last_name }}" readonly
+                     style="background:#f1f5f9;cursor:not-allowed;color:#64748b;" required>
+              {% else %}
               <input type="text" name="last_name" placeholder="Jean" required>
+              {% endif %}
             </div>
           </div>
           <div class="form-group">
             <label>Email</label>
+            {% if contact_user %}
+            <input type="email" name="email" value="{{ contact_user.email }}" readonly
+                   style="background:#f1f5f9;cursor:not-allowed;color:#64748b;" required>
+            {% else %}
             <input type="email" name="email" placeholder="marie@exemple.com" required>
+            {% endif %}
           </div>
           <div class="form-group">
             <label>Sujet</label>

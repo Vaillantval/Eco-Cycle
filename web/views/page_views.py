@@ -33,8 +33,15 @@ class FaqView(TemplateView):
 
 
 class ContactPageView(View):
+    def _get_user(self, request):
+        user_id = request.session.get('user_id')
+        if not user_id:
+            return None
+        from apps.accounts.models import User
+        return User.objects.filter(id=user_id).first()
+
     def get(self, request):
-        return render(request, 'pages/contact.html')
+        return render(request, 'pages/contact.html', {'contact_user': self._get_user(request)})
 
     def post(self, request):
         data = request.POST.dict()
