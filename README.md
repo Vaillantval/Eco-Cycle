@@ -92,8 +92,8 @@ ecocycle/
 
 | URL | Page |
 |---|---|
-| `/dashboard/` | Vue d'ensemble |
-| `/dashboard/listings/` | Mes déchets soumis |
+| `/dashboard/` | Vue d'ensemble (widget enchères actives avec countdown live) |
+| `/dashboard/listings/` | Mes déchets soumis (avec colonne enchère + statut) |
 | `/dashboard/listings/submit/` | Soumettre un déchet (analyse IA) |
 | `/dashboard/pickups/` | Mes demandes de ramassage |
 | `/dashboard/pickups/request/` | Nouvelle demande |
@@ -143,7 +143,8 @@ ecocycle/
 | `/panel/users/` | Gestion utilisateurs |
 | `/panel/users/<id>/` | Détail utilisateur |
 | `/panel/auctions/` | Toutes les enchères (filtres, pagination) |
-| `/panel/auctions/<id>/` | Détail enchère + historique enchères + annuler/clôturer |
+| `/panel/auctions/create/` | Créer une enchère (sélection listing, type, prix, durée) |
+| `/panel/auctions/<id>/` | Détail enchère + historique offres + annuler/clôturer |
 | `/panel/orders/` | Toutes les commandes (recherche + pagination) |
 | `/panel/orders/<id>/` | Détail commande + notes internes |
 | `/panel/blog/` | Gestion articles |
@@ -244,8 +245,19 @@ BuyNow / Enchère gagnante
 ### Gestion admin enchères
 
 - Liste avec filtres (statut, type) et pagination
-- Détail : infos financières, historique enchères, profil vendeur, commande liée
+- Détail : infos financières, historique offres (rang, avatar, badge "En tête"), profil vendeur, commande liée
 - Actions : annuler ou clôturer manuellement une enchère active
+- Création manuelle via `/panel/auctions/create/` : sélection listing approuvé, type, prix de départ/achat immédiat/réserve, durée prédéfinie ou dates personnalisées
+
+### Approbation → création automatique d'enchère
+
+Lorsqu'un admin approuve un listing, le formulaire d'approbation expose :
+- **Type d'enchère** : Enchère / Achat immédiat / Les deux
+- **Prix de départ** (pré-rempli avec la valeur estimée par l'IA)
+- **Prix achat immédiat** (optionnel)
+- **Durée** : 3 / 7 / 14 / 30 jours
+
+L'`Auction` est créée automatiquement au statut `active` dès l'approbation. Le vendeur reçoit une notification push + email.
 
 ## Academy — e-learning (gratuit + payant)
 
@@ -350,7 +362,7 @@ L'API (`/api/`) est destinée à l'application mobile Flutter et utilise JWT.
 
 | Tâche | Fréquence |
 |---|---|
-| Clôture des enchères expirées + reserve price check | Toutes les 5 minutes |
+| Clôture des enchères expirées + reserve price check + notification vendeur | Toutes les 5 minutes |
 | Annulation des ramassages non assignés après 72h | Toutes les heures |
 | Rapport hebdomadaire admin | Lundi 8h (heure Haïti) |
 
@@ -475,8 +487,7 @@ SiteConfiguration (singleton: slider, liens app, contact, maintenance_mode)
 Photo mobile / web
   → POST /api/waste/analyze/ (analyse IA Claude Vision)
   → POST /api/waste/listings/ (draft)
-  → Admin approuve → statut: approved
-  → Création Auction sur le marketplace
+  → Admin approuve → statut: approved + Auction créée automatiquement (active)
   → Enchère gagnante / achat immédiat → Order (pending_payment)
   → /payment/<order_id>/ → Stripe ou PlopPlop
   → process_successful_payment() → Order.status = paid
