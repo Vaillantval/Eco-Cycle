@@ -10,6 +10,64 @@
   .navbar .nav-dropdown-trigger { color: var(--charcoal); }
   .navbar .hamburger span { background: var(--black); }
 
+  /* Dark mode — navbar forcée */
+  [data-theme="dark"] .navbar {
+    background: rgba(13,17,23,0.97) !important;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.4) !important;
+  }
+  [data-theme="dark"] .navbar .nav-logo-text,
+  [data-theme="dark"] .navbar .nav-links a,
+  [data-theme="dark"] .navbar .nav-login,
+  [data-theme="dark"] .navbar .nav-user-name { color: rgba(230,237,243,0.85) !important; }
+  [data-theme="dark"] .navbar .nav-dropdown-trigger { color: rgba(230,237,243,0.85) !important; }
+  [data-theme="dark"] .navbar .hamburger span { background: #e6edf3 !important; }
+
+  /* Topbar dashboard */
+  .dash-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 24px;
+    background: #fff;
+    border-bottom: 1px solid #f1f5f9;
+    position: sticky;
+    top: 72px;
+    z-index: 90;
+  }
+  [data-theme="dark"] .dash-topbar {
+    background: #161b22;
+    border-color: #21262d;
+  }
+  .dash-topbar-left { display: flex; align-items: center; gap: 10px; }
+  .dash-home-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #64748b;
+    text-decoration: none;
+    padding: 6px 14px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    transition: all 0.18s;
+  }
+  .dash-home-btn:hover { color: var(--green); border-color: var(--green); background: #f0fdf4; }
+  [data-theme="dark"] .dash-home-btn {
+    background: #21262d; border-color: #30363d; color: #8b949e;
+  }
+  [data-theme="dark"] .dash-home-btn:hover { color: #4ade80; border-color: #4ade80; background: #0a2217; }
+
+  /* Réutilise .theme-toggle mais adapté au topbar clair */
+  .dash-topbar .theme-toggle {
+    border-color: #e2e8f0;
+    color: #64748b;
+  }
+  .dash-topbar .theme-toggle:hover { background: #f1f5f9; transform: none; }
+  [data-theme="dark"] .dash-topbar .theme-toggle { border-color: #30363d; color: #8b949e; }
+  [data-theme="dark"] .dash-topbar .theme-toggle:hover { background: #21262d; }
+
   /* Logo sidebar utilisateur */
   .sidebar-logo-wrap {
     display: flex;
@@ -139,6 +197,18 @@
 
   <!-- CONTENU PRINCIPAL -->
   <div class="dashboard-content">
+
+    <!-- Topbar : accueil + toggle thème -->
+    <div class="dash-topbar">
+      <div class="dash-topbar-left">
+        <a href="{% url 'home' %}" class="dash-home-btn">🌐 Retour à l'accueil</a>
+      </div>
+      <button class="theme-toggle" aria-label="Basculer le thème">
+        <span class="theme-icon-light">🌙</span>
+        <span class="theme-icon-dark">☀️</span>
+      </button>
+    </div>
+
     {% block dashboard_content %}{% endblock %}
   </div>
 

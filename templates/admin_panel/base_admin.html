@@ -8,6 +8,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/css/main.css">
   <link rel="stylesheet" href="/static/css/dashboard.css">
+  <!-- Anti-flash thème -->
+  <script>(function(){var t=localStorage.getItem('theme')||'light';document.documentElement.setAttribute('data-theme',t);})();</script>
   <style>
     @keyframes recycle-spin {
       from { transform: rotate(0deg); }
@@ -331,6 +333,112 @@
       justify-content:center;
       font-size:1.2rem;
     }
+
+    /* ── Bouton toggle thème (topbar admin) ── */
+    .theme-toggle {
+      background: none;
+      border: 1.5px solid #cbd5e1;
+      color: #64748b;
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+      flex-shrink: 0;
+      padding: 0;
+    }
+    .theme-toggle:hover { background: #f1f5f9; }
+    .theme-icon-dark { display: none; }
+    [data-theme="dark"] .theme-icon-light { display: none; }
+    [data-theme="dark"] .theme-icon-dark  { display: block; }
+
+    /* Bouton accueil topbar */
+    .topbar-home-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #64748b;
+      text-decoration: none;
+      padding: 6px 14px;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+      background: #f8fafc;
+      transition: all 0.18s;
+    }
+    .topbar-home-btn:hover { color: #0d7a45; border-color: #0d7a45; background: #f0fdf4; }
+
+    /* ── DARK MODE ADMIN ── */
+    [data-theme="dark"] body { background: #0d1117 !important; }
+
+    [data-theme="dark"] .admin-content { background: #0d1117; }
+
+    [data-theme="dark"] .admin-topbar {
+      background: #161b22;
+      border-color: #21262d;
+    }
+    [data-theme="dark"] .admin-topbar h1 { color: #e6edf3; }
+    [data-theme="dark"] .theme-toggle { border-color: #30363d; color: #8b949e; }
+    [data-theme="dark"] .theme-toggle:hover { background: #21262d; }
+    [data-theme="dark"] .topbar-home-btn { background: #21262d; border-color: #30363d; color: #8b949e; }
+    [data-theme="dark"] .topbar-home-btn:hover { color: #4ade80; border-color: #4ade80; background: #0a2217; }
+
+    [data-theme="dark"] .admin-card { background: #161b22; border-color: #21262d; }
+    [data-theme="dark"] .admin-card-header { border-color: #21262d; }
+    [data-theme="dark"] .admin-card-title { color: #e6edf3; }
+
+    [data-theme="dark"] .admin-stat { background: #161b22; border-color: #21262d; }
+    [data-theme="dark"] .admin-stat-value { color: #e6edf3; }
+    [data-theme="dark"] .admin-stat-label { color: #8b949e; }
+    [data-theme="dark"] .admin-stat-sub   { color: #6b7280; }
+
+    [data-theme="dark"] .admin-table thead th {
+      background: #21262d; border-color: #30363d; color: #8b949e;
+    }
+    [data-theme="dark"] .admin-table tbody td {
+      border-color: #21262d; color: #e6edf3;
+    }
+    [data-theme="dark"] .admin-table tbody tr:hover { background: #21262d; }
+
+    [data-theme="dark"] .filter-btn {
+      background: #21262d; border-color: #30363d; color: #8b949e;
+    }
+    [data-theme="dark"] .filter-btn:hover { border-color: #0d7a45; color: #4ade80; }
+    [data-theme="dark"] .filter-btn.active { background: #0d7a45; color: white; border-color: #0d7a45; }
+
+    [data-theme="dark"] .btn-view { background: #21262d; color: #94a3b8; }
+    [data-theme="dark"] .btn-view:hover { background: #30363d; }
+    [data-theme="dark"] .btn-admin-primary { background: #e6edf3; color: #0d1117; }
+    [data-theme="dark"] .btn-admin-primary:hover { background: #cbd5e1; }
+    [data-theme="dark"] .btn-approve { background: #0a2217; color: #4ade80; }
+    [data-theme="dark"] .btn-reject  { background: #2a0d0d; color: #f87171; }
+
+    [data-theme="dark"] .listing-thumb-placeholder { background: #21262d; }
+    [data-theme="dark"] .listing-thumb { background: #21262d; }
+
+    /* Messages flash inline */
+    [data-theme="dark"] .admin-main div[style*="background:#dcfce7"] {
+      background: #0a2217 !important; color: #4ade80 !important;
+    }
+    [data-theme="dark"] .admin-main div[style*="background:#fef9c3"] {
+      background: #2a1d00 !important; color: #fbbf24 !important;
+    }
+    [data-theme="dark"] .admin-main div[style*="background:#fee2e2"] {
+      background: #2a0d0d !important; color: #f87171 !important;
+    }
+    [data-theme="dark"] .admin-main div[style*="background:#e0f2fe"] {
+      background: #0d1a2a !important; color: #60a5fa !important;
+    }
+
+    /* Inputs dans les formulaires admin */
+    [data-theme="dark"] input, [data-theme="dark"] select, [data-theme="dark"] textarea {
+      background: #21262d !important;
+      border-color: #30363d !important;
+      color: #e6edf3 !important;
+    }
+    [data-theme="dark"] input::placeholder, [data-theme="dark"] textarea::placeholder { color: #6b7280 !important; }
   </style>
 </head>
 <body style="margin:0;background:#f8fafc;">
@@ -447,6 +555,11 @@
       <h1>{% block page_title %}Panel Admin{% endblock %}</h1>
       <div class="admin-topbar-actions">
         {% block topbar_actions %}{% endblock %}
+        <a href="{% url 'home' %}" class="topbar-home-btn">🌐 Accueil</a>
+        <button class="theme-toggle" aria-label="Basculer le thème">
+          <span class="theme-icon-light">🌙</span>
+          <span class="theme-icon-dark">☀️</span>
+        </button>
       </div>
     </div>
 
@@ -471,5 +584,16 @@
   </div>
 </div>
 
+<script>
+(function(){
+  document.querySelectorAll('.theme-toggle').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var next=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
+      document.documentElement.setAttribute('data-theme',next);
+      localStorage.setItem('theme',next);
+    });
+  });
+})();
+</script>
 </body>
 </html>
