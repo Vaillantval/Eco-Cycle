@@ -15,9 +15,21 @@ from apps.core.models import ContactMessage, NewsletterSubscriber, SiteConfigura
 
 
 def _get_reading_duration_minutes(text: str) -> int:
-    """Estimate reading time in minutes at 200 words/min. Returns 0 if no text."""
+    """Estimate reading time in minutes at 200 words/min from raw text."""
     words = len(text.split())
     return max(1, round(words / 200)) if words else 0
+
+
+def _get_pdf_reading_duration_minutes(file_obj) -> int:
+    """Estimate reading time from PDF page count (250 words/page, 200 wpm).
+    More reliable than word-counting raw pypdf output which includes noise/duplicates."""
+    try:
+        from pypdf import PdfReader
+        reader = PdfReader(file_obj)
+        num_pages = len(reader.pages)
+        return max(1, round(num_pages * 250 / 200)) if num_pages else 0
+    except Exception:
+        return 0
 
 
 def _extract_pdf_text(file_obj):
@@ -932,8 +944,12 @@ class AdminAcademyLessonEditView(AdminRequiredMixin, View):
         lesson.pdf_display_mode   = request.POST.get('pdf_display_mode', lesson.pdf_display_mode)
         pdf_file                  = request.FILES.get('pdf_file')
         replace_content           = request.POST.get('replace_content') == '1'
-        embed_text = ''  # texte extrait en mode visionneuse (durée uniquement)
+        pdf_auto_duration = 0
         if pdf_file:
+            # Durée basée sur le nombre de pages (250 mots/page, 200 mpm)
+            # Plus fiable que le comptage de mots bruts (pypdf génère du bruit/doublons)
+            pdf_auto_duration = _get_pdf_reading_duration_minutes(pdf_file)
+            pdf_file.seek(0)
             extracted = _extract_pdf_text(pdf_file)
             if lesson.pdf_display_mode == 'extract':
                 if extracted:
@@ -946,22 +962,21 @@ class AdminAcademyLessonEditView(AdminRequiredMixin, View):
                 else:
                     messages.warning(request, 'PDF uploadé mais aucun texte n\'a pu être extrait.')
             else:
-                embed_text = extracted  # texte gardé pour la durée, pas affiché
                 messages.info(request, 'PDF uploadé — affiché en visionneuse pour l\'utilisateur.')
             pdf_file.seek(0)
             lesson.pdf_file = pdf_file
         else:
             if lesson.pdf_display_mode == 'extract':
                 lesson.content = request.POST.get('content', '')
-        # Durée de lecture — calculée depuis tout le texte disponible
-        # Priorité : saisie manuelle > lesson.content > texte PDF visionneuse
+        # Durée de lecture — priorité : manuel > PDF (pages) > texte direct (mots)
         manual_pdf = int(request.POST.get('lesson_duration') or 0)
         if manual_pdf:
             lesson.pdf_reading_minutes = manual_pdf
+        elif pdf_auto_duration:
+            lesson.pdf_reading_minutes = pdf_auto_duration
         else:
-            text_for_duration = lesson.content or embed_text
-            auto_duration = _get_reading_duration_minutes(text_for_duration)
-            lesson.pdf_reading_minutes = auto_duration
+            # Pas de nouveau PDF — recalcul depuis le texte du textarea (saisie directe)
+            lesson.pdf_reading_minutes = _get_reading_duration_minutes(lesson.content)
         lesson.save()
         lesson.sync_duration()
         messages.success(request, f'Leçon « {lesson.title} » mise à jour.')
