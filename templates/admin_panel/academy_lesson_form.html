@@ -225,6 +225,12 @@
               {% if lesson.duration_minutes and not videos %}
               <span style="background:#eff6ff;color:#2563eb;border-radius:6px;padding:2px 8px;font-weight:700;">⏱ ~{{ lesson.duration_minutes }} min de lecture</span>
               {% endif %}
+              <button type="submit" name="action" value="delete_pdf"
+                      onclick="return confirm('Supprimer le PDF et tout le contenu texte extrait ?')"
+                      style="padding:2px 10px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;
+                             border-radius:6px;font-size:0.72rem;font-weight:700;cursor:pointer;">
+                🗑 Supprimer le PDF
+              </button>
             </div>
             {% endif %}
           </div>

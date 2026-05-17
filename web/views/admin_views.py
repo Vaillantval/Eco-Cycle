@@ -931,6 +931,17 @@ class AdminAcademyLessonEditView(AdminRequiredMixin, View):
             messages.success(request, 'Vidéo mise à jour.')
             return redirect('admin_academy_lesson_edit', course_pk=course_pk, lesson_pk=lesson_pk)
 
+        if action == 'delete_pdf':
+            if lesson.pdf_file:
+                lesson.pdf_file.delete(save=False)
+                lesson.pdf_file = None
+            lesson.content           = ''
+            lesson.pdf_reading_minutes = 0
+            lesson.save()
+            lesson.sync_duration()
+            messages.success(request, 'PDF et contenu texte supprimés.')
+            return redirect('admin_academy_lesson_edit', course_pk=course_pk, lesson_pk=lesson_pk)
+
         if action == 'delete_video':
             video = get_object_or_404(LessonVideo, pk=request.POST.get('video_id'), lesson=lesson)
             video.delete()
