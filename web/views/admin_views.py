@@ -963,19 +963,18 @@ class AdminAcademyLessonEditView(AdminRequiredMixin, View):
         replace_content           = request.POST.get('replace_content') == '1'
         pdf_auto_duration = 0
         if pdf_file:
+            # Supprimer l'ancien fichier PDF du stockage avant d'assigner le nouveau
+            if lesson.pdf_file:
+                lesson.pdf_file.delete(save=False)
             # Durée basée sur le nombre de pages (250 mots/page, 200 mpm)
-            # Plus fiable que le comptage de mots bruts (pypdf génère du bruit/doublons)
             pdf_auto_duration = _get_pdf_reading_duration_minutes(pdf_file)
             pdf_file.seek(0)
             extracted = _extract_pdf_text(pdf_file)
             if lesson.pdf_display_mode == 'extract':
                 if extracted:
-                    if replace_content or not lesson.content.strip():
-                        lesson.content = extracted
-                        messages.info(request, f'Contenu remplacé par le texte du PDF ({len(extracted)} caractères).')
-                    else:
-                        lesson.content = lesson.content.rstrip() + '\n\n' + extracted
-                        messages.info(request, f'Texte du PDF ajouté à la fin ({len(extracted)} caractères).')
+                    # Nouveau PDF → toujours remplacer le contenu extrait
+                    lesson.content = extracted
+                    messages.info(request, f'Contenu remplacé par le texte du nouveau PDF ({len(extracted)} caractères).')
                 else:
                     messages.warning(request, 'PDF uploadé mais aucun texte n\'a pu être extrait.')
             else:
