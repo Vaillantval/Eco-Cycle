@@ -14,6 +14,12 @@ from apps.academy.models import Course, Lesson, LessonVideo, Enrollment, Certifi
 from apps.core.models import ContactMessage, NewsletterSubscriber, SiteConfiguration, SliderItem
 
 
+def _get_reading_duration_minutes(text: str) -> int:
+    """Estimate reading time in minutes at 200 words/min. Returns 0 if no text."""
+    words = len(text.split())
+    return max(1, round(words / 200)) if words else 0
+
+
 def _extract_pdf_text(file_obj):
     """Extract plain text from an uploaded PDF file object. Returns '' on failure."""
     try:
@@ -922,10 +928,12 @@ class AdminAcademyLessonEditView(AdminRequiredMixin, View):
         lesson.pdf_display_mode   = request.POST.get('pdf_display_mode', lesson.pdf_display_mode)
         pdf_file                  = request.FILES.get('pdf_file')
         replace_content           = request.POST.get('replace_content') == '1'
+        pdf_reading_duration      = 0
         if pdf_file:
             if lesson.pdf_display_mode == 'extract':
                 extracted = _extract_pdf_text(pdf_file)
                 if extracted:
+                    pdf_reading_duration = _get_reading_duration_minutes(extracted)
                     if replace_content or not lesson.content.strip():
                         lesson.content = extracted
                         messages.info(request, f'Contenu remplacé par le texte du PDF ({len(extracted)} caractères).')
@@ -941,7 +949,16 @@ class AdminAcademyLessonEditView(AdminRequiredMixin, View):
         else:
             if lesson.pdf_display_mode == 'extract':
                 lesson.content = request.POST.get('content', '')
+        # Durée manuelle (PDF) — ignorée si la leçon a des vidéos (sync_duration fait foi)
+        if not lesson.videos.exists():
+            manual_duration = request.POST.get('lesson_duration')
+            if manual_duration is not None:
+                lesson.duration_minutes = int(manual_duration or 0)
+            elif pdf_reading_duration:
+                lesson.duration_minutes = pdf_reading_duration
         lesson.save()
+        if pdf_reading_duration and not request.POST.get('lesson_duration'):
+            messages.info(request, f'Durée de lecture estimée automatiquement : {pdf_reading_duration} min.')
         messages.success(request, f'Leçon « {lesson.title} » mise à jour.')
         return redirect('admin_academy_lesson_edit', course_pk=course_pk, lesson_pk=lesson_pk)
 

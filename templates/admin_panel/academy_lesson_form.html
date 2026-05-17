@@ -37,9 +37,10 @@
                  style="width:100%;padding:7px 10px;border:1px solid #e2e8f0;border-radius:7px;font-size:0.88rem;">
         </div>
         <div>
-          <label style="font-size:0.72rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Durée (min)</label>
-          <input type="number" name="video_duration" value="{{ v.duration_minutes }}" min="0"
-                 style="width:100%;padding:7px 10px;border:1px solid #e2e8f0;border-radius:7px;font-size:0.88rem;">
+          <label style="font-size:0.72rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Durée (min) 🔒</label>
+          <input type="number" name="video_duration" value="{{ v.duration_minutes }}" min="0" readonly
+                 title="Durée auto-détectée — non modifiable"
+                 style="width:100%;padding:7px 10px;border:1px solid #e2e8f0;border-radius:7px;font-size:0.88rem;background:#f1f5f9;color:#94a3b8;cursor:not-allowed;">
         </div>
         <div style="display:flex;gap:6px;padding-bottom:1px;">
           <button type="submit" name="action" value="update_video"
@@ -147,9 +148,10 @@
                  style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
         </div>
         <div>
-          <label style="font-size:0.75rem;font-weight:600;color:#64748b;display:block;margin-bottom:5px;">Durée (min)</label>
-          <input type="number" name="video_duration" id="newVideoDuration" value="0" min="0"
-                 style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
+          <label style="font-size:0.75rem;font-weight:600;color:#64748b;display:block;margin-bottom:5px;">Durée (min) 🔒</label>
+          <input type="number" name="video_duration" id="newVideoDuration" value="0" min="0" readonly
+                 title="Durée auto-détectée — non modifiable"
+                 style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;background:#f1f5f9;color:#94a3b8;cursor:not-allowed;">
         </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
@@ -300,9 +302,17 @@
           {% endif %}
         </div>
         {% if lesson %}
-        <div style="font-size:0.78rem;color:#94a3b8;padding:8px 0;border-top:1px solid #f1f5f9;">
-          Durée auto-calculée : <strong style="color:#334155;">{{ lesson.duration_minutes }} min</strong><br>
-          <span style="font-size:0.72rem;">Somme des durées des vidéos</span>
+        <div style="padding:8px 0;border-top:1px solid #f1f5f9;">
+          {% if videos %}
+            <span style="font-size:0.72rem;color:#94a3b8;">Durée auto-calculée :</span>
+            <strong style="color:#334155;font-size:0.82rem;"> {{ lesson.duration_minutes }} min</strong><br>
+            <span style="font-size:0.7rem;color:#cbd5e1;">Somme des durées des vidéos</span>
+          {% else %}
+            <label style="font-size:0.75rem;font-weight:600;color:#64748b;display:block;margin-bottom:5px;">Durée de lecture (min)</label>
+            <input type="number" name="lesson_duration" value="{{ lesson.duration_minutes }}" min="0"
+                   style="width:100%;padding:7px 10px;border:1px solid #e2e8f0;border-radius:7px;font-size:0.88rem;margin-bottom:4px;">
+            <span style="font-size:0.7rem;color:#94a3b8;">Estimée depuis le PDF — ajustable</span>
+          {% endif %}
         </div>
         {% endif %}
         <button type="submit" class="btn-admin-sm btn-admin-primary" style="width:100%;justify-content:center;padding:10px;font-size:0.88rem;">
