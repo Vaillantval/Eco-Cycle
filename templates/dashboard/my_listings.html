@@ -59,10 +59,7 @@
           <td>
             {% if listing.auction %}
               {% if listing.auction.status == 'active' %}
-                <a href="{% url 'auction_detail' listing.auction.pk %}"
-                   style="display:inline-flex;align-items:center;gap:5px;font-size:0.78rem;font-weight:700;
-                          color:#16a34a;background:#f0fdf4;border:1px solid #bbf7d0;
-                          border-radius:20px;padding:3px 10px;text-decoration:none;">
+                <a href="{% url 'auction_detail' listing.auction.pk %}" class="auction-pill">
                   🔥 {{ listing.auction.current_price|floatformat:0 }} HTG · {{ listing.auction.total_bids }} offre{{ listing.auction.total_bids|pluralize }}
                 </a>
               {% elif listing.auction.status == 'sold' %}

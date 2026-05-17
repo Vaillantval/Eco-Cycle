@@ -13,7 +13,7 @@
 
 <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px;">
   {% for cert in certificates %}
-  <div style="background:#fff;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
+  <div class="cert-card">
 
     <!-- Bandeau décoratif -->
     <div style="background:linear-gradient(135deg,#0f2d20 0%,#0d7a45 100%);padding:28px 24px;text-align:center;position:relative;">
@@ -25,13 +25,13 @@
     </div>
 
     <!-- Corps -->
-    <div style="padding:20px 24px;">
+    <div class="cert-card-body">
       <div style="font-size:0.75rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Cours complété</div>
       <div style="font-family:var(--font-display);font-weight:700;font-size:1rem;color:var(--charcoal);margin-bottom:16px;line-height:1.4;">
         {{ cert.course.title }}
       </div>
 
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:1px solid #f1f5f9;">
+      <div class="cert-card-footer">
         <div>
           <div style="font-size:0.72rem;color:var(--gray);">Délivré le</div>
           <div style="font-size:0.85rem;font-weight:600;color:var(--charcoal);">{{ cert.issued_at|date:"d/m/Y" }}</div>
@@ -52,7 +52,7 @@
 
 {% else %}
 
-<div style="text-align:center;padding:60px 20px;background:#fff;border-radius:16px;border:1px solid #e2e8f0;">
+<div class="cert-empty">
   <div style="font-size:3rem;margin-bottom:16px;">🎓</div>
   <h3 style="font-family:var(--font-display);font-weight:700;color:var(--charcoal);margin:0 0 8px;">Aucun certificat pour l'instant</h3>
   <p style="color:var(--gray);font-size:0.92rem;margin:0 0 20px;">Complétez toutes les leçons d'un cours pour obtenir votre certificat.</p>
