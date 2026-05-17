@@ -446,21 +446,23 @@ function detectUrlDuration(url, durationInput) {
         playerVars: { autoplay: 0, mute: 1 },
         events: {
           onReady(e) {
-            // cueVideoById force le chargement des métadonnées sans lancer la vidéo
+            // cueVideoById force le chargement des métadonnées
             e.target.cueVideoById(videoId);
-          },
-          onStateChange(e) {
-            // État -1 (non démarré) ou 5 (en file) = métadonnées disponibles
-            if (e.data === -1 || e.data === 5) {
-              const secs = e.target.getDuration();
-              if (secs > 0) finish(secs);
-            }
+            // Polling : getDuration() devient > 0 dès que les métadonnées sont prêtes
+            var polls = 0;
+            var poll = setInterval(function() {
+              var secs = e.target.getDuration();
+              if (secs > 0 || ++polls > 30) {
+                clearInterval(poll);
+                finish(secs);
+              }
+            }, 200);
           },
           onError() { finish(0); }
         }
       });
-      // Sécurité : si onStateChange ne se déclenche pas dans 8s
-      setTimeout(() => { if (!done) finish(player.getDuration ? player.getDuration() : 0); }, 8000);
+      // Sécurité absolue : 10s max
+      setTimeout(function() { if (!done) finish(player && player.getDuration ? player.getDuration() : 0); }, 10000);
     } catch(err) { _showYtWarn(durationInput); container.remove(); }
   }
   tryCreate(20);
