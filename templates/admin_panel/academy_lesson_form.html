@@ -305,17 +305,26 @@
           {% endif %}
         </div>
         {% if lesson %}
-        <div style="padding:8px 0;border-top:1px solid #f1f5f9;">
-          {% if videos %}
-            <span style="font-size:0.72rem;color:#94a3b8;">Durée auto-calculée :</span>
-            <strong style="color:#334155;font-size:0.82rem;"> {{ lesson.duration_minutes }} min</strong><br>
-            <span style="font-size:0.7rem;color:#cbd5e1;">Somme des durées des vidéos</span>
-          {% else %}
-            <label style="font-size:0.75rem;font-weight:600;color:#64748b;display:block;margin-bottom:5px;">Durée de lecture (min)</label>
-            <input type="number" name="lesson_duration" value="{{ lesson.duration_minutes }}" min="0"
-                   style="width:100%;padding:7px 10px;border:1px solid #e2e8f0;border-radius:7px;font-size:0.88rem;margin-bottom:4px;">
-            <span style="font-size:0.7rem;color:#94a3b8;">Estimée depuis le PDF — ajustable</span>
-          {% endif %}
+        <div style="padding:8px 0;border-top:1px solid #f1f5f9;display:flex;flex-direction:column;gap:6px;">
+          <!-- Total -->
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:0.75rem;font-weight:700;color:#64748b;">Durée totale</span>
+            <strong style="font-size:0.9rem;color:#0d7a45;">{{ lesson.duration_minutes }} min</strong>
+          </div>
+          <!-- Détail vidéos -->
+          <div style="display:flex;justify-content:space-between;align-items:center;padding-left:8px;">
+            <span style="font-size:0.72rem;color:#94a3b8;">🎬 Vidéos</span>
+            <span style="font-size:0.78rem;color:#334155;">{{ video_minutes }} min</span>
+          </div>
+          <!-- Durée PDF (toujours éditable) -->
+          <div style="padding-left:8px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+              <span style="font-size:0.72rem;color:#94a3b8;">📄 Lecture PDF</span>
+            </div>
+            <input type="number" name="lesson_duration" value="{{ lesson.pdf_reading_minutes }}" min="0"
+                   style="width:100%;padding:5px 8px;border:1px solid #e2e8f0;border-radius:6px;font-size:0.82rem;">
+            <span style="font-size:0.68rem;color:#cbd5e1;">Auto-estimée — ajustable</span>
+          </div>
         </div>
         {% endif %}
         <button type="submit" class="btn-admin-sm btn-admin-primary" style="width:100%;justify-content:center;padding:10px;font-size:0.88rem;">

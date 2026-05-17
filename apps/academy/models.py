@@ -79,6 +79,7 @@ class Lesson(models.Model):
     )
     order = models.PositiveIntegerField(default=0)
     duration_minutes = models.PositiveIntegerField(default=0)
+    pdf_reading_minutes = models.PositiveIntegerField(default=0)
 
     class Meta:
         db_table = 'lessons'
@@ -88,7 +89,8 @@ class Lesson(models.Model):
         return f'{self.course.title} — {self.title}'
 
     def sync_duration(self):
-        total = self.videos.aggregate(total=Sum('duration_minutes'))['total'] or 0
+        video_total = self.videos.aggregate(total=Sum('duration_minutes'))['total'] or 0
+        total = video_total + self.pdf_reading_minutes
         Lesson.objects.filter(pk=self.pk).update(duration_minutes=total)
         self.duration_minutes = total
         self.course.sync_duration()

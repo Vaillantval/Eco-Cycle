@@ -847,11 +847,15 @@ class AdminAcademyLessonCreateView(AdminRequiredMixin, View):
 
 class AdminAcademyLessonEditView(AdminRequiredMixin, View):
     def _render(self, request, course, lesson):
+        from django.db.models import Sum as _Sum
+        videos = lesson.videos.all()
+        video_minutes = videos.aggregate(t=_Sum('duration_minutes'))['t'] or 0
         return render(request, 'admin_panel/academy_lesson_form.html', {
             'user': self.get_current_user(request),
             'course': course,
             'lesson': lesson,
-            'videos': lesson.videos.all(),
+            'videos': videos,
+            'video_minutes': video_minutes,
         })
 
     def get(self, request, course_pk, lesson_pk):
@@ -949,19 +953,17 @@ class AdminAcademyLessonEditView(AdminRequiredMixin, View):
         else:
             if lesson.pdf_display_mode == 'extract':
                 lesson.content = request.POST.get('content', '')
-        # Durée manuelle (PDF) — ignorée si la leçon a des vidéos (sync_duration fait foi)
-        if not lesson.videos.exists():
-            manual_duration = int(request.POST.get('lesson_duration') or 0)
-            if manual_duration:
-                # L'admin a saisi une valeur non nulle → elle prime
-                lesson.duration_minutes = manual_duration
-            elif pdf_reading_duration:
-                # Pas de saisie manuelle, mais on vient d'extraire un PDF → durée auto
-                lesson.duration_minutes = pdf_reading_duration
-            # Si les deux sont 0 → on ne touche pas à la durée existante
+        # Durée PDF — toujours sauvegardée dans pdf_reading_minutes
+        # sync_duration() recalculera le total = vidéos + pdf_reading_minutes
+        manual_pdf = int(request.POST.get('lesson_duration') or 0)
+        if manual_pdf:
+            lesson.pdf_reading_minutes = manual_pdf
+        elif pdf_reading_duration:
+            lesson.pdf_reading_minutes = pdf_reading_duration
         lesson.save()
-        if pdf_reading_duration and not int(request.POST.get('lesson_duration') or 0):
-            messages.info(request, f'Durée de lecture estimée automatiquement : {pdf_reading_duration} min.')
+        lesson.sync_duration()
+        if pdf_reading_duration and not manual_pdf:
+            messages.info(request, f'Durée de lecture PDF estimée automatiquement : {pdf_reading_duration} min.')
         messages.success(request, f'Leçon « {lesson.title} » mise à jour.')
         return redirect('admin_academy_lesson_edit', course_pk=course_pk, lesson_pk=lesson_pk)
 
