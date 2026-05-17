@@ -429,23 +429,38 @@ function detectUrlDuration(url, durationInput) {
     const container = document.createElement('div');
     container.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;';
     document.body.appendChild(container);
+    var done = false;
+    function finish(secs) {
+      if (done) return; done = true;
+      const mins = secs ? Math.max(1, Math.round(secs / 60)) : 0;
+      durationInput.value = mins;
+      if (!mins) _showYtWarn(durationInput);
+      try { player.destroy(); } catch(e) {}
+      container.remove();
+    }
+    var player;
     try {
-      new YT.Player(container, {
+      player = new YT.Player(container, {
         videoId,
         width: 1, height: 1,
         playerVars: { autoplay: 0, mute: 1 },
         events: {
           onReady(e) {
-            const secs = e.target.getDuration();
-            const mins = secs ? Math.max(1, Math.round(secs / 60)) : 0;
-            durationInput.value = mins;
-            if (!mins) _showYtWarn(durationInput);
-            e.target.destroy();
-            container.remove();
+            // cueVideoById force le chargement des métadonnées sans lancer la vidéo
+            e.target.cueVideoById(videoId);
           },
-          onError() { _showYtWarn(durationInput); container.remove(); }
+          onStateChange(e) {
+            // État -1 (non démarré) ou 5 (en file) = métadonnées disponibles
+            if (e.data === -1 || e.data === 5) {
+              const secs = e.target.getDuration();
+              if (secs > 0) finish(secs);
+            }
+          },
+          onError() { finish(0); }
         }
       });
+      // Sécurité : si onStateChange ne se déclenche pas dans 8s
+      setTimeout(() => { if (!done) finish(player.getDuration ? player.getDuration() : 0); }, 8000);
     } catch(err) { _showYtWarn(durationInput); container.remove(); }
   }
   tryCreate(20);
