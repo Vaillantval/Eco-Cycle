@@ -932,12 +932,10 @@ class AdminAcademyLessonEditView(AdminRequiredMixin, View):
         lesson.pdf_display_mode   = request.POST.get('pdf_display_mode', lesson.pdf_display_mode)
         pdf_file                  = request.FILES.get('pdf_file')
         replace_content           = request.POST.get('replace_content') == '1'
-        pdf_reading_duration      = 0
         if pdf_file:
             if lesson.pdf_display_mode == 'extract':
                 extracted = _extract_pdf_text(pdf_file)
                 if extracted:
-                    pdf_reading_duration = _get_reading_duration_minutes(extracted)
                     if replace_content or not lesson.content.strip():
                         lesson.content = extracted
                         messages.info(request, f'Contenu remplacé par le texte du PDF ({len(extracted)} caractères).')
@@ -953,17 +951,18 @@ class AdminAcademyLessonEditView(AdminRequiredMixin, View):
         else:
             if lesson.pdf_display_mode == 'extract':
                 lesson.content = request.POST.get('content', '')
-        # Durée PDF — toujours sauvegardée dans pdf_reading_minutes
-        # sync_duration() recalculera le total = vidéos + pdf_reading_minutes
+        # Durée de lecture — calculée depuis le contenu final (toutes sources confondues)
+        # L'admin peut écraser avec une valeur manuelle non nulle.
         manual_pdf = int(request.POST.get('lesson_duration') or 0)
         if manual_pdf:
             lesson.pdf_reading_minutes = manual_pdf
-        elif pdf_reading_duration:
-            lesson.pdf_reading_minutes = pdf_reading_duration
+        else:
+            # Auto-calcul depuis lesson.content (textarea direct, PDF extrait, ou mix)
+            auto_duration = _get_reading_duration_minutes(lesson.content)
+            if auto_duration != lesson.pdf_reading_minutes:
+                lesson.pdf_reading_minutes = auto_duration
         lesson.save()
         lesson.sync_duration()
-        if pdf_reading_duration and not manual_pdf:
-            messages.info(request, f'Durée de lecture PDF estimée automatiquement : {pdf_reading_duration} min.')
         messages.success(request, f'Leçon « {lesson.title} » mise à jour.')
         return redirect('admin_academy_lesson_edit', course_pk=course_pk, lesson_pk=lesson_pk)
 
