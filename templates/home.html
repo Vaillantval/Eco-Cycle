@@ -174,28 +174,68 @@
     </div>
 
     {% if featured_auctions %}
-    <div class="auctions-preview reveal" style="margin-top:48px;">
-      <h3 style="font-family:var(--font-display);font-size:1.4rem;margin-bottom:24px;color:var(--charcoal);">Enchères en cours</h3>
-      <div class="auctions-grid">
-        {% for auction in featured_auctions %}
-        <div class="auction-card">
-          {% if auction.listing.photo %}
-            <img src="{{ auction.listing.photo.url }}" alt="{{ auction.listing.title }}" class="auction-card-img">
-          {% else %}
-            <div class="auction-card-img auction-card-placeholder">♻️</div>
-          {% endif %}
-          <div class="auction-card-body">
-            <span class="badge badge-category">{{ auction.listing.category.name }}</span>
-            <h4>{{ auction.listing.title }}</h4>
-            <p class="auction-city">📍 {{ auction.listing.city }}</p>
-            <div class="auction-price-row">
-              <span class="auction-price">{{ auction.current_price }} HTG</span>
-              <span class="auction-bids">{{ auction.total_bids }} enchère{{ auction.total_bids|pluralize }}</span>
-            </div>
-            <div class="auction-countdown" data-ends-at="{{ auction.ends_at|date:'c' }}">...</div>
-            <a href="{% url 'auction_detail' auction.id %}" class="btn btn-primary btn-sm">Voir l'enchère</a>
-          </div>
+    <div class="auctions-preview reveal" style="margin-top:56px;">
+
+      <div class="home-auctions-header">
+        <div>
+          <div class="home-auctions-eyebrow">🔥 Live maintenant</div>
+          <h3 class="home-auctions-title">Enchères en cours</h3>
         </div>
+        <a href="{% url 'marketplace' %}" class="home-auctions-viewall">Tout voir →</a>
+      </div>
+
+      <div class="home-auctions-grid">
+        {% for auction in featured_auctions %}
+        <a href="{% url 'auction_detail' auction.id %}" class="hac">
+
+          <!-- IMAGE -->
+          <div class="hac-img-wrap">
+            {% if auction.listing.photo %}
+              <img src="{{ auction.listing.photo.url }}" alt="{{ auction.listing.title }}" class="hac-img">
+            {% elif auction.listing.photo_url %}
+              <img src="{{ auction.listing.photo_url }}" alt="{{ auction.listing.title }}" class="hac-img">
+            {% else %}
+              <div class="hac-img hac-img-placeholder">{{ auction.listing.category.icon|default:'♻️' }}</div>
+            {% endif %}
+            <div class="hac-img-overlay"></div>
+
+            <!-- Badges sur l'image -->
+            <div class="hac-badges-top">
+              {% if auction.listing.category %}
+              <span class="hac-badge-cat">{{ auction.listing.category.icon|default:'♻️' }} {{ auction.listing.category.name }}</span>
+              {% endif %}
+              {% if auction.total_bids >= 3 %}
+              <span class="hac-badge-hot">🔥 Hot</span>
+              {% endif %}
+            </div>
+
+            <!-- Countdown sur l'image -->
+            <div class="hac-countdown-wrap">
+              <span class="hac-countdown" data-ends="{{ auction.ends_at|date:'c' }}">⏱ …</span>
+            </div>
+          </div>
+
+          <!-- BODY -->
+          <div class="hac-body">
+            <h4 class="hac-title">{{ auction.listing.title|truncatechars:48 }}</h4>
+            <div class="hac-meta">
+              {% if auction.listing.city %}<span>📍 {{ auction.listing.city }}</span>{% endif %}
+              {% if auction.listing.quantity_kg %}<span>⚖️ {{ auction.listing.quantity_kg }} kg</span>{% endif %}
+            </div>
+
+            <div class="hac-price-row">
+              <div>
+                <div class="hac-price-label">Prix actuel</div>
+                <div class="hac-price">{{ auction.current_price|floatformat:0 }} <small>HTG</small></div>
+              </div>
+              <div class="hac-bids-pill">
+                🔨 {{ auction.total_bids }} offre{{ auction.total_bids|pluralize }}
+              </div>
+            </div>
+
+            <div class="hac-cta">Voir l'enchère <span class="hac-arrow">→</span></div>
+          </div>
+        </a>
         {% endfor %}
       </div>
     </div>
@@ -206,6 +246,28 @@
       <a href="{% url 'web_register' %}" class="btn-primary btn-orange">Devenir Vendeur</a>
     </div>
     {% endif %}
+
+    <script>
+    (function(){
+      function urgCls(s){return s<=0?'exp':s<3600?'urg':s<86400?'soon':'ok';}
+      function fmt(s){
+        if(s<=0)return'⏱ Terminée';
+        const d=Math.floor(s/86400),h=Math.floor((s%86400)/3600),m=Math.floor((s%3600)/60),sec=s%60;
+        if(d>0)return`⏱ ${d}j ${h}h`;
+        if(h>0)return`⏱ ${h}h ${m}min`;
+        return`⏱ ${m}m ${sec}s`;
+      }
+      function tick(){
+        const now=Date.now();
+        document.querySelectorAll('.hac-countdown[data-ends]').forEach(el=>{
+          const sec=Math.max(0,Math.round((new Date(el.dataset.ends)-now)/1000));
+          el.textContent=fmt(sec);
+          el.className='hac-countdown '+urgCls(sec);
+        });
+      }
+      tick(); setInterval(tick,1000);
+    })();
+    </script>
   </div>
 </section>
 

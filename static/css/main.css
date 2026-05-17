@@ -490,6 +490,50 @@ body:has(.app-banner) .dashboard-layout { margin-top: calc(72px + 44px); }
 .sort-filters { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 .sort-filters input, .sort-filters select { padding: 10px 14px; border: 1px solid var(--cream-dark); border-radius: 8px; font-family: var(--font-body); font-size: 0.9rem; background: var(--white); outline: none; }
 .sort-filters input:focus, .sort-filters select:focus { border-color: var(--green); }
+/* ── Home auction cards (HAC) ── */
+.home-auctions-header { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:28px; }
+.home-auctions-eyebrow { font-size:0.78rem; font-weight:700; color:var(--green); text-transform:uppercase; letter-spacing:1.5px; margin-bottom:6px; }
+.home-auctions-title { font-family:var(--font-display); font-size:1.7rem; font-weight:800; color:var(--charcoal); margin:0; }
+.home-auctions-viewall { font-size:0.88rem; font-weight:700; color:var(--green); text-decoration:none; padding:8px 18px; border:1.5px solid var(--green); border-radius:30px; transition:background 0.2s,color 0.2s; white-space:nowrap; }
+.home-auctions-viewall:hover { background:var(--green); color:#fff; }
+
+.home-auctions-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:22px; }
+
+.hac { display:flex; flex-direction:column; background:#fff; border-radius:20px; overflow:hidden; text-decoration:none; color:inherit; border:1px solid #e8f0e9; box-shadow:0 2px 8px rgba(0,0,0,0.04); transition:transform 0.25s,box-shadow 0.25s; }
+.hac:hover { transform:translateY(-6px); box-shadow:0 16px 40px rgba(13,122,69,0.13); }
+
+.hac-img-wrap { position:relative; height:220px; overflow:hidden; background:#e8f0e9; flex-shrink:0; }
+.hac-img { width:100%; height:100%; object-fit:cover; transition:transform 0.4s ease; }
+.hac:hover .hac-img { transform:scale(1.06); }
+.hac-img-placeholder { width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:3.5rem; background:linear-gradient(135deg,#e8f5e9,#c8e6c9); }
+.hac-img-overlay { position:absolute; inset:0; background:linear-gradient(to bottom, rgba(0,0,0,0) 40%, rgba(0,0,0,0.52) 100%); pointer-events:none; }
+
+.hac-badges-top { position:absolute; top:12px; left:12px; right:12px; display:flex; justify-content:space-between; align-items:flex-start; gap:6px; }
+.hac-badge-cat { font-size:0.68rem; font-weight:700; background:rgba(13,122,69,0.88); color:#fff; padding:4px 10px; border-radius:20px; backdrop-filter:blur(4px); max-width:calc(100% - 60px); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.hac-badge-hot { font-size:0.68rem; font-weight:700; background:rgba(220,38,38,0.88); color:#fff; padding:4px 10px; border-radius:20px; backdrop-filter:blur(4px); white-space:nowrap; }
+
+.hac-countdown-wrap { position:absolute; bottom:10px; left:12px; }
+.hac-countdown { font-size:0.72rem; font-weight:700; padding:4px 10px; border-radius:20px; backdrop-filter:blur(6px); }
+.hac-countdown.ok   { background:rgba(22,163,74,0.82); color:#fff; }
+.hac-countdown.soon { background:rgba(217,119,6,0.85); color:#fff; }
+.hac-countdown.urg  { background:rgba(220,38,38,0.88); color:#fff; }
+.hac-countdown.exp  { background:rgba(100,116,139,0.8); color:#fff; }
+
+.hac-body { padding:18px 20px 20px; display:flex; flex-direction:column; flex:1; }
+.hac-title { font-family:var(--font-display); font-size:0.97rem; font-weight:700; color:#0f172a; margin:0 0 8px; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.hac-meta { display:flex; gap:12px; font-size:0.76rem; color:#64748b; margin-bottom:14px; flex-wrap:wrap; }
+
+.hac-price-row { display:flex; justify-content:space-between; align-items:flex-end; padding:12px 0; border-top:1px solid #f1f5f9; border-bottom:1px solid #f1f5f9; margin-bottom:14px; }
+.hac-price-label { font-size:0.65rem; text-transform:uppercase; letter-spacing:1px; color:#94a3b8; font-weight:600; margin-bottom:2px; }
+.hac-price { font-family:var(--font-display); font-size:1.3rem; font-weight:800; color:var(--green); line-height:1; }
+.hac-price small { font-size:0.65rem; font-weight:600; color:#64748b; margin-left:2px; }
+.hac-bids-pill { font-size:0.73rem; font-weight:700; color:#475569; background:#f1f5f9; padding:5px 10px; border-radius:20px; white-space:nowrap; }
+
+.hac-cta { margin-top:auto; font-size:0.85rem; font-weight:700; color:var(--green); display:flex; align-items:center; justify-content:space-between; }
+.hac-arrow { display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; background:var(--green); color:#fff; border-radius:50%; font-size:0.8rem; transition:transform 0.2s; }
+.hac:hover .hac-arrow { transform:translateX(4px); }
+
+/* Legacy classes kept for compatibility */
 .auctions-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 40px; }
 .auction-card { background: var(--white); border-radius: 20px; border: 1px solid var(--cream-dark); overflow: hidden; transition: var(--transition); }
 .auction-card:hover { transform: translateY(-6px); box-shadow: var(--shadow); }
@@ -829,6 +873,7 @@ footer { background: var(--black); padding: 80px 0 0; }
   .categories-grid { grid-template-columns: repeat(3, 1fr); }
   .footer-grid { grid-template-columns: 1fr 1fr; }
   .auctions-grid { grid-template-columns: repeat(2, 1fr); }
+  .home-auctions-grid { grid-template-columns: repeat(2, 1fr); }
   .stats-grid-dash { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 768px) {
@@ -853,6 +898,8 @@ footer { background: var(--black); padding: 80px 0 0; }
   .admin-sidebar { position: static; height: auto; }
   .stats-grid-dash { grid-template-columns: repeat(2, 1fr); }
   .auctions-grid { grid-template-columns: 1fr; }
+  .home-auctions-grid { grid-template-columns: 1fr; }
+  .home-auctions-header { flex-direction:column; align-items:flex-start; gap:12px; }
   .blog-grid { grid-template-columns: 1fr; }
   .cta-box { padding: 48px 24px; }
 }
