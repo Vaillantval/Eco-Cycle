@@ -4,10 +4,11 @@
 {% block page_title %}Enchères{% endblock %}
 
 {% block topbar_actions %}
-<div style="display:flex;gap:8px;align-items:center;">
+<div style="display:flex;gap:10px;align-items:center;">
   <span style="font-size:0.82rem;color:#64748b;">
     {{ count_active }} active{{ count_active|pluralize }} · {{ count_sold }} vendue{{ count_sold|pluralize }}
   </span>
+  <a href="{% url 'admin_create_auction' %}" class="btn-admin-sm btn-admin-primary">+ Créer une enchère</a>
 </div>
 {% endblock %}
 

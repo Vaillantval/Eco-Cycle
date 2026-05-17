@@ -1,0 +1,244 @@
+{% extends 'admin_panel/base_admin.html' %}
+
+{% block title %}Créer une enchère — Admin EcoCycle{% endblock %}
+{% block page_title %}Créer une enchère{% endblock %}
+
+{% block topbar_actions %}
+<a href="{% url 'admin_auctions' %}" class="btn-admin-sm btn-view">← Retour aux enchères</a>
+{% endblock %}
+
+{% block admin_content %}
+<div style="max-width:720px;">
+
+  <form method="POST" action="{% url 'admin_create_auction' %}">
+    {% csrf_token %}
+
+    <!-- SÉLECTION DU LISTING -->
+    <div class="admin-card" style="margin-bottom:20px;">
+      <div class="admin-card-header">
+        <div class="admin-card-title">📦 Listing à mettre en enchère</div>
+      </div>
+      <div style="padding:20px;">
+        {% if listings %}
+          <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:6px;">
+            Sélectionner un listing approuvé sans enchère
+          </label>
+          <select name="listing_id" id="listing-select" required
+                  style="width:100%;padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px;
+                         font-size:0.88rem;background:#fff;outline:none;">
+            <option value="">— Choisir un listing —</option>
+            {% for listing in listings %}
+            <option value="{{ listing.id }}"
+                    data-ai="{{ listing.ai_estimated_value|default:'' }}"
+                    data-seller="{{ listing.user.full_name }}"
+                    data-city="{{ listing.city|default:'—' }}"
+                    data-qty="{{ listing.quantity_kg }} kg"
+                    data-cat="{{ listing.category.name|default:'—' }}">
+              {{ listing.title }} — {{ listing.user.full_name }} ({{ listing.city|default:"?" }})
+            </option>
+            {% endfor %}
+          </select>
+
+          <!-- Aperçu listing sélectionné -->
+          <div id="listing-preview" style="display:none;margin-top:14px;padding:12px 16px;
+               background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;font-size:0.83rem;">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;color:#334155;">
+              <div><span style="color:#94a3b8;">Vendeur</span><br><strong id="prev-seller"></strong></div>
+              <div><span style="color:#94a3b8;">Catégorie</span><br><strong id="prev-cat"></strong></div>
+              <div><span style="color:#94a3b8;">Poids</span><br><strong id="prev-qty"></strong></div>
+            </div>
+            <div id="prev-ai-wrap" style="margin-top:10px;padding:8px 12px;background:#f0fdf4;border-radius:6px;display:none;">
+              💡 Valeur estimée par l'IA : <strong id="prev-ai" style="color:#16a34a;"></strong> HTG
+            </div>
+          </div>
+        {% else %}
+          <div style="padding:24px;text-align:center;color:#94a3b8;font-size:0.88rem;">
+            Aucun listing approuvé disponible sans enchère.
+            <a href="{% url 'admin_listings' %}" style="color:#16a34a;">Gérer les listings →</a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if listings %}
+
+    <!-- PARAMÈTRES -->
+    <div class="admin-card" style="margin-bottom:20px;">
+      <div class="admin-card-header">
+        <div class="admin-card-title">⚙️ Paramètres de l'enchère</div>
+      </div>
+      <div style="padding:20px;display:flex;flex-direction:column;gap:16px;">
+
+        <!-- Type -->
+        <div>
+          <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:8px;">Type d'enchère</label>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <label class="type-radio">
+              <input type="radio" name="auction_type" value="both" checked>
+              <span>🔨⚡ Enchère + Achat immédiat</span>
+            </label>
+            <label class="type-radio">
+              <input type="radio" name="auction_type" value="auction">
+              <span>🔨 Enchère uniquement</span>
+            </label>
+            <label class="type-radio">
+              <input type="radio" name="auction_type" value="buy_now">
+              <span>⚡ Achat immédiat uniquement</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Prix -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;">
+          <div>
+            <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">
+              Prix de départ (HTG) <span style="color:#dc2626;">*</span>
+            </label>
+            <input type="number" name="starting_price" id="starting-price" min="1" step="1" required
+                   placeholder="Ex : 1 500"
+                   style="width:100%;padding:9px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;box-sizing:border-box;">
+          </div>
+          <div id="buy-now-field">
+            <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">
+              Prix achat immédiat (HTG)
+            </label>
+            <input type="number" name="buy_now_price" min="1" step="1"
+                   placeholder="Ex : 3 000"
+                   style="width:100%;padding:9px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;box-sizing:border-box;">
+          </div>
+          <div>
+            <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">
+              Prix de réserve (HTG) <span style="font-weight:400;color:#94a3b8;">optionnel</span>
+            </label>
+            <input type="number" name="reserve_price" min="1" step="1"
+                   placeholder="Ex : 2 000"
+                   style="width:100%;padding:9px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;box-sizing:border-box;">
+          </div>
+        </div>
+
+        <!-- Dates -->
+        <div>
+          <label style="font-size:0.78rem;font-weight:600;color:#64748b;display:block;margin-bottom:8px;">Durée / Dates</label>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <label style="font-size:0.82rem;display:flex;align-items:center;gap:6px;">
+              <input type="radio" name="date_mode" value="duration" checked onchange="toggleDateMode(this)">
+              Durée prédéfinie
+            </label>
+            <label style="font-size:0.82rem;display:flex;align-items:center;gap:6px;">
+              <input type="radio" name="date_mode" value="custom" onchange="toggleDateMode(this)">
+              Dates personnalisées
+            </label>
+          </div>
+
+          <div id="mode-duration" style="margin-top:10px;">
+            <select name="duration_days"
+                    style="padding:9px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;background:#fff;">
+              <option value="3">3 jours</option>
+              <option value="7" selected>7 jours</option>
+              <option value="14">14 jours</option>
+              <option value="30">30 jours</option>
+            </select>
+            <span style="font-size:0.78rem;color:#94a3b8;margin-left:8px;">L'enchère démarre maintenant</span>
+          </div>
+
+          <div id="mode-custom" style="display:none;margin-top:10px;display:none;grid-template-columns:1fr 1fr;gap:12px;">
+            <div>
+              <label style="font-size:0.75rem;color:#64748b;display:block;margin-bottom:4px;">Début</label>
+              <input type="datetime-local" name="starts_at"
+                     style="width:100%;padding:9px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;box-sizing:border-box;">
+            </div>
+            <div>
+              <label style="font-size:0.75rem;color:#64748b;display:block;margin-bottom:4px;">Fin</label>
+              <input type="datetime-local" name="ends_at"
+                     style="width:100%;padding:9px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;box-sizing:border-box;">
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ACTIONS -->
+    <div style="display:flex;gap:12px;justify-content:flex-end;">
+      <a href="{% url 'admin_auctions' %}"
+         style="padding:10px 22px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;
+                font-weight:600;color:#64748b;text-decoration:none;background:#fff;">
+        Annuler
+      </a>
+      <button type="submit"
+              style="padding:10px 28px;background:#16a34a;color:#fff;border:none;border-radius:8px;
+                     font-size:0.88rem;font-weight:700;cursor:pointer;">
+        ✅ Créer l'enchère
+      </button>
+    </div>
+
+    {% endif %}
+  </form>
+</div>
+
+<style>
+.type-radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  color: #334155;
+}
+.type-radio:has(input:checked) {
+  border-color: #16a34a;
+  background: #f0fdf4;
+  color: #15803d;
+}
+.type-radio input { display: none; }
+</style>
+
+<script>
+// Listing select → aperçu
+document.getElementById('listing-select')?.addEventListener('change', function () {
+  const opt = this.options[this.selectedIndex];
+  const preview = document.getElementById('listing-preview');
+  if (!opt.value) { preview.style.display = 'none'; return; }
+  document.getElementById('prev-seller').textContent = opt.dataset.seller;
+  document.getElementById('prev-cat').textContent    = opt.dataset.cat;
+  document.getElementById('prev-qty').textContent    = opt.dataset.qty;
+  const ai = opt.dataset.ai;
+  const aiWrap = document.getElementById('prev-ai-wrap');
+  if (ai) {
+    document.getElementById('prev-ai').textContent = parseFloat(ai).toLocaleString('fr');
+    aiWrap.style.display = '';
+    document.getElementById('starting-price').placeholder = ai;
+    document.getElementById('starting-price').value = ai;
+  } else {
+    aiWrap.style.display = 'none';
+  }
+  preview.style.display = '';
+});
+
+// Type radio → cacher/montrer achat immédiat
+document.querySelectorAll('input[name="auction_type"]').forEach(r => {
+  r.addEventListener('change', function () {
+    document.getElementById('buy-now-field').style.display =
+      this.value === 'auction' ? 'none' : '';
+  });
+});
+
+// Mode dates
+function toggleDateMode(radio) {
+  const dur = document.getElementById('mode-duration');
+  const cust = document.getElementById('mode-custom');
+  if (radio.value === 'custom') {
+    dur.style.display = 'none';
+    cust.style.display = 'grid';
+  } else {
+    dur.style.display = '';
+    cust.style.display = 'none';
+  }
+}
+</script>
+{% endblock %}

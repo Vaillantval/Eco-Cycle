@@ -226,6 +226,89 @@ class AdminAuctionsView(AdminRequiredMixin, View):
         })
 
 
+class AdminCreateAuctionView(AdminRequiredMixin, View):
+    def get(self, request):
+        user = self.get_current_user(request)
+        # Only approved listings without an existing auction
+        listings = (
+            WasteListing.objects
+            .filter(status='approved')
+            .exclude(auction__isnull=False)
+            .select_related('user', 'category')
+            .order_by('-created_at')
+        )
+        return render(request, 'admin_panel/auction_form.html', {
+            'user': user,
+            'listings': listings,
+        })
+
+    def post(self, request):
+        from datetime import timedelta
+        try:
+            listing_id   = request.POST.get('listing_id')
+            listing      = get_object_or_404(WasteListing, pk=listing_id, status='approved')
+
+            if hasattr(listing, 'auction'):
+                messages.error(request, 'Ce listing a déjà une enchère.')
+                return redirect('admin_create_auction')
+
+            starting_price = float(request.POST.get('starting_price') or 0)
+            if starting_price <= 0:
+                raise ValueError('Le prix de départ doit être supérieur à 0.')
+
+            buy_now_raw   = request.POST.get('buy_now_price', '').strip()
+            reserve_raw   = request.POST.get('reserve_price', '').strip()
+            auction_type  = request.POST.get('auction_type', 'both')
+
+            # Dates : soit starts_at/ends_at saisis, soit durée en jours
+            starts_at_raw = request.POST.get('starts_at', '').strip()
+            ends_at_raw   = request.POST.get('ends_at', '').strip()
+            duration_days = int(request.POST.get('duration_days') or 7)
+
+            now = timezone.now()
+            if starts_at_raw:
+                from django.utils.dateparse import parse_datetime
+                starts_at = timezone.make_aware(
+                    parse_datetime(starts_at_raw),
+                    timezone.get_current_timezone()
+                ) if not starts_at_raw.endswith('Z') else parse_datetime(starts_at_raw)
+            else:
+                starts_at = now
+
+            if ends_at_raw:
+                from django.utils.dateparse import parse_datetime
+                ends_at = timezone.make_aware(
+                    parse_datetime(ends_at_raw),
+                    timezone.get_current_timezone()
+                ) if not ends_at_raw.endswith('Z') else parse_datetime(ends_at_raw)
+            else:
+                ends_at = starts_at + timedelta(days=duration_days)
+
+            auction = Auction.objects.create(
+                listing=listing,
+                seller=listing.user,
+                auction_type=auction_type,
+                starting_price=starting_price,
+                current_price=starting_price,
+                buy_now_price=float(buy_now_raw) if buy_now_raw else None,
+                reserve_price=float(reserve_raw) if reserve_raw else None,
+                status='active',
+                starts_at=starts_at,
+                ends_at=ends_at,
+            )
+            listing.status = 'approved'
+            listing.save(update_fields=['status', 'updated_at'])
+            messages.success(request, f'Enchère créée pour « {listing.title} ».')
+            return redirect('admin_auction_detail', pk=auction.pk)
+
+        except ValueError as e:
+            messages.error(request, str(e))
+            return redirect('admin_create_auction')
+        except Exception as e:
+            messages.error(request, f'Erreur : {e}')
+            return redirect('admin_create_auction')
+
+
 class AdminAuctionDetailView(AdminRequiredMixin, View):
     def get(self, request, pk):
         user = self.get_current_user(request)
