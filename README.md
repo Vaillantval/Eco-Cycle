@@ -263,11 +263,34 @@ L'`Auction` est créée automatiquement au statut `active` dès l'approbation. L
 
 ### Modèles
 
-- `Course` : titre, description, niveau, thumbnail, `price` (HTG, 0 = gratuit), is_published, durée auto-calculée
-- `Lesson` : titre, contenu, PDF (extract ou embed), ordre, durée auto-calculée (somme vidéos)
-- `LessonVideo` : fichier MP4/WebM **ou** URL externe (YouTube, Vimeo), embed automatique
+- `Course` : titre, description, niveau, thumbnail, `price` (HTG, 0 = gratuit), is_published, `duration_minutes` (somme des leçons), `auto_advance_delay`
+- `Lesson` : titre, contenu Markdown, PDF (mode `extract` ou `embed`), ordre, `duration_minutes` (vidéos + PDF), `pdf_reading_minutes`
+- `LessonVideo` : fichier MP4/WebM **ou** URL externe — YouTube, Vimeo, **TikTok**, **Instagram** (Reels/Posts/IGTV) — embed automatique avec détection de format
 - `Enrollment` : progression, `progress_percent`, `is_completed`, `payment_status` (free/pending/paid)
 - `Certificate` : délivré automatiquement à 100% de progression, PDF téléchargeable
+
+### Durée automatique
+
+| Source | Méthode | Champ |
+|---|---|---|
+| Vidéo uploadée (MP4…) | HTML5 `loadedmetadata` côté navigateur | `LessonVideo.duration_minutes` |
+| URL YouTube | YouTube Data API v3 (`YOUTUBE_API_KEY`) — côté serveur | `LessonVideo.duration_minutes` (verrouillé en édition) |
+| URL TikTok / Instagram / Vimeo | Saisie manuelle admin | `LessonVideo.duration_minutes` (éditable) |
+| PDF uploadé | Nombre de pages × 250 mots / 200 mpm (pypdf) | `Lesson.pdf_reading_minutes` |
+| Contenu texte direct | Nombre de mots / 200 mpm | `Lesson.pdf_reading_minutes` |
+
+`Lesson.duration_minutes` = somme des vidéos + `pdf_reading_minutes`  
+`Course.duration_minutes` = somme des leçons (mis à jour via `sync_duration()`)
+
+### Sources vidéo supportées
+
+| Plateforme | Format d'embed | Aspect ratio |
+|---|---|---|
+| YouTube | `youtube-nocookie.com/embed/ID?enablejsapi=1` | 16:9 |
+| Vimeo | `player.vimeo.com/video/ID?api=1` | 16:9 |
+| TikTok | `tiktok.com/embed/v2/ID` | Portrait 325×575px |
+| Instagram | `instagram.com/p\|reel\|tv/ID/embed/` | Portrait 325×575px |
+| Fichier uploadé | `<video>` natif | 16:9 max 500px |
 
 ### Cours payants
 
