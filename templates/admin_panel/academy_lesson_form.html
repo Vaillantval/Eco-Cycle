@@ -37,10 +37,12 @@
                  style="width:100%;padding:7px 10px;border:1px solid #e2e8f0;border-radius:7px;font-size:0.88rem;">
         </div>
         <div>
-          <label style="font-size:0.72rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">Durée (min) 🔒</label>
-          <input type="number" name="video_duration" value="{{ v.duration_minutes }}" min="0" readonly
-                 title="Durée auto-détectée — non modifiable"
-                 style="width:100%;padding:7px 10px;border:1px solid #e2e8f0;border-radius:7px;font-size:0.88rem;background:#f1f5f9;color:#94a3b8;cursor:not-allowed;">
+          <label style="font-size:0.72rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;">
+            Durée (min) {% if v.is_youtube %}🔒{% endif %}
+          </label>
+          <input type="number" name="video_duration" value="{{ v.duration_minutes }}" min="0"
+                 {% if v.is_youtube %}readonly title="Durée auto-détectée — non modifiable"{% endif %}
+                 style="width:100%;padding:7px 10px;border:1px solid #e2e8f0;border-radius:7px;font-size:0.88rem;{% if v.is_youtube %}background:#f1f5f9;color:#94a3b8;cursor:not-allowed;{% endif %}">
         </div>
         <div style="display:flex;gap:6px;padding-bottom:1px;">
           <button type="submit" name="action" value="update_video"
@@ -152,10 +154,9 @@
                  style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
         </div>
         <div>
-          <label style="font-size:0.75rem;font-weight:600;color:#64748b;display:block;margin-bottom:5px;">Durée (min) 🔒</label>
-          <input type="number" name="video_duration" id="newVideoDuration" value="0" min="0" readonly
-                 title="Durée auto-détectée — non modifiable"
-                 style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;background:#f1f5f9;color:#94a3b8;cursor:not-allowed;">
+          <label style="font-size:0.75rem;font-weight:600;color:#64748b;display:block;margin-bottom:5px;" id="newVideoDurationLabel">Durée (min)</label>
+          <input type="number" name="video_duration" id="newVideoDuration" value="0" min="0"
+                 style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.88rem;">
         </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
@@ -426,15 +427,42 @@ function detectUrlDuration(url, durationInput) {
   .catch(() => { durationInput.placeholder = '0'; });
 }
 
+// ── Verrouillage durée : YouTube = readonly, tout le reste = éditable ─────────
+function setDurationLock(input, locked, labelEl) {
+  input.readOnly = locked;
+  input.style.background = locked ? '#f1f5f9' : '';
+  input.style.color       = locked ? '#94a3b8' : '';
+  input.style.cursor      = locked ? 'not-allowed' : '';
+  if (labelEl) labelEl.textContent = 'Durée (min)' + (locked ? ' 🔒' : '');
+}
+
+function isYouTubeUrl(url) {
+  return /youtube\.com|youtu\.be/.test(url);
+}
+
 // ── Formulaire "Ajouter une vidéo" ────────────────────────────────────────────
+const newDurInput = document.getElementById('newVideoDuration');
+const newDurLabel = document.getElementById('newVideoDurationLabel');
+
 document.getElementById('videoFileInput').addEventListener('change', function () {
   document.getElementById('videoDownloadToggle').style.display =
     this.files.length > 0 ? 'block' : 'none';
-  detectFileDuration(this, document.getElementById('newVideoDuration'));
+  // Fichier uploadé : durée auto via HTML5, mais reste éditable
+  setDurationLock(newDurInput, false, newDurLabel);
+  detectFileDuration(this, newDurInput);
+});
+
+document.getElementById('newVideoUrl').addEventListener('input', function () {
+  const isYt = isYouTubeUrl(this.value.trim());
+  setDurationLock(newDurInput, isYt, newDurLabel);
+  if (!isYt) newDurInput.value = 0;
 });
 
 document.getElementById('newVideoUrl').addEventListener('blur', function () {
-  detectUrlDuration(this.value.trim(), document.getElementById('newVideoDuration'));
+  const url = this.value.trim();
+  if (isYouTubeUrl(url)) {
+    detectUrlDuration(url, newDurInput);
+  }
 });
 
 // ── Cartes vidéo existantes ────────────────────────────────────────────────────
