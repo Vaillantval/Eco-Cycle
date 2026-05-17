@@ -387,34 +387,68 @@ function detectFileDuration(fileInput, durationInput) {
   };
 }
 
+// ── YouTube IFrame API — détection durée côté navigateur (pas de blocage IP serveur) ──
+var _ytApiReady = false;
+var _ytApiLoading = false;
+
+function onYouTubeIframeAPIReady() { _ytApiReady = true; }
+
+function _loadYouTubeAPI() {
+  if (_ytApiLoading || _ytApiReady) return;
+  _ytApiLoading = true;
+  var s = document.createElement('script');
+  s.src = 'https://www.youtube.com/iframe_api';
+  document.head.appendChild(s);
+}
+
+function _showYtWarn(durationInput) {
+  const label = durationInput.closest('div')?.querySelector('label');
+  if (label && !label.querySelector('.yt-warn')) {
+    const w = document.createElement('span');
+    w.className = 'yt-warn';
+    w.style.cssText = 'font-size:0.68rem;color:#dc2626;margin-left:6px;';
+    w.textContent = '⚠ durée non détectée';
+    label.appendChild(w);
+  }
+}
+
 function detectUrlDuration(url, durationInput) {
-  if (!url || !/youtube\.com|youtu\.be/.test(url)) return;
-  const csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
-  const origPlaceholder = durationInput.placeholder;
-  durationInput.placeholder = '⏳';
-  fetch('/panel/api/video-duration/', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
-    body: JSON.stringify({ url }),
-  })
-  .then(r => r.json())
-  .then(data => {
-    durationInput.placeholder = origPlaceholder;
-    if (data.duration_minutes > 0) {
-      durationInput.value = data.duration_minutes;
-    } else {
-      // yt-dlp a échoué côté serveur — sauvegarde quand même, le backend réessaiera
-      const label = durationInput.closest('div')?.querySelector('label');
-      if (label && !label.querySelector('.yt-warn')) {
-        const warn = document.createElement('span');
-        warn.className = 'yt-warn';
-        warn.style.cssText = 'font-size:0.68rem;color:#dc2626;margin-left:6px;';
-        warn.textContent = '⚠ durée non détectée';
-        label.appendChild(warn);
-      }
+  if (!url) return;
+  const m = url.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+  if (!m) return;
+  const videoId = m[1];
+  _loadYouTubeAPI();
+
+  // Attendre que l'API YouTube soit prête (max ~6 s)
+  function tryCreate(attempts) {
+    if (attempts <= 0) { _showYtWarn(durationInput); return; }
+    if (!_ytApiReady || typeof YT === 'undefined' || !YT.Player) {
+      setTimeout(() => tryCreate(attempts - 1), 300);
+      return;
     }
-  })
-  .catch(() => { durationInput.placeholder = origPlaceholder; });
+    const container = document.createElement('div');
+    container.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;';
+    document.body.appendChild(container);
+    try {
+      new YT.Player(container, {
+        videoId,
+        width: 1, height: 1,
+        playerVars: { autoplay: 0, mute: 1 },
+        events: {
+          onReady(e) {
+            const secs = e.target.getDuration();
+            const mins = secs ? Math.max(1, Math.round(secs / 60)) : 0;
+            durationInput.value = mins;
+            if (!mins) _showYtWarn(durationInput);
+            e.target.destroy();
+            container.remove();
+          },
+          onError() { _showYtWarn(durationInput); container.remove(); }
+        }
+      });
+    } catch(err) { _showYtWarn(durationInput); container.remove(); }
+  }
+  tryCreate(20);
 }
 
 // ── Formulaire "Ajouter une vidéo" ────────────────────────────────────────────
