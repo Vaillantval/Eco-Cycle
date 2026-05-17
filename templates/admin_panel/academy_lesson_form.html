@@ -393,8 +393,20 @@ function detectUrlDuration(url, durationInput) {
   })
   .then(r => r.json())
   .then(data => {
-    if (data.duration_minutes > 0) durationInput.value = data.duration_minutes;
     durationInput.placeholder = origPlaceholder;
+    if (data.duration_minutes > 0) {
+      durationInput.value = data.duration_minutes;
+    } else {
+      // yt-dlp a échoué côté serveur — sauvegarde quand même, le backend réessaiera
+      const label = durationInput.closest('div')?.querySelector('label');
+      if (label && !label.querySelector('.yt-warn')) {
+        const warn = document.createElement('span');
+        warn.className = 'yt-warn';
+        warn.style.cssText = 'font-size:0.68rem;color:#dc2626;margin-left:6px;';
+        warn.textContent = '⚠ durée non détectée';
+        label.appendChild(warn);
+      }
+    }
   })
   .catch(() => { durationInput.placeholder = origPlaceholder; });
 }

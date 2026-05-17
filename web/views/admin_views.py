@@ -843,7 +843,9 @@ class AdminAcademyLessonCreateView(AdminRequiredMixin, View):
         if video_file or video_url:
             duration = int(request.POST.get('video_duration') or 0)
             if not duration and video_url:
-                duration = _get_youtube_duration_minutes(video_url)
+                duration, yt_err = _get_youtube_duration_minutes(video_url)
+                if yt_err:
+                    messages.warning(request, f'Durée YouTube non détectée (renseigne-la manuellement) : {yt_err}')
             LessonVideo.objects.create(
                 lesson           = lesson,
                 title            = request.POST.get('video_title', '').strip(),
@@ -886,7 +888,9 @@ class AdminAcademyLessonEditView(AdminRequiredMixin, View):
             if video_file or video_url:
                 duration = int(request.POST.get('video_duration') or 0)
                 if not duration and video_url:
-                    duration = _get_youtube_duration_minutes(video_url)
+                    duration, yt_err = _get_youtube_duration_minutes(video_url)
+                    if yt_err:
+                        messages.warning(request, f'Durée YouTube non détectée (renseigne-la manuellement) : {yt_err}')
                 LessonVideo.objects.create(
                     lesson           = lesson,
                     title            = request.POST.get('video_title', '').strip(),
@@ -919,7 +923,9 @@ class AdminAcademyLessonEditView(AdminRequiredMixin, View):
                     video.video_file = None
             duration = int(request.POST.get('video_duration') or 0)
             if not duration and video.video_url:
-                duration = _get_youtube_duration_minutes(video.video_url)
+                duration, yt_err = _get_youtube_duration_minutes(video.video_url)
+                if yt_err:
+                    messages.warning(request, f'Durée YouTube non détectée (renseigne-la manuellement) : {yt_err}')
             video.duration_minutes = duration
             video.save()
             messages.success(request, 'Vidéo mise à jour.')
@@ -1342,11 +1348,12 @@ class AdminCertificatePDFView(AdminRequiredMixin, View):
         return response
 
 
-def _get_youtube_duration_minutes(url: str) -> int:
-    """Return duration in minutes for a YouTube URL using yt-dlp. Returns 0 on failure."""
-    import re
+def _get_youtube_duration_minutes(url: str) -> tuple[int, str]:
+    """Return (duration_minutes, error_message) for a YouTube URL using yt-dlp."""
+    import re, logging
+    logger = logging.getLogger(__name__)
     if not re.search(r'(?:youtube\.com|youtu\.be)', url):
-        return 0
+        return 0, ''
     try:
         import yt_dlp
         ydl_opts = {
@@ -1359,13 +1366,15 @@ def _get_youtube_duration_minutes(url: str) -> int:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
             seconds = info.get('duration') or 0
-            return max(1, round(seconds / 60)) if seconds else 0
-    except Exception:
-        return 0
+            minutes = max(1, round(seconds / 60)) if seconds else 0
+            return minutes, ''
+    except Exception as e:
+        logger.warning('yt-dlp failed for %s: %s', url, e)
+        return 0, str(e)
 
 
 class AdminVideoDurationView(AdminRequiredMixin, View):
-    """AJAX endpoint: POST {"url": "..."} → {"duration_minutes": N}"""
+    """AJAX endpoint: POST {"url": "..."} → {"duration_minutes": N, "error": "..."}"""
     def post(self, request):
         import json
         try:
@@ -1374,6 +1383,6 @@ class AdminVideoDurationView(AdminRequiredMixin, View):
         except Exception:
             return JsonResponse({'error': 'invalid json'}, status=400)
         if not url:
-            return JsonResponse({'duration_minutes': 0})
-        minutes = _get_youtube_duration_minutes(url)
-        return JsonResponse({'duration_minutes': minutes})
+            return JsonResponse({'duration_minutes': 0, 'error': ''})
+        minutes, error = _get_youtube_duration_minutes(url)
+        return JsonResponse({'duration_minutes': minutes, 'error': error})
