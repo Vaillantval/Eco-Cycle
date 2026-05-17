@@ -3,6 +3,10 @@ from .base import *
 DEBUG = True
 ALLOWED_HOSTS = ['*']
 
+# En développement, WhiteNoise lit directement depuis STATICFILES_DIRS (static/)
+# → plus besoin de collectstatic après chaque modif CSS/JS
+WHITENOISE_USE_FINDERS = True
+
 CORS_ALLOW_ALL_ORIGINS = True
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

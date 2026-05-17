@@ -621,3 +621,15 @@
   background: #0a2217;
   border-color: #16a34a;
 }
+
+/* ── Surcharge inline styles hardcodés (textes sombres en dark mode) ── */
+[data-theme="dark"] .dashboard-content [style*="color:#0f172a"]  { color: #e2e8f0 !important; }
+[data-theme="dark"] .dashboard-content [style*="color:#334155"]  { color: #c9d1d9 !important; }
+[data-theme="dark"] .dashboard-content [style*="color:#1d4ed8"]  { color: #60a5fa !important; }
+[data-theme="dark"] .dashboard-content [style*="color:#2563eb"]  { color: #60a5fa !important; }
+[data-theme="dark"] .dashboard-content [style*="color:#065f46"]  { color: #4ade80 !important; }
+[data-theme="dark"] .dashboard-content [style*="color:#059669"]  { color: #4ade80 !important; }
+[data-theme="dark"] .dashboard-content [style*="color:#dc2626"]  { color: #f87171 !important; }
+[data-theme="dark"] .dashboard-content [style*="background:#f9fafb"] { background: #1c2128 !important; }
+[data-theme="dark"] .dashboard-content [style*="background:#d1fae5"] { background: #0a2217 !important; }
+[data-theme="dark"] .dashboard-content [style*="background:#fee2e2"] { background: #2d0a0a !important; }
