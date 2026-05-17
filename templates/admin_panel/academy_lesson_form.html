@@ -345,18 +345,21 @@ document.getElementById('videoFileInput').addEventListener('change', function ()
 
 // Met à jour le style visuel des labels radio PDF + affiche/cache la ligne "remplacer"
 function updateModeStyle() {
+  const isDark         = document.documentElement.getAttribute('data-theme') === 'dark';
   const extractChecked = document.querySelector('input[name="pdf_display_mode"][value="extract"]').checked;
   const extractLabel   = document.getElementById('mode-extract-label');
   const embedLabel     = document.getElementById('mode-embed-label');
   const replaceRow     = document.getElementById('replace-content-row');
 
-  const activeStyle   = '1.5px solid #0d7a45';
-  const inactiveStyle = '1.5px solid #e2e8f0';
+  const activeStyle   = isDark ? '1.5px solid #4ade80' : '1.5px solid #0d7a45';
+  const inactiveStyle = isDark ? '1.5px solid #30363d' : '1.5px solid #e2e8f0';
+  const activeBg      = isDark ? '#0a2217' : '#f0fdf4';
+  const inactiveBg    = isDark ? '#1c2128' : '#fafafa';
 
-  extractLabel.style.border     = extractChecked ? activeStyle : inactiveStyle;
-  extractLabel.style.background = extractChecked ? '#f0fdf4'  : '#fafafa';
+  extractLabel.style.border     = extractChecked ? activeStyle   : inactiveStyle;
+  extractLabel.style.background = extractChecked ? activeBg      : inactiveBg;
   embedLabel.style.border       = extractChecked ? inactiveStyle : activeStyle;
-  embedLabel.style.background   = extractChecked ? '#fafafa'  : '#f0fdf4';
+  embedLabel.style.background   = extractChecked ? inactiveBg    : activeBg;
 
   if (replaceRow) replaceRow.style.display = extractChecked ? '' : 'none';
 }
