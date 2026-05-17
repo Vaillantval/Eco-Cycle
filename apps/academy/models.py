@@ -151,6 +151,10 @@ class LessonVideo(models.Model):
         tt = re.search(r'tiktok\.com/@[^/]+/video/(\d+)', url)
         if tt:
             return f'https://www.tiktok.com/embed/v2/{tt.group(1)}'
+        # Instagram (post, reel, TV)
+        ig = re.search(r'instagram\.com/(?:p|reel|tv)/([A-Za-z0-9_-]+)', url)
+        if ig:
+            return f'https://www.instagram.com/p/{ig.group(1)}/embed/'
         return None
 
     def is_youtube(self):
@@ -161,6 +165,9 @@ class LessonVideo(models.Model):
 
     def is_tiktok(self):
         return bool(re.search(r'tiktok\.com', self.video_url or ''))
+
+    def is_instagram(self):
+        return bool(re.search(r'instagram\.com', self.video_url or ''))
 
 
 class Enrollment(models.Model):

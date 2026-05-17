@@ -341,7 +341,7 @@
             <source src="{{ video.video_file.url }}">
           </video>
           {% elif video.embed_url %}
-          {% if video.is_tiktok %}
+          {% if video.is_tiktok or video.is_instagram %}
           <div style="display:flex;justify-content:center;background:#000;padding:12px 0;">
             <iframe src="{{ video.embed_url }}"
                     style="width:325px;height:575px;border:none;border-radius:12px;"
@@ -395,7 +395,7 @@
             <source src="{{ video.video_file.url }}">
           </video>
           {% elif video.embed_url %}
-          {% if video.is_tiktok %}
+          {% if video.is_tiktok or video.is_instagram %}
           <div style="display:flex;justify-content:center;background:#000;padding:12px 0;">
             <iframe src="{{ video.embed_url }}"
                     style="width:325px;height:575px;border:none;border-radius:12px;"
