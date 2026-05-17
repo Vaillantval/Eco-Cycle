@@ -23,6 +23,8 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♻️</text></svg>">
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'css/main.css' %}">
+  <!-- Anti-flash : applique le thème avant le premier rendu -->
+  <script>(function(){var t=localStorage.getItem('theme')||'light';document.documentElement.setAttribute('data-theme',t);})();</script>
   <style>
     /* ── Navbar : respiration horizontale ── */
     .nav-inner { padding: 0 28px; }
@@ -126,6 +128,12 @@
       </ul>
 
       <div class="nav-actions">
+        <!-- Toggle thème -->
+        <button class="theme-toggle" id="themeToggle" aria-label="Basculer le thème">
+          <span class="theme-icon-light">🌙</span>
+          <span class="theme-icon-dark">☀️</span>
+        </button>
+
         {% if request.session.user_id %}
           <span class="nav-user-name">{{ request.session.user_name }}</span>
           {% if request.session.user_role == 'admin' %}
@@ -290,5 +298,17 @@
 
   <script src="{% static 'js/main.js' %}"></script>
   {% block extra_js %}{% endblock %}
+  <script>
+  (function(){
+    var btn = document.getElementById('themeToggle');
+    if(!btn) return;
+    btn.addEventListener('click', function(){
+      var html = document.documentElement;
+      var next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+    });
+  })();
+  </script>
 </body>
 </html>
