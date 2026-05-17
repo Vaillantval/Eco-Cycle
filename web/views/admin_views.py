@@ -932,9 +932,10 @@ class AdminAcademyLessonEditView(AdminRequiredMixin, View):
         lesson.pdf_display_mode   = request.POST.get('pdf_display_mode', lesson.pdf_display_mode)
         pdf_file                  = request.FILES.get('pdf_file')
         replace_content           = request.POST.get('replace_content') == '1'
+        embed_text = ''  # texte extrait en mode visionneuse (durée uniquement)
         if pdf_file:
+            extracted = _extract_pdf_text(pdf_file)
             if lesson.pdf_display_mode == 'extract':
-                extracted = _extract_pdf_text(pdf_file)
                 if extracted:
                     if replace_content or not lesson.content.strip():
                         lesson.content = extracted
@@ -945,22 +946,22 @@ class AdminAcademyLessonEditView(AdminRequiredMixin, View):
                 else:
                     messages.warning(request, 'PDF uploadé mais aucun texte n\'a pu être extrait.')
             else:
+                embed_text = extracted  # texte gardé pour la durée, pas affiché
                 messages.info(request, 'PDF uploadé — affiché en visionneuse pour l\'utilisateur.')
             pdf_file.seek(0)
             lesson.pdf_file = pdf_file
         else:
             if lesson.pdf_display_mode == 'extract':
                 lesson.content = request.POST.get('content', '')
-        # Durée de lecture — calculée depuis le contenu final (toutes sources confondues)
-        # L'admin peut écraser avec une valeur manuelle non nulle.
+        # Durée de lecture — calculée depuis tout le texte disponible
+        # Priorité : saisie manuelle > lesson.content > texte PDF visionneuse
         manual_pdf = int(request.POST.get('lesson_duration') or 0)
         if manual_pdf:
             lesson.pdf_reading_minutes = manual_pdf
         else:
-            # Auto-calcul depuis lesson.content (textarea direct, PDF extrait, ou mix)
-            auto_duration = _get_reading_duration_minutes(lesson.content)
-            if auto_duration != lesson.pdf_reading_minutes:
-                lesson.pdf_reading_minutes = auto_duration
+            text_for_duration = lesson.content or embed_text
+            auto_duration = _get_reading_duration_minutes(text_for_duration)
+            lesson.pdf_reading_minutes = auto_duration
         lesson.save()
         lesson.sync_duration()
         messages.success(request, f'Leçon « {lesson.title} » mise à jour.')
