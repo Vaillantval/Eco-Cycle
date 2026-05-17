@@ -493,7 +493,7 @@ body:has(.app-banner) .dashboard-layout { margin-top: calc(72px + 44px); }
 /* ── Home auction cards (HAC) ── */
 .home-auctions-header { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:28px; }
 .home-auctions-eyebrow { font-size:0.78rem; font-weight:700; color:var(--green); text-transform:uppercase; letter-spacing:1.5px; margin-bottom:6px; }
-.home-auctions-title { font-family:var(--font-display); font-size:1.7rem; font-weight:800; color:var(--charcoal); margin:0; }
+.home-auctions-title { font-family:var(--font-display); font-size:1.7rem; font-weight:800; color:#fff; margin:0; }
 .home-auctions-viewall { font-size:0.88rem; font-weight:700; color:var(--green); text-decoration:none; padding:8px 18px; border:1.5px solid var(--green); border-radius:30px; transition:background 0.2s,color 0.2s; white-space:nowrap; }
 .home-auctions-viewall:hover { background:var(--green); color:#fff; }
 
@@ -1137,3 +1137,19 @@ footer { background: var(--black); padding: 80px 0 0; }
 
 /* ── Auction detail (public) ── */
 [data-theme="dark"] .auction-detail-card { background: #161b22; }
+
+/* ── Sections "always-dark" : forcer fond fixe en dark mode ── */
+/* Le footer et #marketplace utilisent --black/--charcoal comme FOND     */
+/* (ces vars sont remappées en clair en dark mode pour les textes),       */
+/* il faut donc les surcharger explicitement ici.                         */
+
+[data-theme="dark"] footer { background: #0e0e0e; }
+[data-theme="dark"] .footer-col h5 { color: #ffffff; }
+
+[data-theme="dark"] #marketplace { background: #1a1a2e; }
+[data-theme="dark"] .home-auctions-title  { color: #e6edf3; }
+[data-theme="dark"] .home-auctions-eyebrow { color: var(--green-light); }
+[data-theme="dark"] .home-auctions-viewall { color: var(--green-light); border-color: var(--green-light); }
+
+/* Mobile menu (utilise aussi --black comme fond) */
+[data-theme="dark"] .mobile-menu { background: #0d1117 !important; }
