@@ -1317,6 +1317,7 @@ def _get_youtube_duration_minutes(url: str) -> int:
             'skip_download': True,
             'extract_flat': False,
             'no_warnings': True,
+            'noplaylist': True,
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
