@@ -84,6 +84,8 @@ class WebRegisterView(View):
             phone=data.get('phone', ''),
         )
         send_verification_email.delay(str(user.id))
+        from apps.notifications.tasks import notify_admin_new_user
+        notify_admin_new_user.delay(str(user.id))
 
         messages.success(request, 'Compte créé ! Vérifiez votre email pour activer votre compte.')
         return redirect('web_login')

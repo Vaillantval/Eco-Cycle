@@ -30,11 +30,18 @@ def analyze_waste_photo_async(self, listing_id: str):
 def notify_admin_new_listing(listing_id: str):
     from .models import WasteListing
     from apps.notifications.email_service import EmailService
+    from apps.notifications.fcm_service import FCMService
     from apps.accounts.models import User
     try:
         listing = WasteListing.objects.select_related('user', 'category').get(id=listing_id)
-        admins = User.objects.filter(role='admin', is_active=True)
+        admins = list(User.objects.filter(role='admin', is_active=True))
         for admin in admins:
             EmailService.send_admin_new_listing(admin=admin, listing=listing)
+        FCMService.send_to_multiple(
+            admins,
+            'Nouveau listing à réviser',
+            f'{listing.user.full_name} — « {listing.title} »',
+            {'type': 'admin_new_listing', 'listing_id': str(listing.id)},
+        )
     except WasteListing.DoesNotExist:
         pass

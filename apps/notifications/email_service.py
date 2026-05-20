@@ -120,6 +120,68 @@ class EmailService:
         )
 
     @classmethod
+    def send_admin_new_user(cls, admin, new_user):
+        html = (
+            f'<p>Bonjour {admin.first_name},</p>'
+            f'<p>Un nouvel utilisateur vient de s\'inscrire sur EcoCycle :</p>'
+            f'<p><strong>{new_user.full_name}</strong> — {new_user.email}</p>'
+            f'<p>Inscrit le : {new_user.date_joined.strftime("%d/%m/%Y à %H:%M")}</p>'
+            f'<p><a href="{settings.FRONTEND_URL}/panel/users/">Voir les utilisateurs</a></p>'
+        )
+        cls._send(admin.email, f'[EcoCycle Admin] Nouvel utilisateur : {new_user.full_name}', html)
+
+    @classmethod
+    def send_admin_payment_received(cls, admin, transaction):
+        if transaction.order_id:
+            label = f'Commande marketplace — {transaction.order.auction.listing.title}'
+            buyer_name = transaction.order.buyer.full_name
+            detail_url = f'{settings.FRONTEND_URL}/panel/orders/{transaction.order.id}/'
+        else:
+            label = f'Cours Academy — {transaction.enrollment.course.title}'
+            buyer_name = transaction.enrollment.user.full_name
+            detail_url = f'{settings.FRONTEND_URL}/panel/academy/'
+        html = (
+            f'<p>Bonjour {admin.first_name},</p>'
+            f'<p>Un paiement a été confirmé sur EcoCycle :</p>'
+            f'<p><strong>{buyer_name}</strong> — {transaction.amount} HTG</p>'
+            f'<p>Objet : {label}</p>'
+            f'<p>Méthode : {transaction.get_payment_method_display()}</p>'
+            f'<p>Ref : {transaction.transaction_number}</p>'
+            f'<p><a href="{detail_url}">Voir les détails</a></p>'
+        )
+        cls._send(admin.email, f'[EcoCycle Admin] Paiement reçu — {transaction.amount} HTG', html)
+
+    @classmethod
+    def send_admin_pickup_failed(cls, admin, pickup):
+        collector_name = pickup.collector.full_name if pickup.collector else 'Non assigné'
+        html = (
+            f'<p>Bonjour {admin.first_name},</p>'
+            f'<p>Un ramassage a été marqué comme <strong>échoué</strong> :</p>'
+            f'<p>Client : <strong>{pickup.user.full_name}</strong></p>'
+            f'<p>Ville : {pickup.city}</p>'
+            f'<p>Date prévue : {pickup.preferred_date}</p>'
+            f'<p>Collecteur : {collector_name}</p>'
+            f'<p><a href="{settings.FRONTEND_URL}/panel/collections/{pickup.id}/">Voir le ramassage</a></p>'
+        )
+        cls._send(admin.email, f'[EcoCycle Admin] Ramassage échoué — {pickup.user.full_name}', html)
+
+    @classmethod
+    def send_admin_paid_enrollment(cls, admin, enrollment):
+        html = (
+            f'<p>Bonjour {admin.first_name},</p>'
+            f'<p>Un utilisateur vient de s\'inscrire à un cours payant :</p>'
+            f'<p>Étudiant : <strong>{enrollment.user.full_name}</strong> ({enrollment.user.email})</p>'
+            f'<p>Cours : <strong>{enrollment.course.title}</strong></p>'
+            f'<p>Prix : {enrollment.course.price} HTG</p>'
+            f'<p><a href="{settings.FRONTEND_URL}/panel/academy/{enrollment.course.id}/">Voir le cours</a></p>'
+        )
+        cls._send(
+            admin.email,
+            f'[EcoCycle Admin] Inscription payante — {enrollment.user.full_name} — {enrollment.course.title}',
+            html,
+        )
+
+    @classmethod
     def send_newsletter_confirmation(cls, subscriber):
         html = cls._render_email('emails/newsletter_confirm.html', {
             'subscriber': subscriber,

@@ -56,6 +56,12 @@ def process_successful_payment(transaction: Transaction, external_id: str = '', 
         except Exception as e:
             logger.warning(f'[Payment] Notif order_paid non envoyée: {e}')
 
+        try:
+            from apps.notifications.tasks import notify_admin_payment_received
+            notify_admin_payment_received.delay(str(transaction.id))
+        except Exception as e:
+            logger.warning(f'[Payment] Notif admin_payment non envoyée: {e}')
+
     # ── Cas 2 : inscription cours payant ─────────────────────────────────────
     elif transaction.enrollment_id:
         enrollment = transaction.enrollment
@@ -67,6 +73,13 @@ def process_successful_payment(transaction: Transaction, external_id: str = '', 
             EmailService.send_course_enrollment_confirmation(enrollment, transaction)
         except Exception as e:
             logger.warning(f'[Payment] Email inscription cours non envoyé ({enrollment.id}): {e}')
+
+        try:
+            from apps.notifications.tasks import notify_admin_payment_received, notify_admin_paid_enrollment
+            notify_admin_payment_received.delay(str(transaction.id))
+            notify_admin_paid_enrollment.delay(str(enrollment.id))
+        except Exception as e:
+            logger.warning(f'[Payment] Notif admin_enrollment non envoyée: {e}')
 
 
 def _payment_success_response(request, transaction: Transaction, method_label: str):

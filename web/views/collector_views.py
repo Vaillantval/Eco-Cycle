@@ -80,6 +80,8 @@ class CollectorPickupDetailView(CollectorRequiredMixin, View):
         elif action == 'fail':
             reason = request.POST.get('fail_reason', 'Collecte impossible').strip()
             pickup.update_status('failed', reason)
+            from apps.notifications.tasks import notify_admin_pickup_failed
+            notify_admin_pickup_failed.delay(str(pickup.id))
             messages.warning(request, f'Ramassage marqué comme échoué.')
 
         return redirect('collector_pickup_detail', pk=pk)

@@ -250,6 +250,99 @@ def notify_newsletter_signup(subscriber_id: int):
     EmailService.send_newsletter_confirmation(subscriber)
 
 
+@shared_task(name='notifications.notify_admin_new_user')
+def notify_admin_new_user(user_id: str):
+    from apps.accounts.models import User
+    from .email_service import EmailService
+    from .fcm_service import FCMService
+    try:
+        new_user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return
+    admins = list(User.objects.filter(role='admin', is_active=True))
+    for admin in admins:
+        EmailService.send_admin_new_user(admin, new_user)
+    FCMService.send_to_multiple(
+        admins,
+        'Nouvel utilisateur inscrit',
+        f'{new_user.full_name} ({new_user.email})',
+        {'type': 'admin_new_user', 'user_id': str(new_user.id)},
+    )
+
+
+@shared_task(name='notifications.notify_admin_payment_received')
+def notify_admin_payment_received(transaction_id: str):
+    from apps.payments.models import Transaction
+    from apps.accounts.models import User
+    from .email_service import EmailService
+    from .fcm_service import FCMService
+    try:
+        transaction = Transaction.objects.select_related(
+            'order__buyer', 'order__auction__listing',
+            'enrollment__user', 'enrollment__course',
+        ).get(id=transaction_id)
+    except Transaction.DoesNotExist:
+        return
+    admins = list(User.objects.filter(role='admin', is_active=True))
+    for admin in admins:
+        EmailService.send_admin_payment_received(admin, transaction)
+    if transaction.order_id:
+        label = transaction.order.auction.listing.title
+        buyer_name = transaction.order.buyer.full_name
+    else:
+        label = transaction.enrollment.course.title
+        buyer_name = transaction.enrollment.user.full_name
+    FCMService.send_to_multiple(
+        admins,
+        'Paiement reçu',
+        f'{buyer_name} — {transaction.amount} HTG — {label}',
+        {'type': 'admin_payment_received', 'transaction_id': str(transaction.id)},
+    )
+
+
+@shared_task(name='notifications.notify_admin_pickup_failed')
+def notify_admin_pickup_failed(pickup_id: str):
+    from apps.collections.models import PickupRequest
+    from apps.accounts.models import User
+    from .email_service import EmailService
+    from .fcm_service import FCMService
+    try:
+        pickup = PickupRequest.objects.select_related('user', 'collector').get(id=pickup_id)
+    except PickupRequest.DoesNotExist:
+        return
+    admins = list(User.objects.filter(role='admin', is_active=True))
+    for admin in admins:
+        EmailService.send_admin_pickup_failed(admin, pickup)
+    collector_name = pickup.collector.full_name if pickup.collector else 'Collecteur inconnu'
+    FCMService.send_to_multiple(
+        admins,
+        'Ramassage échoué',
+        f'{pickup.user.full_name} — {pickup.city} — {collector_name}',
+        {'type': 'admin_pickup_failed', 'pickup_id': str(pickup.id)},
+    )
+
+
+@shared_task(name='notifications.notify_admin_paid_enrollment')
+def notify_admin_paid_enrollment(enrollment_id: str):
+    from apps.academy.models import Enrollment
+    from apps.accounts.models import User
+    from .email_service import EmailService
+    from .fcm_service import FCMService
+    try:
+        enrollment = Enrollment.objects.select_related('user', 'course').get(id=enrollment_id)
+    except Enrollment.DoesNotExist:
+        return
+    admins = list(User.objects.filter(role='admin', is_active=True))
+    for admin in admins:
+        EmailService.send_admin_paid_enrollment(admin, enrollment)
+    FCMService.send_to_multiple(
+        admins,
+        'Inscription cours payant',
+        f'{enrollment.user.full_name} — « {enrollment.course.title} »',
+        {'type': 'admin_paid_enrollment', 'enrollment_id': str(enrollment.id)},
+    )
+
+
 @shared_task(name='notifications.notify_pickup_status_update')
 def notify_pickup_status_update(pickup_id: str):
     from apps.collections.models import PickupRequest
