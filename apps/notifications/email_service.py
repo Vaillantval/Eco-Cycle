@@ -268,3 +268,57 @@ class EmailService:
             f'Inscription confirmée — {course.title}',
             html,
         )
+
+    @classmethod
+    def send_free_enrollment_confirmation(cls, enrollment):
+        """U3 — Confirmation pour inscription à un cours gratuit (pas de transaction)."""
+        course = enrollment.course
+        user   = enrollment.user
+        html = (
+            f'<p>Bonjour {user.first_name},</p>'
+            f'<p>Vous êtes maintenant inscrit au cours gratuit <strong>« {course.title} »</strong>.</p>'
+            f'<p><a href="{settings.FRONTEND_URL}/academy/{course.slug}/">Accéder au cours</a></p>'
+            f'<p>Bonne formation !<br>L\'équipe EcoCycle Haiti</p>'
+        )
+        cls._send(user.email, f'Inscription confirmée — {course.title} — EcoCycle', html)
+
+    @classmethod
+    def send_pickup_status_update(cls, pickup):
+        """U1 — Email au client pour les changements de statut importants (in_transit, completed)."""
+        status_subjects = {
+            'in_transit': 'Votre collecteur est en route !',
+            'completed':  'Votre ramassage est complété !',
+        }
+        status_bodies = {
+            'in_transit': (
+                f'<p>Bonjour {pickup.user.first_name},</p>'
+                f'<p>Bonne nouvelle ! Votre collecteur est en route pour récupérer vos déchets.</p>'
+                f'<p>Ramassage du <strong>{pickup.preferred_date}</strong> — {pickup.city}.</p>'
+                f'<p><a href="{settings.FRONTEND_URL}/dashboard/pickups/">Suivre mon ramassage</a></p>'
+            ),
+            'completed': (
+                f'<p>Bonjour {pickup.user.first_name},</p>'
+                f'<p>Votre ramassage du <strong>{pickup.preferred_date}</strong> a été complété avec succès !</p>'
+                f'<p>Merci de contribuer au recyclage responsable en Haïti.</p>'
+                f'<p><a href="{settings.FRONTEND_URL}/dashboard/">Voir mon tableau de bord</a></p>'
+            ),
+        }
+        subject = status_subjects.get(pickup.status)
+        html    = status_bodies.get(pickup.status)
+        if subject and html:
+            cls._send(pickup.user.email, f'{subject} — EcoCycle Haiti', html)
+
+    @classmethod
+    def send_lesson_reminder(cls, enrollment):
+        """U4 — Rappel de leçon non terminée."""
+        course = enrollment.course
+        user   = enrollment.user
+        html = (
+            f'<p>Bonjour {user.first_name},</p>'
+            f'<p>Vous avez commencé le cours <strong>« {course.title} »</strong> '
+            f'mais n\'avez pas encore terminé — vous êtes à <strong>{enrollment.progress_percent}%</strong>.</p>'
+            f'<p>Reprenez là où vous en étiez et obtenez votre certificat !</p>'
+            f'<p><a href="{settings.FRONTEND_URL}/academy/{course.slug}/">Reprendre le cours</a></p>'
+            f'<p>L\'équipe EcoCycle Haiti</p>'
+        )
+        cls._send(user.email, f'Reprenez « {course.title} » — EcoCycle Academy', html)

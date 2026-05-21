@@ -58,8 +58,9 @@ def notify_listing_rejected(listing_id: str):
 def notify_new_bid(bid_id: str):
     from apps.marketplace.models import Bid
     from .fcm_service import FCMService
-    bid = Bid.objects.select_related('auction', 'auction__seller', 'bidder').get(id=bid_id)
+    bid = Bid.objects.select_related('auction', 'auction__seller', 'auction__listing', 'bidder').get(id=bid_id)
     auction = bid.auction
+    # Notifier le vendeur
     FCMService.send_to_user(
         auction.seller,
         'Nouvelle enchere !',
@@ -72,6 +73,28 @@ def notify_new_bid(bid_id: str):
         f'{bid.bidder.full_name} — {bid.amount} HTG',
         {'auction_id': str(auction.id), 'bid_id': str(bid.id)},
     )
+    # U2 — Notifier le précédent enchérisseur (surenchéri)
+    prev_bid = (
+        auction.bids
+        .exclude(id=bid.id)
+        .exclude(bidder=bid.bidder)
+        .order_by('-amount')
+        .select_related('bidder')
+        .first()
+    )
+    if prev_bid:
+        FCMService.send_to_user(
+            prev_bid.bidder,
+            'Vous avez été surenchéri !',
+            f'Une offre de {bid.amount} HTG dépasse la vôtre sur "{auction.listing.title}".',
+            {'type': 'outbid', 'auction_id': str(auction.id)},
+        )
+        _create_notification(
+            prev_bid.bidder, 'outbid',
+            'Surenchère !',
+            f'{bid.amount} HTG sur « {auction.listing.title} »',
+            {'auction_id': str(auction.id)},
+        )
 
 
 @shared_task(name='notifications.notify_auction_closed')
@@ -79,7 +102,7 @@ def notify_auction_closed(auction_id: str, winner: bool):
     from apps.marketplace.models import Auction
     from .email_service import EmailService
     from .fcm_service import FCMService
-    auction = Auction.objects.select_related('winner', 'seller', 'listing').get(id=auction_id)
+    auction = Auction.objects.select_related('winner', 'seller', 'listing').prefetch_related('bids__bidder').get(id=auction_id)
     if winner and auction.winner:
         FCMService.send_to_user(
             auction.winner,
@@ -95,6 +118,28 @@ def notify_auction_closed(auction_id: str, winner: bool):
         )
         if hasattr(auction, 'order'):
             EmailService.send_auction_won(auction.order)
+        # U6 — Notifier les enchérisseurs perdants
+        losing_bidders = (
+            auction.bids
+            .exclude(bidder=auction.winner)
+            .values_list('bidder', flat=True)
+            .distinct()
+        )
+        from apps.accounts.models import User as _User
+        losers = list(_User.objects.filter(id__in=losing_bidders))
+        FCMService.send_to_multiple(
+            losers,
+            'Enchère terminée',
+            f'Vous n\'avez pas remporté « {auction.listing.title} ». Continuez d\'explorer la marketplace.',
+            {'type': 'auction_lost', 'auction_id': str(auction_id)},
+        )
+        for loser in losers:
+            _create_notification(
+                loser, 'auction_lost',
+                'Enchère non remportée',
+                f'« {auction.listing.title} » a été vendu à {auction.current_price} HTG.',
+                {'auction_id': str(auction_id)},
+            )
     else:
         # No winner — notify the seller
         FCMService.send_to_user(
@@ -219,10 +264,18 @@ def notify_course_completed(user_id: str, course_id: str, cert_id: str):
     from apps.accounts.models import User
     from apps.academy.models import Course, Certificate
     from .email_service import EmailService
+    from .fcm_service import FCMService
     user = User.objects.get(id=user_id)
     course = Course.objects.get(id=course_id)
     cert = Certificate.objects.get(id=cert_id)
     EmailService.send_certificate_earned(user, course, cert)
+    # U5 — Push FCM au user
+    FCMService.send_to_user(
+        user,
+        'Certificat disponible !',
+        f'Vous avez terminé « {course.title} ». Votre certificat est prêt !',
+        {'type': 'course_completed', 'course_id': str(course.id), 'cert_id': str(cert.id)},
+    )
     for admin in User.objects.filter(role='admin', is_active=True):
         EmailService.send_admin_course_completed(admin, user, course, cert)
 
@@ -346,15 +399,17 @@ def notify_admin_paid_enrollment(enrollment_id: str):
 @shared_task(name='notifications.notify_pickup_status_update')
 def notify_pickup_status_update(pickup_id: str):
     from apps.collections.models import PickupRequest
+    from .email_service import EmailService
     from .fcm_service import FCMService
     pickup = PickupRequest.objects.select_related('user').get(id=pickup_id)
     status_titles = {
         'in_transit': 'Le collecteur est en route !',
-        'arrived': 'Le collecteur est arrive',
-        'completed': 'Ramassage complete !',
-        'failed': 'Ramassage echoue',
+        'arrived': 'Le collecteur est arrivé',
+        'completed': 'Ramassage complété !',
+        'failed': 'Ramassage échoué',
     }
-    title = status_titles.get(pickup.status, 'Mise a jour du ramassage')
+    title = status_titles.get(pickup.status, 'Mise à jour du ramassage')
+    # U1 — Push FCM
     FCMService.send_to_user(
         pickup.user, title,
         f'Ramassage du {pickup.preferred_date} — {pickup.get_status_display()}',
@@ -364,4 +419,63 @@ def notify_pickup_status_update(pickup_id: str):
         pickup.user, 'pickup_status', title,
         pickup.get_status_display(),
         {'pickup_id': str(pickup_id)},
+    )
+    # U1 — Email pour les statuts importants
+    if pickup.status in ('in_transit', 'completed'):
+        try:
+            EmailService.send_pickup_status_update(pickup)
+        except Exception:
+            pass
+
+
+@shared_task(name='notifications.send_lesson_reminders')
+def send_lesson_reminders():
+    """U4 — Envoi quotidien de rappels aux étudiants qui ont commencé un cours mais ne l'ont pas terminé."""
+    from django.utils import timezone
+    from apps.academy.models import Enrollment
+    from .email_service import EmailService
+    from .fcm_service import FCMService
+    now = timezone.now()
+    # Fenêtre 48h–72h après enrollment : chaque enrollment passe une seule fois dans cette fenêtre
+    window_start = now - timezone.timedelta(hours=72)
+    window_end   = now - timezone.timedelta(hours=48)
+    stale = Enrollment.objects.filter(
+        is_completed=False,
+        progress_percent__gt=0,
+        enrolled_at__range=(window_start, window_end),
+    ).select_related('user', 'course')
+    for enrollment in stale:
+        try:
+            EmailService.send_lesson_reminder(enrollment)
+        except Exception:
+            pass
+        FCMService.send_to_user(
+            enrollment.user,
+            'Continuez votre apprentissage !',
+            f'Reprenez « {enrollment.course.title} » là où vous en étiez.',
+            {'type': 'lesson_reminder', 'course_slug': enrollment.course.slug},
+        )
+
+
+@shared_task(name='notifications.notify_new_lesson')
+def notify_new_lesson(lesson_id: str):
+    """U7 — Notifie par FCM tous les étudiants inscrits quand une nouvelle leçon est ajoutée."""
+    from apps.academy.models import Lesson, Enrollment
+    from apps.accounts.models import User
+    from .fcm_service import FCMService
+    try:
+        lesson = Lesson.objects.select_related('course').get(id=lesson_id)
+    except Lesson.DoesNotExist:
+        return
+    course = lesson.course
+    enrolled_user_ids = Enrollment.objects.filter(
+        course=course,
+        is_completed=False,
+    ).values_list('user_id', flat=True)
+    students = list(User.objects.filter(id__in=enrolled_user_ids, is_active=True))
+    FCMService.send_to_multiple(
+        students,
+        'Nouvelle leçon disponible !',
+        f'« {lesson.title} » vient d\'être ajoutée à {course.title}.',
+        {'type': 'new_lesson', 'course_slug': course.slug, 'lesson_id': str(lesson.id)},
     )

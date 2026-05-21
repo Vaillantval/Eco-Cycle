@@ -856,6 +856,13 @@ class AdminAcademyLessonCreateView(AdminRequiredMixin, View):
                 duration_minutes = duration,
             )
         messages.success(request, f'Leçon « {lesson.title} » créée.')
+        # U7 — Notifier les étudiants inscrits si le cours est publié
+        if course.is_published:
+            try:
+                from apps.notifications.tasks import notify_new_lesson
+                notify_new_lesson.delay(str(lesson.id))
+            except Exception:
+                pass
         return redirect('admin_academy_lesson_edit', course_pk=course_pk, lesson_pk=lesson.pk)
 
 

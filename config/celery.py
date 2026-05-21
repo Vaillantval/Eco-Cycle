@@ -24,4 +24,9 @@ app.conf.beat_schedule = {
         'task': 'collections.auto_cancel_unassigned',
         'schedule': crontab(minute=0),
     },
+    # Rappels leçons non terminées — tous les jours à 10h UTC
+    'lesson-reminders': {
+        'task': 'notifications.send_lesson_reminders',
+        'schedule': crontab(hour=10, minute=0),
+    },
 }

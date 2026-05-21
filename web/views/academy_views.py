@@ -92,6 +92,11 @@ class EnrollCourseView(LoginRequiredMixin, View):
             enrollment.save(update_fields=['payment_status'])
         if created:
             messages.success(request, f'Inscrit au cours « {course.title} » !')
+            try:
+                from apps.notifications.email_service import EmailService
+                EmailService.send_free_enrollment_confirmation(enrollment)
+            except Exception:
+                pass
         else:
             messages.info(request, 'Vous êtes déjà inscrit à ce cours.')
         return redirect('course_detail', slug=slug)

@@ -30,5 +30,33 @@ def create_superuser():
     print(f'✓ Superuser {email} créé.')
 
 
+def setup_periodic_tasks():
+    """Synchronise les tâches périodiques Celery Beat dans la base (idempotent).
+    Les schedules sont définis dans config/celery.py ; ici on s'assure qu'ils
+    existent aussi en base pour le DatabaseScheduler de Railway.
+    """
+    try:
+        from django_celery_beat.models import PeriodicTask, CrontabSchedule
+        import json
+
+        # Rappels de leçons non terminées — tous les jours à 10h00 UTC
+        daily_10h, _ = CrontabSchedule.objects.get_or_create(
+            minute='0', hour='10', day_of_week='*', day_of_month='*', month_of_year='*',
+        )
+        PeriodicTask.objects.update_or_create(
+            name='Rappels leçons non terminées',
+            defaults={
+                'crontab': daily_10h,
+                'task': 'notifications.send_lesson_reminders',
+                'args': json.dumps([]),
+                'enabled': True,
+            },
+        )
+        print('✓ Periodic task "send_lesson_reminders" enregistrée.')
+    except Exception as e:
+        print(f'⚠ setup_periodic_tasks: {e}')
+
+
 if __name__ == '__main__':
     create_superuser()
+    setup_periodic_tasks()
