@@ -29,6 +29,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
 
     # API v1
+    path('api/admin/', include('apps.accounts.admin_urls')),
     path('api/auth/', include('apps.accounts.urls')),
     path('api/waste/', include('apps.waste.urls')),
     path('api/marketplace/', include('apps.marketplace.urls')),
