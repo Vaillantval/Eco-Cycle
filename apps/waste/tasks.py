@@ -9,8 +9,7 @@ def analyze_waste_photo_async(self, listing_id: str):
     try:
         listing = WasteListing.objects.get(id=listing_id)
         if listing.photo:
-            photo_url = listing.photo.url
-            result = ai_service.analyze_image_from_url(photo_url)
+            result = ai_service.analyze_image_from_file(listing.photo.path)
             if 'error' not in result:
                 listing.ai_analysis = result
                 listing.ai_estimated_value = result.get('estimated_value_htg')
