@@ -204,7 +204,7 @@ if (newsletterBtn) {
 
 // ── CHAT WIDGET CONSEILLER RECYCLAGE ──────────────────────────────────────────
 (function () {
-  let chatHistory = [];
+  let chatSessionId = null;
 
   function getCsrfToken() {
     const match = document.cookie.match(/csrftoken=([^;]+)/);
@@ -235,13 +235,13 @@ if (newsletterBtn) {
           'Content-Type': 'application/json',
           'X-CSRFToken': getCsrfToken(),
         },
-        body: JSON.stringify({ message, history: chatHistory }),
+        body: JSON.stringify({ message, session_id: chatSessionId }),
       });
       const data = await res.json();
       removeChatBubble(loadingId);
       if (data.reply) {
         appendChatBubble('assistant', data.reply);
-        chatHistory = data.history || [];
+        chatSessionId = data.session_id || null;
       } else {
         appendChatBubble('assistant', data.error || 'Une erreur est survenue.');
       }

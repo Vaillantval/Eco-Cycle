@@ -378,63 +378,86 @@ class _LazyService:
 
 class RecyclingAdvisor:
     """
-    Agent conversationnel Conseiller Recyclage EcoCycle.
-    Utilisé dans le chat widget de l'interface web et l'app Flutter.
+    Agent conversationnel Conseiller Recyclage EcoCycle via Sessions API.
+    Le system prompt est configuré directement sur l'agent dans la console Anthropic.
+    Le session_id est retourné au client et réutilisé pour maintenir le contexte.
     """
 
-    SYSTEM_PROMPT = """Tu es Éco, le conseiller recyclage intelligent de la plateforme EcoCycle Haiti.
-Tu aides les utilisateurs haïtiens à recycler mieux, vendre leurs déchets et comprendre leur impact environnemental.
-
-Tes domaines d'expertise :
-- Identification et tri des déchets recyclables (plastique PET/HDPE, métaux ferreux/non-ferreux, papier/carton, verre, électronique, pneus)
-- Estimation de la valeur marchande en gourdes haïtiennes (HTG) et en USD selon les cours locaux
-- Conseils pratiques pour préparer les déchets (tri, nettoyage, compactage) afin d'obtenir le meilleur prix
-- Explication du processus EcoCycle : soumettre un listing, attendre l'approbation, participer aux enchères
-- Impact environnemental du recyclage (CO₂ évité, eau économisée, arbres préservés)
-- Localisation des points de collecte EcoCycle en Haïti (Port-au-Prince, Cap-Haïtien, Gonaïves, etc.)
-
-Fourchettes de prix indicatives (marché haïtien 2026) :
-- Plastique PET (bouteilles) : 30–60 HTG/kg
-- Plastique HDPE (bidons) : 20–45 HTG/kg
-- Fer/acier : 15–30 HTG/kg
-- Aluminium : 80–150 HTG/kg
-- Cuivre : 250–500 HTG/kg
-- Papier/carton propre : 8–20 HTG/kg
-- Verre : 5–12 HTG/kg
-- Appareils électroniques : valeur variable selon l'état
-
-Règles de comportement :
-- Réponds toujours en français (ou en créole haïtien si l'utilisateur écrit en créole)
-- Sois concis et pratique — maximum 3 paragraphes sauf si plus de détails sont demandés
-- Si tu n'es pas sûr d'une information, dis-le clairement
-- Ne traite que les sujets liés au recyclage, aux déchets et à l'environnement
-- Encourage toujours l'action concrète : soumettre un déchet, visiter la marketplace, suivre une formation Academy"""
+    TIMEOUT = 60
 
     def __init__(self):
-        self.client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
+        self.client   = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
+        self.agent_id = settings.ANTHROPIC_ADVISOR_AGENT_ID
+        self.env_id   = settings.ANTHROPIC_ENV_ID
 
-    def chat(self, user_message: str, history: list = None) -> tuple:
+    def chat(self, user_message: str, session_id: str = None) -> tuple:
         """
-        Envoie un message et retourne (reply, updated_history).
-        history : liste de {'role': 'user'|'assistant', 'content': '...'}
+        Retourne (reply, session_id).
+        session_id=None → crée une nouvelle session (premier message).
+        session_id fourni → continue la conversation existante.
         """
-        messages = list(history or [])
-        messages.append({'role': 'user', 'content': user_message})
+        if not self.agent_id or not self.env_id:
+            return 'Agent non configuré (ANTHROPIC_ADVISOR_AGENT_ID manquant).', None
 
-        response = self.client.messages.create(
-            model='claude-haiku-4-5-20251001',
-            max_tokens=512,
-            system=self.SYSTEM_PROMPT,
-            messages=messages,
-        )
-        reply = response.content[0].text
-        messages.append({'role': 'assistant', 'content': reply})
-        return reply, messages
+        if not session_id:
+            try:
+                session    = self.client.beta.sessions.create(
+                    agent=self.agent_id,
+                    environment_id=self.env_id,
+                )
+                session_id = session.id
+            except Exception as e:
+                return f'Erreur création session : {e}', None
+
+        collected_text = []
+        done           = threading.Event()
+        stream_error   = [None]
+
+        def stream_loop():
+            try:
+                for event in self.client.beta.sessions.events.stream(session_id):
+                    if event.type == 'agent.message':
+                        for block in event.content:
+                            if block.type == 'text':
+                                collected_text.append(block.text)
+                    elif event.type in ('session.status_idle', 'session.status_terminated'):
+                        done.set()
+                        return
+                    elif event.type == 'session.error':
+                        stream_error[0] = (
+                            f"{getattr(event.error, 'type', '?')}: "
+                            f"{getattr(event.error, 'message', '')}"
+                        )
+                        done.set()
+                        return
+            except Exception as e:
+                stream_error[0] = str(e)
+                done.set()
+
+        t = threading.Thread(target=stream_loop, daemon=True)
+        t.start()
+
+        try:
+            self.client.beta.sessions.events.send(
+                session_id,
+                events=[{'type': 'user.message', 'content': [{'type': 'text', 'text': user_message}]}],
+            )
+        except Exception as e:
+            done.set()
+            return f'Erreur envoi message : {e}', None
+
+        done.wait(timeout=self.TIMEOUT)
+        t.join(timeout=5)
+
+        if stream_error[0]:
+            return f'Erreur agent : {stream_error[0]}', None
+
+        reply = ''.join(collected_text) or 'Aucune réponse reçue.'
+        return reply, session_id
 
     def quick_estimate(self, waste_description: str) -> str:
         """Estimation rapide d'un déchet sans photo."""
-        prompt = f"Donne-moi une estimation rapide de la valeur de ce déchet : {waste_description}"
-        reply, _ = self.chat(prompt)
+        reply, _ = self.chat(f"Estimation rapide : {waste_description}")
         return reply
 
 

@@ -82,19 +82,16 @@ class RecyclingAdvisorView(APIView):
     throttle_scope = 'ai_analysis'
 
     def post(self, request):
-        message = request.data.get('message', '').strip()
-        history = request.data.get('history', [])
+        message    = request.data.get('message', '').strip()
+        session_id = request.data.get('session_id') or None
 
         if not message:
             return Response({'error': 'Message vide.'}, status=status.HTTP_400_BAD_REQUEST)
         if len(message) > 500:
             return Response({'error': 'Message trop long (500 caractères max).'}, status=status.HTTP_400_BAD_REQUEST)
 
-        reply, updated_history = recycling_advisor.chat(message, history)
-        return Response({
-            'reply': reply,
-            'history': updated_history[-10:],
-        })
+        reply, session_id = recycling_advisor.chat(message, session_id)
+        return Response({'reply': reply, 'session_id': session_id})
 
 
 class AdminListingListView(generics.ListAPIView):
