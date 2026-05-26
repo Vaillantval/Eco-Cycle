@@ -9,7 +9,7 @@ from .serializers import (
     WasteListingSerializer, CreateWasteListingSerializer,
     WasteCategorySerializer, AIAnalysisRequestSerializer, AdminReviewSerializer,
 )
-from .ai_service import ai_service
+from .ai_service import ai_service, recycling_advisor
 from .tasks import analyze_waste_photo_async, notify_admin_new_listing
 from apps.accounts.permissions import IsAdmin, IsOwnerOrAdmin
 
@@ -71,6 +71,30 @@ class AIAnalysisView(APIView):
             return Response({'error': result['error']}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
 
         return Response({'analysis': result})
+
+
+class RecyclingAdvisorView(APIView):
+    """
+    POST /api/waste/advisor/
+    Chat conversationnel avec l'agent Conseiller Recyclage.
+    """
+    permission_classes = [permissions.AllowAny]
+    throttle_scope = 'ai_analysis'
+
+    def post(self, request):
+        message = request.data.get('message', '').strip()
+        history = request.data.get('history', [])
+
+        if not message:
+            return Response({'error': 'Message vide.'}, status=status.HTTP_400_BAD_REQUEST)
+        if len(message) > 500:
+            return Response({'error': 'Message trop long (500 caractères max).'}, status=status.HTTP_400_BAD_REQUEST)
+
+        reply, updated_history = recycling_advisor.chat(message, history)
+        return Response({
+            'reply': reply,
+            'history': updated_history[-10:],
+        })
 
 
 class AdminListingListView(generics.ListAPIView):

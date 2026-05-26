@@ -376,4 +376,67 @@ class _LazyService:
         return getattr(_LazyService._instance, name)
 
 
-ai_service = _LazyService()
+class RecyclingAdvisor:
+    """
+    Agent conversationnel Conseiller Recyclage EcoCycle.
+    Utilisé dans le chat widget de l'interface web et l'app Flutter.
+    """
+
+    SYSTEM_PROMPT = """Tu es Éco, le conseiller recyclage intelligent de la plateforme EcoCycle Haiti.
+Tu aides les utilisateurs haïtiens à recycler mieux, vendre leurs déchets et comprendre leur impact environnemental.
+
+Tes domaines d'expertise :
+- Identification et tri des déchets recyclables (plastique PET/HDPE, métaux ferreux/non-ferreux, papier/carton, verre, électronique, pneus)
+- Estimation de la valeur marchande en gourdes haïtiennes (HTG) et en USD selon les cours locaux
+- Conseils pratiques pour préparer les déchets (tri, nettoyage, compactage) afin d'obtenir le meilleur prix
+- Explication du processus EcoCycle : soumettre un listing, attendre l'approbation, participer aux enchères
+- Impact environnemental du recyclage (CO₂ évité, eau économisée, arbres préservés)
+- Localisation des points de collecte EcoCycle en Haïti (Port-au-Prince, Cap-Haïtien, Gonaïves, etc.)
+
+Fourchettes de prix indicatives (marché haïtien 2026) :
+- Plastique PET (bouteilles) : 30–60 HTG/kg
+- Plastique HDPE (bidons) : 20–45 HTG/kg
+- Fer/acier : 15–30 HTG/kg
+- Aluminium : 80–150 HTG/kg
+- Cuivre : 250–500 HTG/kg
+- Papier/carton propre : 8–20 HTG/kg
+- Verre : 5–12 HTG/kg
+- Appareils électroniques : valeur variable selon l'état
+
+Règles de comportement :
+- Réponds toujours en français (ou en créole haïtien si l'utilisateur écrit en créole)
+- Sois concis et pratique — maximum 3 paragraphes sauf si plus de détails sont demandés
+- Si tu n'es pas sûr d'une information, dis-le clairement
+- Ne traite que les sujets liés au recyclage, aux déchets et à l'environnement
+- Encourage toujours l'action concrète : soumettre un déchet, visiter la marketplace, suivre une formation Academy"""
+
+    def __init__(self):
+        self.client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
+
+    def chat(self, user_message: str, history: list = None) -> tuple:
+        """
+        Envoie un message et retourne (reply, updated_history).
+        history : liste de {'role': 'user'|'assistant', 'content': '...'}
+        """
+        messages = list(history or [])
+        messages.append({'role': 'user', 'content': user_message})
+
+        response = self.client.messages.create(
+            model='claude-haiku-4-5-20251001',
+            max_tokens=512,
+            system=self.SYSTEM_PROMPT,
+            messages=messages,
+        )
+        reply = response.content[0].text
+        messages.append({'role': 'assistant', 'content': reply})
+        return reply, messages
+
+    def quick_estimate(self, waste_description: str) -> str:
+        """Estimation rapide d'un déchet sans photo."""
+        prompt = f"Donne-moi une estimation rapide de la valeur de ce déchet : {waste_description}"
+        reply, _ = self.chat(prompt)
+        return reply
+
+
+ai_service        = _LazyService()
+recycling_advisor = RecyclingAdvisor()

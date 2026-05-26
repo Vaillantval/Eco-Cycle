@@ -201,3 +201,77 @@ if (newsletterBtn) {
 
   if (TOTAL > 1) { resetProgress(); startAuto(); }
 })();
+
+// ── CHAT WIDGET CONSEILLER RECYCLAGE ──────────────────────────────────────────
+(function () {
+  let chatHistory = [];
+
+  function getCsrfToken() {
+    const match = document.cookie.match(/csrftoken=([^;]+)/);
+    return match ? match[1] : '';
+  }
+
+  window.toggleChat = function () {
+    const box = document.getElementById('chat-box');
+    if (!box) return;
+    const opening = box.style.display === 'none';
+    box.style.display = opening ? 'flex' : 'none';
+    if (opening) document.getElementById('chat-input')?.focus();
+  };
+
+  window.sendChatMessage = async function () {
+    const input = document.getElementById('chat-input');
+    const message = input?.value.trim();
+    if (!message) return;
+
+    appendChatBubble('user', message);
+    input.value = '';
+    const loadingId = appendChatBubble('assistant', '...');
+
+    try {
+      const res = await fetch('/api/waste/advisor/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCsrfToken(),
+        },
+        body: JSON.stringify({ message, history: chatHistory }),
+      });
+      const data = await res.json();
+      removeChatBubble(loadingId);
+      if (data.reply) {
+        appendChatBubble('assistant', data.reply);
+        chatHistory = data.history || [];
+      } else {
+        appendChatBubble('assistant', data.error || 'Une erreur est survenue.');
+      }
+    } catch {
+      removeChatBubble(loadingId);
+      appendChatBubble('assistant', 'Désolé, une erreur est survenue. Réessayez.');
+    }
+  };
+
+  function appendChatBubble(role, text) {
+    const box = document.getElementById('chat-messages');
+    if (!box) return null;
+    const id  = 'cb-' + Date.now();
+    const div = document.createElement('div');
+    div.className = `chat-bubble ${role}`;
+    div.id        = id;
+    div.textContent = text;
+    box.appendChild(div);
+    box.scrollTop = box.scrollHeight;
+    return id;
+  }
+
+  function removeChatBubble(id) {
+    if (id) document.getElementById(id)?.remove();
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById('chat-toggle')?.addEventListener('click', toggleChat);
+    document.getElementById('chat-input')?.addEventListener('keypress', function (e) {
+      if (e.key === 'Enter') sendChatMessage();
+    });
+  });
+})();

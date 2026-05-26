@@ -296,6 +296,31 @@
     </div>
   </footer>
 
+  <!-- CHAT WIDGET CONSEILLER RECYCLAGE -->
+  <div id="chat-widget" class="chat-widget">
+    <button id="chat-toggle" class="chat-toggle-btn" aria-label="Ouvrir le conseiller recyclage">
+      💬 Éco
+    </button>
+    <div id="chat-box" class="chat-box" style="display:none;">
+      <div class="chat-header">
+        <span>♻ Éco — Conseiller Recyclage</span>
+        <button onclick="toggleChat()" aria-label="Fermer">×</button>
+      </div>
+      <div id="chat-messages" class="chat-messages">
+        <div class="chat-bubble assistant">
+          Bonjour ! Je suis Éco, votre conseiller recyclage 🌱<br>
+          Comment puis-je vous aider aujourd'hui ?
+        </div>
+      </div>
+      <div class="chat-input-row">
+        <input type="text" id="chat-input"
+               placeholder="Posez votre question..."
+               aria-label="Message au conseiller">
+        <button onclick="sendChatMessage()" class="btn btn-primary btn-sm" aria-label="Envoyer">→</button>
+      </div>
+    </div>
+  </div>
+
   <script src="{% static 'js/main.js' %}"></script>
   {% block extra_js %}{% endblock %}
   <script>
