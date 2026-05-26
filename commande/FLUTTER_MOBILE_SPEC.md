@@ -11,6 +11,17 @@
 1. [Architecture & Auth](#1-architecture--auth)
 2. [Rôles utilisateurs](#2-rôles-utilisateurs)
 3. [Endpoints API — Référence complète](#3-endpoints-api--référence-complète)
+   - 3.1 [Authentification](#31-authentification--apiauth)
+   - 3.2 [Déchets (Waste)](#32-déchets-waste--apiwaste)
+   - 3.3 [Ramassages (Collections)](#33-ramassages-collections--apicollections)
+   - 3.4 [Marketplace](#34-marketplace--apimarketplace)
+   - 3.5 [Academy](#35-academy--apiacademy)
+   - 3.6 [Notifications](#36-notifications--apinotifications)
+   - 3.7 [Impact](#37-impact--apiimpact)
+   - 3.8 [Blog](#38-blog--apiblog)
+   - 3.9 [Contact & Newsletter](#39-contact--newsletter--apicontact-apinewsletter)
+   - 3.10 [Documentation API](#310-documentation-api)
+   - 3.11 [Admin global](#311-admin-global--apiadmin)
 4. [Fonctionnalités par rôle](#4-fonctionnalités-par-rôle)
    - 4.1 [Utilisateur standard](#41-utilisateur-standard)
    - 4.2 [Collecteur](#42-collecteur)
@@ -338,10 +349,12 @@ ou
 
 ### 3.5 Academy — `/api/academy/`
 
+#### Endpoints utilisateur
+
 | Méthode | Endpoint | Auth | Description |
 |---------|----------|------|-------------|
 | GET | `/api/academy/courses/` | Non | Liste des cours publiés |
-| GET | `/api/academy/courses/<slug>/` | Non | Détail cours + leçons |
+| GET | `/api/academy/courses/<slug>/` | Non | Détail cours + leçons + vidéos |
 | POST | `/api/academy/courses/<slug>/enroll/` | Oui | S'inscrire au cours |
 | POST | `/api/academy/lessons/<id>/complete/` | Oui | Marquer leçon terminée |
 | GET | `/api/academy/my-enrollments/` | Oui | Mes cours en cours |
@@ -371,14 +384,43 @@ ou
       "id": "uuid",
       "title": "Introduction",
       "content": "Markdown content...",
+      "pdf_display_mode": "extract",
+      "pdf_allow_download": false,
       "order": 1,
-      "duration_minutes": 15
+      "duration_minutes": 15,
+      "videos": [
+        {
+          "id": "uuid",
+          "title": "Intro vidéo",
+          "video_file": null,
+          "video_url": "https://youtu.be/dQw4w9WgXcQ",
+          "embed_url": "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ",
+          "platform": "youtube",
+          "allow_download": false,
+          "duration_minutes": 12,
+          "order": 1
+        }
+      ]
     }
   ]
 }
 ```
 
-> **Note :** L'API actuelle retourne le contenu textuel Markdown des leçons. Les vidéos (`LessonVideo`) ne sont pas encore sérialisées dans l'API REST — à étendre si besoin pour le mobile (voir section 8).
+**Valeurs `platform` :**
+| Valeur | Signification |
+|--------|--------------|
+| `youtube` | Vidéo YouTube |
+| `vimeo` | Vidéo Vimeo |
+| `tiktok` | Vidéo TikTok |
+| `instagram` | Reel Instagram |
+| `direct` | Fichier MP4/WebM uploadé |
+| `unknown` | URL non reconnue |
+
+**Valeurs `pdf_display_mode` :**
+| Valeur | Signification |
+|--------|--------------|
+| `extract` | Texte extrait du PDF, rendu en Markdown |
+| `viewer` | Visionneuse PDF intégrée (`flutter_pdfview`) |
 
 **Réponse enrollment :**
 ```json
@@ -390,10 +432,157 @@ ou
   "progress_percent": 62,
   "is_completed": false,
   "completed_lesson_ids": ["uuid1", "uuid2"],
+  "payment_status": "free",
   "enrolled_at": "2026-05-01T...",
   "completed_at": null
 }
 ```
+
+#### Paiement d'un cours — Stripe
+
+| Méthode | Endpoint | Auth | Description |
+|---------|----------|------|-------------|
+| POST | `/api/academy/courses/<slug>/pay/stripe/init/` | Oui | Initialiser un PaymentIntent Stripe |
+| POST | `/api/academy/courses/<slug>/pay/stripe/confirm/` | Oui | Confirmer après paiement Flutter |
+
+**Stripe init — Réponse :**
+```json
+{
+  "client_secret": "pi_xxx_secret_yyy",
+  "transaction_number": "TXN-XXXXXX"
+}
+```
+
+**Stripe confirm — Body :**
+```json
+{ "payment_intent_id": "pi_xxx" }
+```
+
+**Stripe confirm — Réponse :** objet `Enrollment` complet (voir ci-dessus).
+
+**Flux Flutter Stripe :**
+```dart
+// 1. Init
+final res = await api.post('/api/academy/courses/$slug/pay/stripe/init/');
+final clientSecret = res['client_secret'];
+
+// 2. Présenter la feuille de paiement
+await Stripe.instance.initPaymentSheet(
+  paymentSheetParameters: SetupPaymentSheetParameters(
+    paymentIntentClientSecret: clientSecret,
+    merchantDisplayName: 'EcoCycle Haiti',
+  ),
+);
+await Stripe.instance.presentPaymentSheet();
+
+// 3. Confirmer côté backend
+final pi = await Stripe.instance.retrievePaymentIntent(clientSecret);
+await api.post('/api/academy/courses/$slug/pay/stripe/confirm/', {
+  'payment_intent_id': pi.id,
+});
+```
+
+#### Paiement d'un cours — PlopPlop
+
+| Méthode | Endpoint | Auth | Description |
+|---------|----------|------|-------------|
+| POST | `/api/academy/courses/<slug>/pay/plopplop/` | Oui | Créer le paiement PlopPlop |
+| GET | `/api/academy/courses/<slug>/pay/plopplop/retour/?reference_id=...` | Non | Vérifier après retour WebView |
+
+**PlopPlop init — Body :**
+```json
+{ "method": "moncash" }
+```
+> Valeurs `method` : `moncash` | `natcash` | `kashpaw` | `all`
+
+**PlopPlop init — Réponse :**
+```json
+{
+  "redirect_url": "https://plopplop.com/pay/...",
+  "transaction_number": "TXN-XXXXXX"
+}
+```
+
+**PlopPlop retour — Réponse (si payé) :**
+```json
+{
+  "status": "paid",
+  "enrollment": { "...enrollment complet..." }
+}
+```
+> `status` peut être `"paid"` ou `"already_paid"`. En cas d'échec : HTTP 402.
+
+**Flux Flutter PlopPlop :**
+```dart
+// 1. Init
+final res = await api.post('/api/academy/courses/$slug/pay/plopplop/', {'method': 'moncash'});
+final redirectUrl = res['redirect_url'];
+final txnNumber   = res['transaction_number'];
+
+// 2. Ouvrir WebView
+// Écouter la navigation vers l'URL de retour (contient ?reference_id=...)
+// 3. Vérifier
+final verify = await api.get(
+  '/api/academy/courses/$slug/pay/plopplop/retour/?reference_id=$txnNumber',
+);
+```
+
+#### Endpoints admin Academy
+
+| Méthode | Endpoint | Auth | Description |
+|---------|----------|------|-------------|
+| GET | `/api/academy/admin/courses/` | Admin | Liste tous les cours |
+| POST | `/api/academy/admin/courses/` | Admin | Créer un cours (multipart) |
+| GET | `/api/academy/admin/courses/<slug>/` | Admin | Détail d'un cours |
+| PUT/PATCH | `/api/academy/admin/courses/<slug>/` | Admin | Modifier un cours |
+| DELETE | `/api/academy/admin/courses/<slug>/` | Admin | Supprimer un cours |
+| GET | `/api/academy/admin/lessons/` | Admin | Liste toutes les leçons |
+| POST | `/api/academy/admin/lessons/` | Admin | Créer une leçon (multipart) |
+| GET | `/api/academy/admin/lessons/<id>/` | Admin | Détail d'une leçon |
+| PUT/PATCH | `/api/academy/admin/lessons/<id>/` | Admin | Modifier une leçon |
+| DELETE | `/api/academy/admin/lessons/<id>/` | Admin | Supprimer une leçon |
+| POST | `/api/academy/admin/lessons/<id>/videos/` | Admin | Ajouter une vidéo à une leçon |
+| DELETE | `/api/academy/admin/videos/<id>/` | Admin | Supprimer une vidéo |
+
+**Filtres `/api/academy/admin/courses/` :** `level`, `is_published`, `search`, `ordering`
+
+**Filtres `/api/academy/admin/lessons/` :** `course=<uuid>`, `ordering=order`
+
+**Créer un cours — multipart/form-data :**
+```
+title            : string
+description      : string
+level            : beginner | intermediate | advanced
+is_free          : boolean
+price            : decimal (si is_free=false)
+thumbnail        : image file (optionnel)
+is_published     : boolean
+```
+
+**Créer une leçon — multipart/form-data :**
+```
+course           : UUID
+title            : string
+content          : string (Markdown)
+order            : integer
+pdf_file         : file (optionnel)
+pdf_display_mode : extract | viewer
+pdf_allow_download : boolean
+```
+> Si `pdf_display_mode=extract`, le backend calcule automatiquement `pdf_reading_minutes`.
+
+**Ajouter une vidéo — Body (JSON ou multipart) :**
+```json
+{
+  "title": "Introduction",
+  "video_url": "https://youtu.be/dQw4w9WgXcQ",
+  "duration_minutes": 0,
+  "allow_download": false,
+  "order": 1
+}
+```
+> Si `video_url` est une URL YouTube et `duration_minutes=0`, le backend récupère automatiquement la durée via l'API YouTube Data v3.
+> Pour uploader un fichier : utiliser `multipart/form-data` avec champ `video_file`.
 
 ---
 
@@ -533,6 +722,100 @@ ou
 
 ---
 
+### 3.11 Admin global — `/api/admin/`
+
+> Tous les endpoints de cette section sont réservés au rôle `admin` (permission `IsAdmin`).
+
+#### Stats dashboard
+
+| Méthode | Endpoint | Auth | Description |
+|---------|----------|------|-------------|
+| GET | `/api/admin/stats/` | Admin | Statistiques globales temps réel |
+
+**Réponse :**
+```json
+{
+  "listings_pending": 4,
+  "pickups_active": 7,
+  "auctions_active": 12,
+  "marketplace_revenue_htg": 45000.0,
+  "academy_enrollments": 289,
+  "new_users_today": 3,
+  "total_users": 512
+}
+```
+
+| Champ | Signification |
+|-------|--------------|
+| `listings_pending` | Listings en attente d'approbation (`pending_review`) |
+| `pickups_active` | Ramassages en cours (`assigned` + `in_transit` + `arrived`) |
+| `auctions_active` | Enchères actives |
+| `marketplace_revenue_htg` | Total des commandes payées (HTG) |
+| `academy_enrollments` | Nombre total d'inscriptions Academy |
+| `new_users_today` | Nouveaux inscrits aujourd'hui |
+| `total_users` | Utilisateurs actifs |
+
+#### Gestion des utilisateurs
+
+| Méthode | Endpoint | Auth | Description |
+|---------|----------|------|-------------|
+| GET | `/api/admin/users/` | Admin | Liste tous les utilisateurs |
+| GET | `/api/admin/users/<id>/` | Admin | Détail d'un utilisateur |
+| PATCH | `/api/admin/users/<id>/` | Admin | Modifier rôle, statut, infos |
+
+**Filtres `/api/admin/users/` :**
+- `role=user|collector|admin`
+- `is_active=true|false`
+- `is_email_verified=true|false`
+- `search=<email|prénom|nom|ville>`
+- `ordering=created_at|email|role`
+
+**Réponse utilisateur :**
+```json
+{
+  "id": "uuid",
+  "email": "user@example.com",
+  "full_name": "Jean Pierre",
+  "first_name": "Jean",
+  "last_name": "Pierre",
+  "phone": "+50912345678",
+  "role": "user",
+  "is_active": true,
+  "is_email_verified": true,
+  "city": "Port-au-Prince",
+  "avatar": "https://...",
+  "created_at": "2026-05-01T..."
+}
+```
+
+**PATCH `/api/admin/users/<id>/` — Champs modifiables :**
+```json
+{
+  "role": "collector",
+  "is_active": false,
+  "first_name": "Jean",
+  "last_name": "Pierre",
+  "phone": "+50912345678",
+  "city": "Cap-Haïtien"
+}
+```
+> `role` accepte uniquement : `user` | `collector` | `admin`
+
+#### Liste des collecteurs disponibles
+
+| Méthode | Endpoint | Auth | Description |
+|---------|----------|------|-------------|
+| GET | `/api/admin/collectors/` | Admin | Collecteurs et admins actifs |
+
+> Utilisé pour la liste de sélection lors de l'assignation d'un ramassage.
+> Retourne uniquement les utilisateurs avec `role in (collector, admin)` et `is_active=true`.
+
+**Filtres :** `search=<email|prénom|nom|ville>`, `ordering=first_name|city`
+
+**Réponse :** même format que `/api/admin/users/`.
+
+---
+
 ## 4. Fonctionnalités par rôle
 
 ### 4.1 Utilisateur standard
@@ -601,17 +884,19 @@ ou
 - [x] Catalogue des cours (filtres niveau, gratuit/payant, recherche)
 - [x] Détail cours : description, durée, nombre de leçons, niveau
 - [x] S'inscrire à un cours gratuit
-- [x] Payer un cours payant (Stripe / PlopPlop)
+- [x] Payer un cours payant via Stripe (`/pay/stripe/init/` + `flutter_stripe`)
+- [x] Payer un cours payant via PlopPlop (`/pay/plopplop/` + WebView)
 - [x] Mes cours en cours : progression (barre de progression)
 - [x] Leçon — contenu :
   - Texte Markdown rendu
-  - Vidéos intégrées : YouTube, Vimeo (lecture native), TikTok/Instagram (WebView)
+  - Vidéos intégrées : YouTube, Vimeo (lecture native), TikTok/Instagram (WebView), MP4 direct
   - PDF : mode texte extrait ou visionneuse PDF
 - [x] Marquer une leçon comme terminée
 - [x] Avancer automatiquement à la leçon suivante
 - [x] Certificat généré automatiquement à la complétion du cours
 - [x] Mes certificats (liste + téléchargement PDF)
 - [x] Notifications : rappel 48h si cours commencé non terminé
+- [x] Notifications : nouvelle leçon dans un cours inscrit
 
 #### Impact personnel
 - [x] Tableau de bord impact : kg recyclés, CO2 économisé, valeur économique, rang
@@ -668,12 +953,14 @@ ou
 > Accès à **tout** ce que fait un utilisateur standard + collecteur, **plus** :
 
 #### Dashboard admin
-- [x] Stats globales en temps réel :
+- [x] Stats globales en temps réel via `GET /api/admin/stats/` :
   - Listings en attente d'approbation
   - Ramassages actifs
   - Enchères actives
-  - Revenus marketplace
+  - Revenus marketplace (HTG)
   - Inscriptions Academy
+  - Nouveaux utilisateurs aujourd'hui
+  - Total utilisateurs actifs
 - [x] Alertes : nouveaux listings, nouveaux utilisateurs
 
 #### Gestion des listings
@@ -689,7 +976,7 @@ ou
 - [x] Liste tous les ramassages (tous statuts, tous utilisateurs)
   - Filtre : statut, ville, date
   - Recherche : email client, ville, adresse
-- [x] Assigner un collecteur à un ramassage
+- [x] Assigner un collecteur à un ramassage via `GET /api/admin/collectors/`
 - [x] Notification push + email à réception d'une nouvelle demande de ramassage
 
 #### Gestion de la marketplace
@@ -699,20 +986,22 @@ ou
 - [x] Créer une enchère manuellement
 - [x] Voir les enchères actives et leur état
 
-#### Gestion de l'Academy
-- [x] Créer / modifier / supprimer un cours
-- [x] Créer / modifier / supprimer des leçons
-- [x] Ajouter des vidéos (YouTube, Vimeo, TikTok, Instagram, MP4/WebM uploadé)
-- [x] Ajouter un PDF (mode texte extrait ou visionneuse)
-- [x] Publier / dépublier un cours
+#### Gestion de l'Academy (CRUD complet via API REST)
+- [x] Créer / modifier / supprimer un cours — `POST/PATCH/DELETE /api/academy/admin/courses/`
+- [x] Publier / dépublier un cours — champ `is_published`
+- [x] Créer / modifier / supprimer des leçons — `POST/PATCH/DELETE /api/academy/admin/lessons/`
+- [x] Ajouter des vidéos (YouTube auto-durée, Vimeo, TikTok, Instagram, MP4/WebM uploadé) — `POST /api/academy/admin/lessons/<id>/videos/`
+- [x] Supprimer une vidéo — `DELETE /api/academy/admin/videos/<id>/`
+- [x] Ajouter un PDF (mode texte extrait ou visionneuse, extraction auto des pages)
 - [x] Voir les inscriptions par cours
 - [x] Voir les certificats émis
 
-#### Gestion des utilisateurs
-- [x] Liste tous les utilisateurs
-  - Rôle, statut, date d'inscription
-- [x] Modifier le rôle d'un utilisateur (user → collector → admin)
-- [x] Activer / désactiver un compte
+#### Gestion des utilisateurs (via API REST)
+- [x] Liste tous les utilisateurs via `GET /api/admin/users/`
+  - Filtres : rôle, statut actif, email vérifié
+  - Recherche : email, prénom, nom, ville
+- [x] Modifier le rôle d'un utilisateur (user → collector → admin) via `PATCH /api/admin/users/<id>/`
+- [x] Activer / désactiver un compte via `PATCH /api/admin/users/<id>/` (`is_active`)
 
 #### Notifications admin reçues
 - [x] Push + email : nouveau listing soumis
@@ -720,8 +1009,6 @@ ou
 - [x] Push + email : paiement reçu (marketplace ou academy)
 - [x] Push + email : ramassage échoué
 - [x] Push + email : inscription cours payant
-
-> **Note :** Ces endpoints admin spécifiques (gestion users, gestion academy côté admin, stats dashboard) sont actuellement implémentés dans le panel web Django. Pour le mobile admin, il faudra créer des endpoints DRF dédiés ou utiliser l'interface web en WebView pour les fonctions avancées.
 
 ---
 
@@ -770,10 +1057,10 @@ Chaque notification push contient un champ `data` avec le contexte pour la navig
 // Statut ramassage mis à jour
 { "type": "pickup_status", "pickup_id": "uuid", "status": "in_transit" }
 
-// Cours complété
+// Cours complété → certificat dispo
 { "type": "course_completed", "course_id": "uuid", "cert_id": "uuid" }
 
-// Rappel leçon non terminée
+// Rappel leçon non terminée (48-72h après dernière activité)
 { "type": "lesson_reminder", "course_slug": "recyclage-du-plastique" }
 
 // Nouvelle leçon dans un cours inscrit
@@ -871,7 +1158,7 @@ Chaque notification push contient un champ `data` avec le contexte pour la navig
 | `MySalesScreen` | Mes ventes |
 | `OrderDetailScreen` | Détail commande + statut paiement |
 | `PaymentCheckoutScreen` | Sélection mode de paiement |
-| `StripeCheckoutScreen` | WebView ou flutter_stripe |
+| `StripeCheckoutScreen` | flutter_stripe PaymentSheet |
 | `PlopPlopCheckoutScreen` | WebView PlopPlop → retour app |
 | `PaymentSuccessScreen` | Confirmation de paiement |
 
@@ -883,7 +1170,7 @@ Chaque notification push contient un champ `data` avec le contexte pour la navig
 | `LessonScreen` | Contenu : Markdown, vidéo (YouTube / Vimeo / TikTok / Instagram / MP4), PDF |
 | `MyCoursesScreen` | Mes cours en cours avec barre de progression |
 | `MyCertificatesScreen` | Liste de mes certificats, bouton télécharger PDF |
-| `CoursePaymentScreen` | Paiement d'un cours payant |
+| `CoursePaymentScreen` | Sélection Stripe / PlopPlop pour un cours payant |
 
 #### Impact
 | Écran | Description |
@@ -923,13 +1210,19 @@ Chaque notification push contient un champ `data` avec le contexte pour la navig
 
 | Écran | Description |
 |-------|-------------|
-| `AdminDashboardScreen` | Stats globales, alertes |
+| `AdminDashboardScreen` | Stats globales (`/api/admin/stats/`), alertes |
 | `AdminListingsScreen` | Tous les listings (filtre, recherche, approbation) |
 | `AdminListingReviewScreen` | Approuver / Rejeter + raison |
 | `AdminPickupsScreen` | Tous les ramassages (filtre, recherche) |
-| `AdminPickupAssignScreen` | Assigner un collecteur (liste collecteurs dispo) |
+| `AdminPickupAssignScreen` | Assigner un collecteur (liste via `/api/admin/collectors/`) |
 | `AdminOrdersScreen` | Toutes les commandes |
-| `AdminUsersScreen` | Tous les utilisateurs (modifier rôle, activer/désactiver) |
+| `AdminUsersScreen` | Tous les utilisateurs (`/api/admin/users/`) — modifier rôle, activer/désactiver |
+| `AdminUserDetailScreen` | Détail utilisateur + formulaire PATCH |
+| `AdminAcademyCoursesScreen` | Liste cours admin (`/api/academy/admin/courses/`) |
+| `AdminCourseFormScreen` | Créer / modifier un cours |
+| `AdminLessonsScreen` | Liste leçons admin (`/api/academy/admin/lessons/`) |
+| `AdminLessonFormScreen` | Créer / modifier une leçon |
+| `AdminVideoFormScreen` | Ajouter une vidéo à une leçon |
 
 ---
 
@@ -1023,6 +1316,35 @@ class Auction {
 }
 ```
 
+### LessonVideo
+```dart
+class LessonVideo {
+  String id;            // UUID
+  String title;
+  String? videoFile;    // URL fichier direct (null si embed)
+  String? videoUrl;     // URL source originale (YouTube, TikTok, etc.)
+  String? embedUrl;     // URL d'intégration calculée par le backend
+  String platform;      // "youtube" | "vimeo" | "tiktok" | "instagram" | "direct" | "unknown"
+  bool allowDownload;
+  int durationMinutes;
+  int order;
+}
+```
+
+### Lesson
+```dart
+class Lesson {
+  String id;              // UUID
+  String title;
+  String content;         // Markdown
+  String pdfDisplayMode;  // "extract" | "viewer"
+  bool pdfAllowDownload;
+  int order;
+  int durationMinutes;
+  List<LessonVideo> videos;
+}
+```
+
 ### Enrollment (Academy)
 ```dart
 class Enrollment {
@@ -1057,63 +1379,45 @@ class AppNotification {
 
 ## 8. Notes d'implémentation Flutter
 
-### Endpoints à créer côté backend (manquants pour le mobile)
+### Lecture vidéo selon plateforme
 
-Les fonctionnalités suivantes existent dans le panel web mais **n'ont pas encore d'endpoint REST** :
+Le backend retourne `platform` et `embed_url` dans chaque `LessonVideo`. Utiliser la stratégie suivante :
 
-| Fonctionnalité | Endpoint à créer |
-|----------------|-----------------|
-| CRUD cours (admin) | `POST/PUT/DELETE /api/academy/admin/courses/` |
-| CRUD leçons (admin) | `POST/PUT/DELETE /api/academy/admin/lessons/` |
-| Upload vidéo leçon | `POST /api/academy/admin/lessons/<id>/videos/` |
-| Gestion utilisateurs | `GET/PATCH /api/admin/users/` |
-| Stats dashboard admin | `GET /api/admin/stats/` |
-| Paiement cours (Stripe init) | `POST /api/academy/courses/<slug>/pay/stripe/init/` |
-| Paiement cours (PlopPlop) | `POST /api/academy/courses/<slug>/pay/plopplop/` |
-| Vidéos dans une leçon | À ajouter dans `LessonSerializer` |
-| Liste collecteurs disponibles | `GET /api/admin/collectors/` |
+| `platform` | Solution Flutter |
+|------------|----------------|
+| `youtube` | `youtube_player_flutter` avec `embed_url` |
+| `vimeo` | `flutter_inappwebview` avec `embed_url` |
+| `tiktok` | `flutter_inappwebview` avec `embed_url` (ratio portrait) |
+| `instagram` | `flutter_inappwebview` avec `embed_url` (ratio portrait) |
+| `direct` | `video_player` + `chewie` avec `video_file` |
 
-### Gestion des vidéos dans les leçons
-
-L'API actuelle (`LessonSerializer`) ne retourne **pas** les vidéos (`LessonVideo`). Pour le mobile :
-
-**Option A** (recommandée) : Étendre le serializer côté backend :
-```python
-# Dans academy/serializers.py — LessonSerializer
-class LessonVideoSerializer(serializers.ModelSerializer):
-    embed_url = serializers.SerializerMethodField()
-    platform = serializers.SerializerMethodField()
-
-    class Meta:
-        model = LessonVideo
-        fields = ['id', 'title', 'video_file', 'video_url', 'embed_url',
-                  'platform', 'duration_minutes', 'order']
-
-    def get_embed_url(self, obj): return obj.embed_url()
-    def get_platform(self, obj):
-        if obj.is_youtube(): return 'youtube'
-        if obj.is_vimeo(): return 'vimeo'
-        if obj.is_tiktok(): return 'tiktok'
-        if obj.is_instagram(): return 'instagram'
-        return 'direct'
+```dart
+Widget buildVideoPlayer(LessonVideo video) {
+  switch (video.platform) {
+    case 'youtube':
+      final videoId = YoutubePlayer.convertUrlToId(video.videoUrl ?? '');
+      return YoutubePlayer(controller: YoutubePlayerController(initialVideoId: videoId!));
+    case 'vimeo':
+    case 'tiktok':
+    case 'instagram':
+      return InAppWebView(initialUrlRequest: URLRequest(url: Uri.parse(video.embedUrl!)));
+    case 'direct':
+      return VideoPlayer(VideoPlayerController.network(video.videoFile!));
+    default:
+      return Text('Vidéo non disponible');
+  }
+}
 ```
 
-**Lecture vidéo Flutter selon plateforme :**
-| Plateforme | Solution Flutter |
-|------------|----------------|
-| YouTube | `youtube_player_flutter` (portrait: WebView) |
-| Vimeo | `flutter_inappwebview` (WebView) |
-| TikTok | `flutter_inappwebview` (WebView, ratio portrait) |
-| Instagram | `flutter_inappwebview` (WebView, ratio portrait) |
-| MP4/WebM direct | `video_player` + `chewie` |
+### Paiement cours — Stripe
 
-### Paiement mobile
-
-**Stripe :**
 ```dart
-// Package : flutter_stripe
-// Utiliser PaymentSheet (recommandé) ou WebView vers /academy/<slug>/pay/stripe/
-// Endpoint existant : POST /api/academy/<slug>/pay/stripe/init/ → client_secret
+// 1. Initialiser le PaymentIntent côté backend
+final res = await api.post('/api/academy/courses/$slug/pay/stripe/init/');
+final clientSecret      = res['client_secret'];
+final transactionNumber = res['transaction_number'];
+
+// 2. Présenter la feuille de paiement Stripe
 await Stripe.instance.initPaymentSheet(
   paymentSheetParameters: SetupPaymentSheetParameters(
     paymentIntentClientSecret: clientSecret,
@@ -1121,13 +1425,34 @@ await Stripe.instance.initPaymentSheet(
   ),
 );
 await Stripe.instance.presentPaymentSheet();
+
+// 3. Confirmer côté backend (obligatoire pour activer l'enrollment)
+final pi = await Stripe.instance.retrievePaymentIntent(clientSecret);
+final enrollment = await api.post(
+  '/api/academy/courses/$slug/pay/stripe/confirm/',
+  {'payment_intent_id': pi.id},
+);
 ```
 
-**PlopPlop (MonCash, NatCash, Kashpaw) :**
+### Paiement cours — PlopPlop (MonCash, NatCash, Kashpaw)
+
 ```dart
-// Ouvrir la WebView → URL retournée par l'API
-// Écouter la redirection vers /payment/plopplop/retour/ ou /academy/<slug>/pay/plopplop/retour/
-// Puis appeler l'API pour vérifier le statut
+// 1. Créer le paiement
+final res = await api.post(
+  '/api/academy/courses/$slug/pay/plopplop/',
+  {'method': 'moncash'},
+);
+final redirectUrl      = res['redirect_url'];
+final transactionNumber = res['transaction_number'];
+
+// 2. Ouvrir WebView PlopPlop
+// Détecter la navigation vers l'URL de retour (contient ?reference_id=...)
+
+// 3. Vérifier le paiement (l'endpoint est public, pas besoin de JWT)
+final verify = await api.get(
+  '/api/academy/courses/$slug/pay/plopplop/retour/?reference_id=$transactionNumber',
+);
+// verify['status'] == 'paid' ou 'already_paid'
 ```
 
 ### Countdown temps réel des enchères
@@ -1170,4 +1495,4 @@ Construire l'URL complète côté client : `BASE_URL + '/media/' + path`.
 
 ---
 
-*Document généré le 2026-05-20 — à mettre à jour à chaque évolution du backend.*
+*Document mis à jour le 2026-05-20 — tous les endpoints backend sont désormais implémentés.*

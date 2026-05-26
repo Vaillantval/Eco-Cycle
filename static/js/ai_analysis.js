@@ -54,7 +54,7 @@ if (btnAnalyze) {
     const reader = new FileReader();
     reader.onload = async (e) => {
       try {
-        const response = await fetch('/api/waste/listings/analyze-image/', {
+        const response = await fetch('/api/waste/analyze/', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

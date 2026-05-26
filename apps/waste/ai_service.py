@@ -143,13 +143,12 @@ class ManagedAgentService:
 
         return self._parse_json_response(''.join(collected_text))
 
-    # ── Extraction JSON depuis la réponse Markdown ───────────────────────────
+    # ── Extraction + normalisation JSON ─────────────────────────────────────
 
     @staticmethod
     def _parse_json_response(raw: str) -> dict:
         text = raw.strip()
 
-        # Extraire depuis un bloc ```json ... ``` si présent
         if '```' in text:
             for part in text.split('```'):
                 candidate = part.lstrip('json').strip()
@@ -157,16 +156,214 @@ class ManagedAgentService:
                     text = candidate
                     break
 
-        # Isoler le premier objet JSON {...}
         start = text.find('{')
         end   = text.rfind('}')
         if start != -1 and end != -1:
             text = text[start:end + 1]
 
         try:
-            return json.loads(text)
+            data = json.loads(text)
         except json.JSONDecodeError:
             return {'error': 'Réponse agent non parseable', 'raw': raw}
+
+        return ManagedAgentService._normalize(data)
+
+    # Mots-clés → slug de catégorie (ordre de priorité décroissant)
+    _SLUG_KEYWORDS = [
+        (['pet', 'plastique', 'hdpe', 'pvc', 'pp ', 'polyet', 'polyprop', 'plastic'], 'plastic'),
+        (['métal', 'metal', 'fer', 'acier', 'aluminium', 'cuivre', 'ferreux', 'zinc'],  'metal'),
+        (['papier', 'carton', 'paper', 'journal', 'kraft'],                              'paper'),
+        (['électronique', 'electronic', 'deee', 'e-waste', 'circuit', 'batterie'],       'electronics'),
+        (['verre', 'glass'],                                                              'glass'),
+        (['pneu', 'tire', 'caoutchouc'],                                                 'tires'),
+    ]
+
+    @classmethod
+    def _slug_from_name(cls, name: str) -> str:
+        lower = name.lower()
+        for keywords, slug in cls._SLUG_KEYWORDS:
+            if any(kw in lower for kw in keywords):
+                return slug
+        return 'other'
+
+    @staticmethod
+    def _pick(data: dict, *keys, default=None):
+        """Retourne la première valeur non-nulle parmi les clés données."""
+        for k in keys:
+            v = data.get(k)
+            if v is not None:
+                return v
+        return default
+
+    @staticmethod
+    def _normalize(data: dict) -> dict:
+        """
+        Convertit la réponse de l'agent (format variable) vers le format
+        attendu par les vues, templates et la tâche Celery.
+
+        Champs garantis en sortie :
+          category, category_slug, recyclability_score, condition,
+          estimated_weight_kg, estimated_value_htg, estimated_value_usd,
+          description, recommendations, confidence, is_recyclable,
+          hazardous, summary, material_type
+        """
+        # ── Déjà au bon format canonique ────────────────────────────────────
+        if 'estimated_value_htg' in data:
+            data.setdefault('summary',       data.get('description', '')[:120])
+            data.setdefault('material_type', data.get('category', ''))
+            return data
+
+        pick = ManagedAgentService._pick
+
+        # ── Matériaux (noms de clé observés : materiaux / materiaux_detectes /
+        #    materials_detected) ─────────────────────────────────────────────
+        materials = pick(data, 'materiaux', 'materials_detected', 'materiaux_detectes', default=[])
+        dominant  = materials[0] if materials else {}
+
+        # Catégorie
+        category_name = (
+            dominant.get('type')
+            or data.get('category')
+            or data.get('categorie_dechet')
+            or 'Déchet recyclable'
+        )
+        category_slug = ManagedAgentService._slug_from_name(category_name)
+
+        # ── Helpers de recherche numérique ───────────────────────────────────
+        def num(obj, *keys):
+            """Retourne le premier nombre trouvé parmi les clés d'un dict."""
+            if not isinstance(obj, dict):
+                return None
+            for k in keys:
+                v = obj.get(k)
+                if isinstance(v, (int, float)):
+                    return float(v)
+                if isinstance(v, dict):
+                    # Cherche 'moyenne', 'moyen', 'max', 'min', 'valeur' dans le sous-dict
+                    inner = num(v, 'moyenne', 'moyen', 'max', 'min', 'valeur')
+                    if inner is not None:
+                        return inner
+            return None
+
+        def mat_sum(key, *aliases):
+            """Somme une valeur numérique sur tous les matériaux (clé variable)."""
+            total = 0.0
+            for m in materials:
+                v = num(m, key, *aliases)
+                if v is not None:
+                    total += v
+            return total or None
+
+        # Poids ───────────────────────────────────────────────────────────────
+        summary_obj = data.get('summary', {}) if isinstance(data.get('summary'), dict) else {}
+        poids_obj   = data.get('estimation_poids', {})
+
+        weight = (
+            num(summary_obj, 'total_estimated_weight_kg')
+            or num(poids_obj, 'valeur_kg', 'fourchette_max_kg')
+            or num(data, 'poids_total_estime_kg', 'total_weight_kg')
+            or mat_sum('estimated_weight_kg', 'poids_estime_kg', 'weight_kg')
+            or 0
+        )
+
+        # Valeurs HTG ─────────────────────────────────────────────────────────
+        # Formats observés :
+        #  F1 valeur_marchande_htg.valeur_estimee_centrale
+        #  F2 summary.total_value_htg
+        #  F3 valeur_marchande.valeur_totale_htg.{moyenne|max}
+        #  F4 valeur_totale_estimee.htg   +   materiaux[].valeur_estimee_htg
+        vm     = data.get('valeur_marchande', {})
+        vte    = data.get('valeur_totale_estimee', {})
+
+        value_htg = (
+            num(summary_obj, 'total_value_htg', 'valeur_totale_htg')
+            or num(data.get('valeur_marchande_htg', {}), 'valeur_estimee_centrale', 'valeur_totale_max')
+            or num(vm.get('valeur_totale_htg', {}) if isinstance(vm.get('valeur_totale_htg'), dict) else vm,
+                   'moyenne', 'moyen', 'max')
+            or num(vte, 'htg')
+            or mat_sum('estimated_value_htg', 'valeur_estimee_htg')
+            or 0
+        )
+
+        # Valeurs USD ─────────────────────────────────────────────────────────
+        value_usd = (
+            num(summary_obj, 'total_value_usd', 'valeur_totale_usd')
+            or num(data.get('valeur_marchande_usd', {}), 'valeur_estimee_centrale')
+            or num(vm.get('valeur_totale_usd', {}) if isinstance(vm.get('valeur_totale_usd'), dict) else vm,
+                   'moyenne', 'moyen', 'max')
+            or num(vte, 'usd')
+            or mat_sum('estimated_value_usd', 'valeur_estimee_usd')
+            or 0
+        )
+
+        # Score recyclabilité ─────────────────────────────────────────────────
+        confidence    = float(data.get('confidence', 0.5))
+        is_recyclable = bool(data.get('is_recyclable', True))
+        recyclability_score = (
+            max(1, round(confidence * 10)) if is_recyclable
+            else max(0, round(confidence * 3))
+        )
+
+        # Condition ───────────────────────────────────────────────────────────
+        condition_raw = pick(dominant, 'etat', 'condition', 'detail_etat', default='Moyen')
+        _CMAP = {
+            'très bon': 'Très bon', 'tres bon': 'Très bon', 'excellent': 'Très bon',
+            'bon': 'Bon', 'good': 'Bon', 'utilisé': 'Bon',
+            'moyen': 'Moyen', 'medium': 'Moyen', 'mixte': 'Moyen',
+            'passable': 'Moyen', 'usagé': 'Moyen', 'used': 'Moyen',
+            'mauvais': 'Mauvais', 'poor': 'Mauvais', 'bad': 'Mauvais',
+        }
+        # Prend le premier mot pour la correspondance si valeur composée
+        key = str(condition_raw).lower().split(' —')[0].split(',')[0].strip()
+        condition = _CMAP.get(key, str(condition_raw).capitalize()[:40])
+
+        # Description ─────────────────────────────────────────────────────────
+        desc_parts = []
+        for m in materials:
+            d = m.get('description') or m.get('sous_type') or m.get('detail_etat') or ''
+            if d:
+                desc_parts.append(d)
+        description = ' — '.join(desc_parts) if desc_parts else category_name
+
+        # Recommandations ─────────────────────────────────────────────────────
+        reco_raw = (
+            pick(data, 'recommandations', 'recommendations')
+            or pick(summary_obj, 'recommended_action', 'recommended_actions')
+            or ''
+        )
+        recommendations = (
+            ' | '.join(reco_raw) if isinstance(reco_raw, list) else str(reco_raw)
+        )
+
+        # Matières dangereuses ────────────────────────────────────────────────
+        danger    = pick(data, 'hazardous_materials', 'matieres_dangereuses', default={})
+        hazardous = bool(pick(danger, 'detected', 'detectees', default=False))
+
+        # Résumé ──────────────────────────────────────────────────────────────
+        summary_str = (
+            pick(summary_obj, 'recommended_action')
+            or f"{round(weight)} kg de {category_name} — valeur estimée {round(value_htg)} HTG"
+        )
+
+        return {
+            # ── Format canonique attendu par toute l'app ─────────────────────
+            'category':            category_name,
+            'category_slug':       category_slug,
+            'recyclability_score': recyclability_score,
+            'condition':           condition,
+            'estimated_weight_kg': weight,
+            'estimated_value_htg': value_htg,
+            'estimated_value_usd': value_usd,
+            'description':         description,
+            'recommendations':     recommendations,
+            'confidence':          confidence,
+            'is_recyclable':       is_recyclable,
+            'hazardous':           hazardous,
+            'summary':             summary_str,
+            'material_type':       category_name,
+            # ── Données brutes pour debug / admin ─────────────────────────────
+            '_details':            data,
+        }
 
 
 class _LazyService:
