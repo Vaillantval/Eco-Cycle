@@ -221,7 +221,7 @@ class ManagedAgentService:
 
         # ── Matériaux (noms de clé observés : materiaux / materiaux_detectes /
         #    materials_detected) ─────────────────────────────────────────────
-        materials = pick(data, 'materiaux', 'materials_detected', 'materiaux_detectes', default=[])
+        materials = pick(data, 'materiaux', 'materiaux_identifies', 'materials_detected', 'materiaux_detectes', default=[])
         dominant  = materials[0] if materials else {}
 
         # Catégorie
@@ -281,17 +281,19 @@ class ManagedAgentService:
 
         value_htg = (
             num(summary_obj, 'total_value_htg', 'valeur_totale_htg')
+            or num(data, 'valeur_totale_htg')
             or num(data.get('valeur_marchande_htg', {}), 'valeur_estimee_centrale', 'valeur_totale_max')
             or num(vm.get('valeur_totale_htg', {}) if isinstance(vm.get('valeur_totale_htg'), dict) else vm,
                    'moyenne', 'moyen', 'max')
             or num(vte, 'htg')
-            or mat_sum('estimated_value_htg', 'valeur_estimee_htg')
+            or mat_sum('estimated_value_htg', 'valeur_estimee_htg', 'valeur_htg')
             or 0
         )
 
         # Valeurs USD ─────────────────────────────────────────────────────────
         value_usd = (
             num(summary_obj, 'total_value_usd', 'valeur_totale_usd')
+            or num(data, 'valeur_totale_usd')
             or num(data.get('valeur_marchande_usd', {}), 'valeur_estimee_centrale')
             or num(vm.get('valeur_totale_usd', {}) if isinstance(vm.get('valeur_totale_usd'), dict) else vm,
                    'moyenne', 'moyen', 'max')
