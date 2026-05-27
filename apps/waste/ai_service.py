@@ -1,10 +1,14 @@
 import base64
 import json
+import logging
 import threading
 from pathlib import Path
 
 import anthropic
+import httpx
 from django.conf import settings
+
+logger = logging.getLogger(__name__)
 
 
 class ManagedAgentService:
@@ -386,7 +390,10 @@ class RecyclingAdvisor:
     TIMEOUT = 60
 
     def __init__(self):
-        self.client   = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
+        self.client   = anthropic.Anthropic(
+            api_key=settings.ANTHROPIC_API_KEY,
+            http_client=httpx.Client(timeout=httpx.Timeout(60.0, connect=15.0)),
+        )
         self.agent_id = settings.ANTHROPIC_ADVISOR_AGENT_ID
         self.env_id   = settings.ANTHROPIC_ENV_ID
 
@@ -407,6 +414,7 @@ class RecyclingAdvisor:
                 )
                 session_id = session.id
             except Exception as e:
+                logger.error('RecyclingAdvisor session create failed: %s', repr(e))
                 return f'Erreur création session : {e}', None
 
         collected_text = []

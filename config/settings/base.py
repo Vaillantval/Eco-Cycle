@@ -233,6 +233,11 @@ LOGGING = {
             'level': 'ERROR',
             'propagate': False,
         },
+        'apps.waste.ai_service': {
+            'handlers': ['console'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
     },
 }
 
