@@ -133,8 +133,91 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/ai_analysis.js' %}"></script>
 <style>
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 </style>
+<script>
+(function(){
+  var photoInput  = document.getElementById('photo-input');
+  var photoPreview= document.getElementById('photo-preview');
+  var uploadArea  = document.getElementById('upload-area');
+
+  if (photoInput) {
+    photoInput.addEventListener('change', function(){
+      var file = photoInput.files[0]; if(!file) return;
+      var reader = new FileReader();
+      reader.onload = function(e){
+        photoPreview.src = e.target.result;
+        photoPreview.style.display = 'block';
+        uploadArea.classList.add('has-file');
+      };
+      reader.readAsDataURL(file);
+    });
+    uploadArea.addEventListener('click', function(){ photoInput.click(); });
+    uploadArea.addEventListener('dragover', function(e){
+      e.preventDefault(); uploadArea.style.borderColor = 'var(--green)';
+    });
+    uploadArea.addEventListener('drop', function(e){
+      e.preventDefault();
+      var file = e.dataTransfer.files[0];
+      if(file){ var dt=new DataTransfer(); dt.items.add(file); photoInput.files=dt.files; photoInput.dispatchEvent(new Event('change')); }
+    });
+  }
+
+  var btnAnalyze = document.getElementById('btn-analyze');
+  if (btnAnalyze) {
+    btnAnalyze.addEventListener('click', async function(){
+      var file = photoInput && photoInput.files[0];
+      if(!file){ alert("Sélectionnez d'abord une photo."); return; }
+
+      var loading   = document.getElementById('ai-loading');
+      var resultBox = document.getElementById('ai-result');
+      loading.style.display = 'block';
+      resultBox.classList.remove('visible');
+      btnAnalyze.disabled = true;
+      btnAnalyze.textContent = 'Analyse en cours...';
+
+      var reader = new FileReader();
+      reader.onload = async function(e){
+        try {
+          var response = await fetch('/api/waste/analyze/', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            },
+            body: JSON.stringify({ image_base64: e.target.result }),
+          });
+          var data = await response.json();
+          loading.style.display = 'none';
+          btnAnalyze.disabled = false;
+          btnAnalyze.textContent = '🤖 Analyser avec l\'IA';
+
+          if(data.analysis){
+            var a = data.analysis;
+            resultBox.classList.add('visible');
+            document.getElementById('ai-category').textContent    = a.category || '—';
+            document.getElementById('ai-value').textContent       = (a.estimated_value_htg || '—') + ' HTG';
+            document.getElementById('ai-score').textContent       = (a.recyclability_score || '—') + '/10';
+            document.getElementById('ai-condition').textContent   = a.condition || '—';
+            document.getElementById('ai-description').textContent = a.description || '—';
+            var titleInput  = document.getElementById('title-input');
+            var weightInput = document.getElementById('weight-input');
+            if(titleInput  && !titleInput.value)  titleInput.value  = a.category || '';
+            if(weightInput && !weightInput.value) weightInput.value = a.estimated_weight_kg || '';
+          } else {
+            alert("Analyse impossible. Vérifiez que la photo est claire et réessayez.");
+          }
+        } catch(err) {
+          loading.style.display = 'none';
+          btnAnalyze.disabled = false;
+          btnAnalyze.textContent = '🤖 Analyser avec l\'IA';
+          alert("Erreur lors de l'analyse. Réessayez.");
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+})();
+</script>
 {% endblock %}
