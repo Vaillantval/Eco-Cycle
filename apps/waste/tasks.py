@@ -22,7 +22,8 @@ def analyze_waste_photo_async(self, listing_id: str):
             result = ai_service.analyze_image_from_file(listing.photo.path)
             logger.warning('analyze_photo used FILE path=%s', listing.photo.path)
         except (FileNotFoundError, OSError):
-            full_url = settings.FRONTEND_URL.rstrip('/') + listing.photo.url
+            base_url = settings.FRONTEND_URL.split(',')[0].strip().rstrip('/')
+            full_url = base_url + listing.photo.url
             logger.warning('analyze_photo fallback URL=%s', full_url)
             result = ai_service.analyze_image_from_url(full_url)
 
