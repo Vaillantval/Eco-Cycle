@@ -572,6 +572,10 @@
       </a>
 
       <div class="admin-nav-section">Paramètres</div>
+      <a href="{% url 'admin_agent_schedules' %}"
+         class="{% if request.resolver_match.url_name == 'admin_agent_schedules' %}active{% endif %}">
+        <span class="nav-icon">⏱</span> Planification IA
+      </a>
       <a href="{% url 'admin_site_config' %}"
          class="{% if request.resolver_match.url_name == 'admin_site_config' %}active{% endif %}">
         <span class="nav-icon">⚙️</span> Config du site

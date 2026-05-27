@@ -29,24 +29,7 @@ app.conf.beat_schedule = {
         'task': 'notifications.send_lesson_reminders',
         'schedule': crontab(hour=10, minute=0),
     },
-    # Optimisation des prix des catégories — chaque lundi à minuit
-    'run-price-optimizer': {
-        'task': 'agents.run_price_optimizer',
-        'schedule': crontab(hour=0, minute=0, day_of_week=1),
-    },
-    # Scan anti-fraude — chaque jour à minuit
-    'run-fraud-detector': {
-        'task': 'agents.run_fraud_detector',
-        'schedule': crontab(hour=0, minute=0),
-    },
-    # Academy Curator — chaque lundi à 9h (heure Haïti)
-    'run-academy-curator': {
-        'task': 'agents.run_academy_curator',
-        'schedule': crontab(hour=9, minute=0, day_of_week=1),
-    },
-    # Blog Writer — chaque mercredi à 8h30 (heure Haïti)
-    'run-blog-writer': {
-        'task': 'agents.run_blog_writer',
-        'schedule': crontab(hour=8, minute=30, day_of_week=3),
-    },
+    # NOTE: Les 4 agents IA (price-optimizer, fraud-detector, academy-curator, blog-writer)
+    # sont gérés en base de données (django-celery-beat) et configurables
+    # depuis le panel admin /panel/agent-schedules/
 }

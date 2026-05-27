@@ -29,6 +29,7 @@ from .views.admin_views import (
     AdminApproveCourseView, AdminRejectCourseView,
     AdminApproveBlogView, AdminRejectBlogView,
     AdminCourseRecommendationDetailView, AdminBlogRecommendationDetailView,
+    AdminAgentSchedulesView,
 )
 from .views.collector_views import (
     CollectorDashboardView, CollectorPickupsView,
@@ -236,6 +237,10 @@ urlpatterns = [
          AdminApproveBlogView.as_view(), name='admin_approve_blog'),
     path('panel/recommendations/blog/<int:pk>/reject/',
          AdminRejectBlogView.as_view(), name='admin_reject_blog'),
+
+    # Planification agents IA
+    path('panel/agent-schedules/',
+         AdminAgentSchedulesView.as_view(), name='admin_agent_schedules'),
 
     # Maintenance
     path('maintenance/',

@@ -1513,3 +1513,116 @@ class AdminBlogRecommendationDetailView(AdminRequiredMixin, View):
     def get(self, request, pk):
         recommendation = get_object_or_404(BlogRecommendation, pk=pk)
         return render(request, 'admin_panel/recommendation_blog_detail.html', {'rec': recommendation})
+
+
+# ── Planification des agents IA ───────────────────────────────────────────────
+
+AGENT_TASK_META = {
+    'run-price-optimizer': {
+        'label': 'Price Optimizer',
+        'icon': '💰',
+        'description': 'Optimise les prix des catégories en analysant les transactions récentes.',
+    },
+    'run-fraud-detector': {
+        'label': 'Fraud Detector',
+        'icon': '🔍',
+        'description': 'Détecte les comportements suspects et bloque les comptes à haut risque.',
+    },
+    'run-academy-curator': {
+        'label': 'Academy Curator',
+        'icon': '🎓',
+        'description': 'Recherche des vidéos YouTube et génère des suggestions de cours.',
+    },
+    'run-blog-writer': {
+        'label': 'Blog Writer',
+        'icon': '✍️',
+        'description': 'Recherche des actualités et suggère des angles d\'articles.',
+    },
+}
+
+DAY_OF_WEEK_CHOICES = [
+    ('*',  'Tous les jours'),
+    ('1',  'Lundi'),
+    ('2',  'Mardi'),
+    ('3',  'Mercredi'),
+    ('4',  'Jeudi'),
+    ('5',  'Vendredi'),
+    ('6',  'Samedi'),
+    ('0',  'Dimanche'),
+]
+
+
+class AdminAgentSchedulesView(AdminRequiredMixin, View):
+
+    def _get_tasks(self):
+        from django_celery_beat.models import PeriodicTask
+        tasks = []
+        for name, meta in AGENT_TASK_META.items():
+            try:
+                task = PeriodicTask.objects.select_related('crontab').get(name=name)
+            except PeriodicTask.DoesNotExist:
+                task = None
+            tasks.append({'name': name, 'meta': meta, 'task': task})
+        return tasks
+
+    def get(self, request):
+        return render(request, 'admin_panel/agent_schedules.html', {
+            'tasks': self._get_tasks(),
+            'day_choices': DAY_OF_WEEK_CHOICES,
+        })
+
+    def post(self, request):
+        from django_celery_beat.models import PeriodicTask, CrontabSchedule
+
+        task_name = request.POST.get('task_name')
+        if task_name not in AGENT_TASK_META:
+            messages.error(request, 'Tâche inconnue.')
+            return redirect('admin_agent_schedules')
+
+        minute = request.POST.get('minute', '0').strip() or '0'
+        hour = request.POST.get('hour', '0').strip() or '0'
+        day_of_week = request.POST.get('day_of_week', '*').strip() or '*'
+        enabled = request.POST.get('enabled') == '1'
+
+        # Validation basique
+        try:
+            if minute != '*':
+                assert 0 <= int(minute) <= 59
+            if hour != '*':
+                assert 0 <= int(hour) <= 23
+        except (ValueError, AssertionError):
+            messages.error(request, 'Heure ou minute invalide.')
+            return redirect('admin_agent_schedules')
+
+        crontab, _ = CrontabSchedule.objects.get_or_create(
+            minute=minute,
+            hour=hour,
+            day_of_week=day_of_week,
+            day_of_month='*',
+            month_of_year='*',
+            timezone='America/Port-au-Prince',
+        )
+
+        task_obj = PeriodicTask.objects.filter(name=task_name).first()
+        if task_obj:
+            task_obj.crontab = crontab
+            task_obj.enabled = enabled
+            task_obj.save()
+        else:
+            meta = AGENT_TASK_META[task_name]
+            PeriodicTask.objects.create(
+                name=task_name,
+                task=f'agents.{task_name.replace("-", "_")}',
+                crontab=crontab,
+                description=meta['description'],
+                enabled=enabled,
+            )
+
+        label = AGENT_TASK_META[task_name]['label']
+        day_label = dict(DAY_OF_WEEK_CHOICES).get(day_of_week, day_of_week)
+        messages.success(
+            request,
+            f'{label} mis à jour — {day_label} à {hour}h{minute.zfill(2)} '
+            f'({"actif" if enabled else "désactivé"}).',
+        )
+        return redirect('admin_agent_schedules')

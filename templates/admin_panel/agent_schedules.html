@@ -1,0 +1,143 @@
+{% extends 'admin_panel/base_admin.html' %}
+{% block admin_content %}
+
+<div class="admin-page-header" style="margin-bottom:1.5rem;">
+  <h1 style="margin:0;font-size:1.6rem;font-weight:700;">⏱ Planification des agents IA</h1>
+  <p style="margin:6px 0 0;color:#718096;font-size:0.9rem;">
+    Les modifications sont actives dès le prochain cycle de Celery Beat.
+  </p>
+</div>
+
+{% if messages %}
+  {% for message in messages %}
+  <div style="background:{% if 'error' in message.tags %}#fed7d7{% else %}#c6f6d5{% endif %};
+              color:{% if 'error' in message.tags %}#742a2a{% else %}#1a4731{% endif %};
+              padding:12px 16px;border-radius:8px;margin-bottom:1.2rem;font-size:0.9rem;">
+    {{ message }}
+  </div>
+  {% endfor %}
+{% endif %}
+
+{% for item in tasks %}
+{% with task=item.task meta=item.meta name=item.name %}
+<div class="admin-card" style="margin-bottom:1.5rem;">
+  <div class="admin-card-header">
+    <span class="admin-card-title">{{ meta.icon }} {{ meta.label }}</span>
+    {% if task %}
+      <span style="padding:3px 12px;border-radius:12px;font-size:0.8rem;font-weight:600;
+                   background:{% if task.enabled %}#c6f6d5{% else %}#fed7d7{% endif %};
+                   color:{% if task.enabled %}#1a4731{% else %}#742a2a{% endif %};">
+        {% if task.enabled %}Actif{% else %}Désactivé{% endif %}
+      </span>
+    {% endif %}
+  </div>
+
+  <div style="padding:1.2rem;">
+    <p style="color:#718096;font-size:0.88rem;margin:0 0 1rem;">{{ meta.description }}</p>
+
+    {% if task %}
+    <!-- Planification actuelle -->
+    <div style="background:#f7fafc;border-radius:8px;padding:10px 14px;margin-bottom:1.2rem;
+                font-size:0.85rem;color:#4a5568;border-left:3px solid #0d7a45;">
+      <strong>Planification actuelle :</strong>
+      {% with c=task.crontab %}
+        {% if c.day_of_week == '*' %}
+          Tous les jours
+        {% elif c.day_of_week == '1' %}Lundi
+        {% elif c.day_of_week == '2' %}Mardi
+        {% elif c.day_of_week == '3' %}Mercredi
+        {% elif c.day_of_week == '4' %}Jeudi
+        {% elif c.day_of_week == '5' %}Vendredi
+        {% elif c.day_of_week == '6' %}Samedi
+        {% elif c.day_of_week == '0' %}Dimanche
+        {% else %}{{ c.day_of_week }}{% endif %}
+        à {{ c.hour }}h{{ c.minute|stringformat:"02d" }}
+        ({{ c.timezone }})
+      {% endwith %}
+    </div>
+    {% endif %}
+
+    <!-- Formulaire de modification -->
+    <form method="POST" action="{% url 'admin_agent_schedules' %}">
+      {% csrf_token %}
+      <input type="hidden" name="task_name" value="{{ name }}">
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:12px;align-items:end;flex-wrap:wrap;">
+
+        <!-- Jour -->
+        <div>
+          <label style="display:block;font-size:0.8rem;font-weight:600;color:#4a5568;margin-bottom:4px;">
+            Jour d'exécution
+          </label>
+          <select name="day_of_week"
+                  style="width:100%;padding:8px 10px;border:1px solid #e2e8f0;border-radius:6px;
+                         font-size:0.88rem;background:white;">
+            {% for value, label in day_choices %}
+            <option value="{{ value }}"
+              {% if task and task.crontab.day_of_week == value %}selected{% endif %}>
+              {{ label }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Heure -->
+        <div>
+          <label style="display:block;font-size:0.8rem;font-weight:600;color:#4a5568;margin-bottom:4px;">
+            Heure (0-23)
+          </label>
+          <input type="number" name="hour" min="0" max="23"
+                 value="{% if task %}{{ task.crontab.hour }}{% else %}0{% endif %}"
+                 style="width:100%;padding:8px 10px;border:1px solid #e2e8f0;border-radius:6px;
+                        font-size:0.88rem;box-sizing:border-box;">
+        </div>
+
+        <!-- Minute -->
+        <div>
+          <label style="display:block;font-size:0.8rem;font-weight:600;color:#4a5568;margin-bottom:4px;">
+            Minute (0-59)
+          </label>
+          <input type="number" name="minute" min="0" max="59"
+                 value="{% if task %}{{ task.crontab.minute }}{% else %}0{% endif %}"
+                 style="width:100%;padding:8px 10px;border:1px solid #e2e8f0;border-radius:6px;
+                        font-size:0.88rem;box-sizing:border-box;">
+        </div>
+
+        <!-- Activé -->
+        <div>
+          <label style="display:block;font-size:0.8rem;font-weight:600;color:#4a5568;margin-bottom:4px;">
+            Statut
+          </label>
+          <select name="enabled"
+                  style="width:100%;padding:8px 10px;border:1px solid #e2e8f0;border-radius:6px;
+                         font-size:0.88rem;background:white;">
+            <option value="1" {% if not task or task.enabled %}selected{% endif %}>✅ Actif</option>
+            <option value="0" {% if task and not task.enabled %}selected{% endif %}>⏸ Désactivé</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="margin-top:12px;display:flex;gap:10px;align-items:center;">
+        <button type="submit" class="btn-admin-sm btn-approve">
+          💾 Enregistrer
+        </button>
+        <span style="font-size:0.78rem;color:#a0aec0;">
+          Heure Haïti (America/Port-au-Prince)
+        </span>
+      </div>
+    </form>
+  </div>
+</div>
+{% endwith %}
+{% endfor %}
+
+<!-- Info -->
+<div style="background:#ebf8f2;border:1px solid #9ae6b4;border-radius:8px;padding:1rem 1.2rem;
+            font-size:0.85rem;color:#2d6a4f;margin-top:0.5rem;">
+  <strong>ℹ️ Comment ça fonctionne :</strong><br>
+  Les planifications sont stockées en base de données et lues par Celery Beat en temps réel.
+  Aucun redémarrage nécessaire — la modification est prise en compte au prochain tick (≤ 1 min).
+  Désactiver un agent ne supprime pas ses données passées.
+</div>
+
+{% endblock %}
