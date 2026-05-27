@@ -1,5 +1,8 @@
+import logging
 from celery import shared_task
 from django.utils import timezone
+
+logger = logging.getLogger(__name__)
 
 
 @shared_task(name='waste.analyze_photo', bind=True, max_retries=3)
@@ -7,17 +10,20 @@ def analyze_waste_photo_async(self, listing_id: str):
     from .models import WasteListing, WasteCategory
     from .ai_service import ai_service
     from django.conf import settings
+
+    logger.warning('analyze_photo START listing=%s', listing_id)
     try:
         listing = WasteListing.objects.get(id=listing_id)
         if not listing.photo:
+            logger.warning('analyze_photo SKIP listing=%s (no photo)', listing_id)
             return
 
-        # Try reading the file directly; fall back to HTTP URL when the
-        # Celery worker runs on a different pod (Railway, Docker, etc.)
         try:
             result = ai_service.analyze_image_from_file(listing.photo.path)
+            logger.warning('analyze_photo used FILE path=%s', listing.photo.path)
         except (FileNotFoundError, OSError):
             full_url = settings.FRONTEND_URL.rstrip('/') + listing.photo.url
+            logger.warning('analyze_photo fallback URL=%s', full_url)
             result = ai_service.analyze_image_from_url(full_url)
 
         if 'error' not in result:
@@ -29,9 +35,15 @@ def analyze_waste_photo_async(self, listing_id: str):
                 if category:
                     listing.category = category
             listing.save()
+            logger.warning('analyze_photo SAVED listing=%s htg=%s category=%s',
+                           listing_id, listing.ai_estimated_value, listing.category)
+        else:
+            logger.error('analyze_photo ERROR listing=%s result=%s', listing_id, result)
+
     except WasteListing.DoesNotExist:
-        pass
+        logger.error('analyze_photo listing NOT FOUND listing=%s', listing_id)
     except Exception as exc:
+        logger.error('analyze_photo EXCEPTION listing=%s exc=%s', listing_id, repr(exc), exc_info=True)
         raise self.retry(exc=exc, countdown=60)
 
 
