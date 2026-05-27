@@ -15,7 +15,7 @@ class Course(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=200)
-    slug = models.SlugField(unique=True, blank=True)
+    slug = models.SlugField(unique=True, blank=True, max_length=220)
     description = models.TextField()
     thumbnail = models.ImageField(upload_to='courses/', blank=True)
     level = models.CharField(max_length=20, choices=LEVEL_CHOICES, default='beginner')

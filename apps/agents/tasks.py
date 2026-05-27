@@ -67,8 +67,18 @@ def publish_approved_course(recommendation_id: int):
     try:
         recommendation = CourseRecommendation.objects.get(id=recommendation_id)
 
+        # Générer un slug unique tronqué à 200 chars
+        from django.utils.text import slugify
+        base_slug = slugify(recommendation.title)[:200]
+        slug = base_slug
+        counter = 1
+        while Course.objects.filter(slug=slug).exists():
+            slug = f'{base_slug[:196]}-{counter}'
+            counter += 1
+
         course = Course.objects.create(
             title=recommendation.title,
+            slug=slug,
             description=recommendation.description,
             level=recommendation.level,
             duration_minutes=recommendation.estimated_duration_minutes,
