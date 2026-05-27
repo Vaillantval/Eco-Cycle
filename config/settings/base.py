@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'apps.blog',
     'apps.core',
     'apps.payments',
+    'apps.agents',
     'web',
 ]
 

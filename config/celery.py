@@ -29,4 +29,14 @@ app.conf.beat_schedule = {
         'task': 'notifications.send_lesson_reminders',
         'schedule': crontab(hour=10, minute=0),
     },
+    # Optimisation des prix des catégories — chaque nuit à minuit
+    'run-price-optimizer': {
+        'task': 'agents.run_price_optimizer',
+        'schedule': crontab(hour=0, minute=0),
+    },
+    # Scan anti-fraude — toutes les heures
+    'run-fraud-detector': {
+        'task': 'agents.run_fraud_detector',
+        'schedule': crontab(minute=0),
+    },
 }
