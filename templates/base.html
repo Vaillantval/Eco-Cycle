@@ -299,8 +299,25 @@
   <!-- CHAT WIDGET CONSEILLER RECYCLAGE -->
   <style>
     #chat-widget{position:fixed;bottom:24px;right:24px;z-index:9999;font-family:sans-serif}
-    .chat-toggle-btn{background:#0d7a45;color:#fff;border:none;border-radius:50px;padding:12px 20px;cursor:pointer;font-size:15px;font-weight:600;box-shadow:0 4px 16px rgba(13,122,69,.4);transition:transform .2s,box-shadow .2s}
+
+    /* Bouton toggle */
+    .chat-toggle-btn{position:relative;background:#0d7a45;color:#fff;border:none;border-radius:50px;padding:12px 20px;cursor:pointer;font-size:15px;font-weight:600;box-shadow:0 4px 16px rgba(13,122,69,.4);transition:transform .2s,box-shadow .2s}
     .chat-toggle-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(13,122,69,.5)}
+
+    /* Point rouge notification */
+    #chat-dot{position:absolute;top:-4px;right:-4px;width:14px;height:14px;background:#e53e3e;border-radius:50%;border:2px solid #fff;animation:dot-ping 1.8s ease-in-out infinite}
+    @keyframes dot-ping{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.35);opacity:.7}}
+
+    /* Rebond périodique du bouton */
+    @keyframes eco-bounce{0%,60%,100%{transform:translateY(0)}20%{transform:translateY(-10px)}40%{transform:translateY(-5px)}}
+    .chat-bouncing{animation:eco-bounce .7s ease 0s 3}
+
+    /* Bulle d'invitation */
+    #chat-invite{position:absolute;bottom:62px;right:0;background:#fff;color:#1a1a2e;padding:10px 14px;border-radius:12px 12px 2px 12px;font-size:13px;line-height:1.4;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.15);animation:invite-in .35s ease;cursor:pointer}
+    #chat-invite::after{content:'';position:absolute;bottom:-8px;right:20px;border:8px solid transparent;border-top-color:#fff;border-bottom:none}
+    @keyframes invite-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+    /* Panneau chat */
     #chat-box{position:absolute;bottom:64px;right:0;width:340px;height:460px;background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.15);display:flex;flex-direction:column;overflow:hidden}
     .chat-header{background:#0d7a45;color:#fff;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;font-weight:600;font-size:.9rem}
     .chat-header button{background:none;border:none;color:#fff;font-size:1.4rem;cursor:pointer;padding:0;opacity:.8}
@@ -313,6 +330,8 @@
     .chat-input-row input{flex:1;border:2px solid #e5e7eb;border-radius:8px;padding:8px 12px;font-size:13px;outline:none;transition:border-color .2s}
     .chat-input-row input:focus{border-color:#0d7a45}
     [data-theme="dark"] #chat-box{background:#161b22}
+    [data-theme="dark"] #chat-invite{background:#21262d;color:#e6edf3}
+    [data-theme="dark"] #chat-invite::after{border-top-color:#21262d}
     [data-theme="dark"] .chat-bubble.assistant{background:#21262d;color:#e6edf3}
     [data-theme="dark"] .chat-input-row{border-top-color:#30363d}
     [data-theme="dark"] .chat-input-row input{background:#0d1117;border-color:#30363d;color:#e6edf3}
@@ -321,6 +340,7 @@
   <div id="chat-widget">
     <button class="chat-toggle-btn" id="chat-toggle" onclick="toggleChat()" aria-label="Ouvrir le conseiller recyclage">
       💬 Éco
+      <span id="chat-dot"></span>
     </button>
     <div id="chat-box" class="chat-box" style="display:none;">
       <div class="chat-header">
@@ -347,7 +367,35 @@
   <script>
   (function(){
     var chatSessionId = null;
+    var chatEngaged   = false;  // true dès le premier clic
+
     function getCsrf(){var m=document.cookie.match(/csrftoken=([^;]+)/);return m?m[1]:'';}
+
+    /* ── Bulle d'invitation ── */
+    function showInvite(){
+      if(chatEngaged||localStorage.getItem('ecoChat'))return;
+      var inv=document.createElement('div');
+      inv.id='chat-invite';
+      inv.innerHTML='Besoin d\'aide pour recycler ? 🌱';
+      inv.onclick=function(){toggleChat();};
+      document.getElementById('chat-widget').appendChild(inv);
+      // Rebond 3× sur le bouton
+      var btn=document.getElementById('chat-toggle');
+      btn.classList.add('chat-bouncing');
+      btn.addEventListener('animationend',function(){btn.classList.remove('chat-bouncing');},{once:true});
+      // Auto-disparition après 8 s
+      setTimeout(function(){var el=document.getElementById('chat-invite');if(el)el.remove();},8000);
+    }
+
+    function dismissInvite(){
+      var el=document.getElementById('chat-invite');if(el)el.remove();
+      var dot=document.getElementById('chat-dot');if(dot)dot.remove();
+      localStorage.setItem('ecoChat','1');
+    }
+
+    // Affiche la bulle après 4 s (sauf si l'utilisateur a déjà interagi)
+    if(!localStorage.getItem('ecoChat')) setTimeout(showInvite, 4000);
+
     function bubble(role,text){
       var box=document.getElementById('chat-messages');if(!box)return null;
       var id='cb-'+Date.now(),d=document.createElement('div');
@@ -355,12 +403,18 @@
       box.appendChild(d);box.scrollTop=box.scrollHeight;return id;
     }
     function rmBubble(id){if(id){var el=document.getElementById(id);if(el)el.remove();}}
+
     window.toggleChat=function(){
       var box=document.getElementById('chat-box');if(!box)return;
       var opening=box.style.display==='none';
       box.style.display=opening?'flex':'none';
-      if(opening){var inp=document.getElementById('chat-input');if(inp)inp.focus();}
+      if(opening){
+        chatEngaged=true;
+        dismissInvite();
+        var inp=document.getElementById('chat-input');if(inp)inp.focus();
+      }
     };
+
     window.sendChatMessage=async function(){
       var inp=document.getElementById('chat-input');
       var msg=inp&&inp.value.trim();if(!msg)return;
@@ -377,7 +431,9 @@
         else{bubble('assistant',data.error||'Une erreur est survenue.');}
       }catch(e){rmBubble(lid);bubble('assistant','Désolé, une erreur est survenue.');}
     };
-    document.getElementById('chat-input')&&document.getElementById('chat-input').addEventListener('keypress',function(e){if(e.key==='Enter')sendChatMessage();});
+
+    var cinp=document.getElementById('chat-input');
+    if(cinp)cinp.addEventListener('keypress',function(e){if(e.key==='Enter')sendChatMessage();});
   })();
   </script>
   <script>
