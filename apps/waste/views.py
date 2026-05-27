@@ -71,6 +71,11 @@ class AIAnalysisView(APIView):
         if 'error' in result:
             return Response({'error': result['error']}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
 
+        import logging
+        logging.getLogger(__name__).warning(
+            'AI analysis result — htg=%s weight=%s category=%s',
+            result.get('estimated_value_htg'), result.get('estimated_weight_kg'), result.get('category'),
+        )
         return Response({'analysis': result})
 
 
