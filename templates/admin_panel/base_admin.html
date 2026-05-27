@@ -556,6 +556,11 @@
          class="{% if request.resolver_match.url_name == 'admin_academy' %}active{% endif %}">
         <span class="nav-icon">🎓</span> Academy
       </a>
+      <a href="{% url 'admin_recommendations' %}"
+         class="{% if 'recommendation' in request.resolver_match.url_name %}active{% endif %}">
+        <span class="nav-icon">🤖</span> Recommandations IA
+        {% if pending_recommendations_count %}<span class="nav-badge">{{ pending_recommendations_count }}</span>{% endif %}
+      </a>
       <a href="{% url 'admin_newsletters' %}"
          class="{% if request.resolver_match.url_name == 'admin_newsletters' %}active{% endif %}">
         <span class="nav-icon">📧</span> Newsletter

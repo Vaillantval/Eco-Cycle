@@ -1,0 +1,87 @@
+{% extends 'admin_panel/base_admin.html' %}
+{% block admin_content %}
+
+<div class="admin-page-header" style="margin-bottom:1.5rem;">
+  <a href="{% url 'admin_recommendations' %}" class="btn-admin-sm btn-view" style="margin-right:12px;">← Retour</a>
+  <h1 style="margin:0;font-size:1.4rem;font-weight:700;">✍️ {{ rec.suggested_title }}</h1>
+</div>
+
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:1.5rem;">
+
+  <!-- Colonne principale -->
+  <div>
+    <div class="admin-card" style="margin-bottom:1.5rem;">
+      <div class="admin-card-header">
+        <span class="admin-card-title">Angle éditorial</span>
+      </div>
+      <div style="padding:1rem;">
+        <p style="color:#2d3748;font-size:0.95rem;line-height:1.6;">{{ rec.angle }}</p>
+        <hr style="border:none;border-top:1px solid #f0f0f0;margin:1rem 0;">
+        <table class="admin-table">
+          <tr><th>Tags</th><td>{{ rec.tags|join:", " }}</td></tr>
+          <tr><th>Statut</th><td>{{ rec.get_status_display }}</td></tr>
+          <tr><th>Créé le</th><td>{{ rec.created_at|date:"d/m/Y à H:i" }}</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- Sources -->
+    <div class="admin-card">
+      <div class="admin-card-header">
+        <span class="admin-card-title">Sources ({{ rec.sources|length }})</span>
+      </div>
+      {% for source in rec.sources %}
+      <div style="padding:12px 16px;border-bottom:1px solid #f0f0f0;">
+        <p style="margin:0 0 4px;font-weight:600;font-size:0.9rem;color:#2d3748;">{{ source.title }}</p>
+        <p style="margin:0 0 6px;font-size:0.82rem;color:#4a5568;">{{ source.snippet|truncatewords:25 }}</p>
+        <a href="{{ source.url }}" target="_blank"
+           style="font-size:0.78rem;color:#0d7a45;text-decoration:none;">🔗 Voir la source</a>
+      </div>
+      {% empty %}
+      <p style="padding:1rem;color:#718096;">Aucune source disponible.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Colonne latérale -->
+  <div>
+    {% if rec.status == 'pending' %}
+    <div class="admin-card">
+      <div class="admin-card-header"><span class="admin-card-title">Actions</span></div>
+      <div style="padding:1rem;display:flex;flex-direction:column;gap:10px;">
+        <p style="font-size:0.82rem;color:#718096;margin:0 0 6px;">
+          En approuvant, l'IA va rédiger l'article complet (800-1200 mots) et le publier automatiquement.
+        </p>
+        <form method="POST" action="{% url 'admin_approve_blog' rec.id %}">
+          {% csrf_token %}
+          <button type="submit" class="btn-admin-sm btn-approve" style="width:100%;justify-content:center;">
+            ✓ Approuver et publier
+          </button>
+        </form>
+        <form method="POST" action="{% url 'admin_reject_blog' rec.id %}">
+          {% csrf_token %}
+          <textarea name="reason" placeholder="Raison du rejet..." rows="2"
+                    style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:6px;
+                           font-size:0.85rem;box-sizing:border-box;margin-bottom:6px;"></textarea>
+          <button type="submit" class="btn-admin-sm btn-reject" style="width:100%;justify-content:center;">
+            ✗ Rejeter
+          </button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if rec.status == 'published' and rec.created_post %}
+    <div class="admin-card">
+      <div class="admin-card-header"><span class="admin-card-title">Article publié</span></div>
+      <div style="padding:1rem;">
+        <p style="font-size:0.85rem;color:#4a5568;margin:0 0 10px;">{{ rec.word_count }} mots · {{ rec.estimated_read_time }} min de lecture</p>
+        <a href="{% url 'blog_detail' rec.created_post.slug %}" target="_blank"
+           class="btn-admin-sm btn-approve">🔗 Voir l'article en ligne</a>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}

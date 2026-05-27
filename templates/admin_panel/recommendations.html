@@ -1,0 +1,177 @@
+{% extends 'admin_panel/base_admin.html' %}
+{% block admin_content %}
+
+<div class="admin-page-header">
+  <h1 style="margin:0;font-size:1.6rem;font-weight:700;">🤖 Recommandations IA</h1>
+  {% if pending_count > 0 %}
+    <span style="background:#0d7a45;color:white;padding:4px 12px;border-radius:20px;font-size:0.85rem;font-weight:600;">
+      {{ pending_count }} en attente
+    </span>
+  {% endif %}
+</div>
+
+{% if messages %}
+  {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}" style="margin-bottom:1rem;">{{ message }}</div>
+  {% endfor %}
+{% endif %}
+
+<!-- ACADEMY -->
+<div class="admin-card" style="margin-bottom:2rem;">
+  <div class="admin-card-header">
+    <span class="admin-card-title">🎓 Academy — Cours suggérés ({{ course_recommendations|length }})</span>
+  </div>
+
+  {% for rec in course_recommendations %}
+  <div style="border:1px solid #e2e8f0;border-radius:8px;padding:1.2rem;margin:1rem 0;background:#fff;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;">
+      <div style="flex:1;min-width:0;">
+        <h3 style="margin:0 0 6px;font-size:1.1rem;font-weight:700;color:#1a202c;">{{ rec.title }}</h3>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">
+          <span style="background:#e6f4ee;color:#0d7a45;padding:2px 10px;border-radius:12px;font-size:0.8rem;font-weight:600;">
+            {{ rec.get_level_display }}
+          </span>
+          <span style="color:#718096;font-size:0.85rem;">
+            {{ rec.suggested_lessons|length }} leçon{{ rec.suggested_lessons|length|pluralize }} · {{ rec.estimated_duration_minutes }} min
+          </span>
+          <span style="color:#a0aec0;font-size:0.8rem;">{{ rec.created_at|date:"d/m/Y à H:i" }}</span>
+        </div>
+        <p style="color:#4a5568;font-size:0.9rem;margin:0;">{{ rec.description|truncatewords:25 }}</p>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <a href="{% url 'admin_course_recommendation_detail' rec.id %}" class="btn-admin-sm btn-view">
+          👁 Détail
+        </a>
+        <form method="POST" action="{% url 'admin_approve_course' rec.id %}" style="display:inline;">
+          {% csrf_token %}
+          <button type="submit" class="btn-admin-sm btn-approve">✓ Approuver</button>
+        </form>
+        <button class="btn-admin-sm btn-reject" onclick="showRejectModal('course', {{ rec.id }})">
+          ✗ Rejeter
+        </button>
+      </div>
+    </div>
+
+    {% if rec.youtube_videos %}
+    <div style="display:flex;gap:10px;margin-top:12px;overflow-x:auto;padding-bottom:4px;">
+      {% for video in rec.youtube_videos|slice:":3" %}
+      <div style="min-width:180px;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;">
+        <img src="{{ video.thumbnail }}" alt="{{ video.title }}"
+             style="width:100%;height:100px;object-fit:cover;display:block;">
+        <div style="padding:6px 8px;">
+          <p style="margin:0 0 3px;font-size:0.75rem;font-weight:600;color:#2d3748;
+                    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+            {{ video.title|truncatechars:50 }}
+          </p>
+          <p style="margin:0 0 4px;font-size:0.7rem;color:#718096;">{{ video.channel }}</p>
+          <a href="{{ video.url }}" target="_blank"
+             style="font-size:0.7rem;color:#0d7a45;text-decoration:none;">▶ YouTube</a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  {% empty %}
+  <div style="text-align:center;padding:2rem;color:#718096;">
+    <p style="font-size:1.1rem;">🎓 Aucun cours en attente d'approbation.</p>
+    <p style="font-size:0.85rem;">Le prochain scan est prévu lundi matin à 9h.</p>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- BLOG -->
+<div class="admin-card" style="margin-bottom:2rem;">
+  <div class="admin-card-header">
+    <span class="admin-card-title">✍️ Blog — Articles suggérés ({{ blog_recommendations|length }})</span>
+  </div>
+
+  {% for rec in blog_recommendations %}
+  <div style="border:1px solid #e2e8f0;border-radius:8px;padding:1.2rem;margin:1rem 0;background:#fff;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;">
+      <div style="flex:1;min-width:0;">
+        <h3 style="margin:0 0 6px;font-size:1.05rem;font-weight:700;color:#1a202c;">{{ rec.suggested_title }}</h3>
+        <p style="color:#4a5568;font-size:0.88rem;margin:0 0 4px;font-style:italic;">{{ rec.angle|truncatewords:20 }}</p>
+        <span style="color:#a0aec0;font-size:0.8rem;">{{ rec.created_at|date:"d/m/Y à H:i" }}</span>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <a href="{% url 'admin_blog_recommendation_detail' rec.id %}" class="btn-admin-sm btn-view">
+          👁 Détail
+        </a>
+        <form method="POST" action="{% url 'admin_approve_blog' rec.id %}" style="display:inline;">
+          {% csrf_token %}
+          <button type="submit" class="btn-admin-sm btn-approve">✓ Approuver</button>
+        </form>
+        <button class="btn-admin-sm btn-reject" onclick="showRejectModal('blog', {{ rec.id }})">
+          ✗ Rejeter
+        </button>
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <div style="text-align:center;padding:2rem;color:#718096;">
+    <p style="font-size:1.1rem;">✍️ Aucun article en attente d'approbation.</p>
+    <p style="font-size:0.85rem;">Le prochain scan est prévu mercredi matin à 8h30.</p>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- PUBLIÉS RÉCEMMENT -->
+{% if published_courses or published_articles %}
+<div class="admin-card">
+  <div class="admin-card-header">
+    <span class="admin-card-title">✅ Publiés récemment</span>
+  </div>
+  <div style="padding:0.5rem 0;">
+    {% for rec in published_courses %}
+    <div style="padding:8px 0;border-bottom:1px solid #f0f0f0;color:#2d3748;font-size:0.9rem;">
+      🎓 <b>{{ rec.title }}</b> — publié le {{ rec.published_at|date:"d/m/Y" }}
+    </div>
+    {% endfor %}
+    {% for rec in published_articles %}
+    <div style="padding:8px 0;border-bottom:1px solid #f0f0f0;color:#2d3748;font-size:0.9rem;">
+      ✍️ <b>{{ rec.suggested_title }}</b> — publié le {{ rec.published_at|date:"d/m/Y" }}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- Modal de rejet -->
+<div id="reject-modal"
+     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;
+            align-items:center;justify-content:center;">
+  <div style="background:white;border-radius:12px;padding:2rem;width:90%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,0.2);">
+    <h3 style="margin:0 0 1rem;font-size:1.1rem;">Raison du rejet</h3>
+    <form id="reject-form" method="POST">
+      {% csrf_token %}
+      <textarea name="reason" placeholder="Expliquez pourquoi ce contenu est rejeté..." rows="4"
+                style="width:100%;padding:10px;border:1px solid #e2e8f0;border-radius:6px;
+                       font-size:0.9rem;resize:vertical;box-sizing:border-box;"></textarea>
+      <div style="display:flex;gap:10px;margin-top:1rem;justify-content:flex-end;">
+        <button type="button" class="btn-admin-sm btn-view" onclick="closeModal()">Annuler</button>
+        <button type="submit" class="btn-admin-sm btn-reject">Confirmer le rejet</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function showRejectModal(type, id) {
+  const modal = document.getElementById('reject-modal');
+  const form = document.getElementById('reject-form');
+  const base = type === 'course'
+    ? '/panel/recommendations/course/'
+    : '/panel/recommendations/blog/';
+  form.action = base + id + '/reject/';
+  modal.style.display = 'flex';
+}
+function closeModal() {
+  document.getElementById('reject-modal').style.display = 'none';
+}
+document.getElementById('reject-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+</script>
+
+{% endblock %}

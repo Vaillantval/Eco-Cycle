@@ -9,8 +9,8 @@ from apps.accounts.models import User
 from apps.waste.models import WasteListing
 from apps.collections.models import PickupRequest
 from apps.marketplace.models import Order, Auction
-from apps.blog.models import Post, BlogCategory
-from apps.academy.models import Course, Lesson, LessonVideo, Enrollment, Certificate
+from apps.blog.models import Post, BlogCategory, BlogRecommendation
+from apps.academy.models import Course, Lesson, LessonVideo, Enrollment, Certificate, CourseRecommendation
 from apps.core.models import ContactMessage, NewsletterSubscriber, SiteConfiguration, SliderItem
 
 
@@ -1433,3 +1433,83 @@ class AdminVideoDurationView(AdminRequiredMixin, View):
             return JsonResponse({'duration_minutes': 0, 'error': ''})
         minutes, error = _get_youtube_duration_minutes(url)
         return JsonResponse({'duration_minutes': minutes, 'error': error})
+
+
+# ── Recommandations IA ────────────────────────────────────────────────────────
+
+class AdminRecommendationsView(AdminRequiredMixin, View):
+    def get(self, request):
+        course_recs = CourseRecommendation.objects.filter(status='pending').order_by('-created_at')
+        blog_recs = BlogRecommendation.objects.filter(status='pending').order_by('-created_at')
+        published_courses = CourseRecommendation.objects.filter(
+            status='published').order_by('-published_at')[:5]
+        published_articles = BlogRecommendation.objects.filter(
+            status='published').order_by('-published_at')[:5]
+        return render(request, 'admin_panel/recommendations.html', {
+            'course_recommendations': course_recs,
+            'blog_recommendations': blog_recs,
+            'published_courses': published_courses,
+            'published_articles': published_articles,
+            'pending_count': course_recs.count() + blog_recs.count(),
+        })
+
+
+class AdminApproveCourseView(AdminRequiredMixin, View):
+    def post(self, request, pk):
+        from apps.agents.tasks import publish_approved_course
+        recommendation = get_object_or_404(CourseRecommendation, pk=pk)
+        recommendation.status = 'approved'
+        recommendation.reviewed_at = timezone.now()
+        recommendation.save()
+        publish_approved_course.delay(recommendation.id)
+        messages.success(request, f'Cours "{recommendation.title}" approuvé ! Publication en cours.')
+        return redirect('admin_recommendations')
+
+
+class AdminRejectCourseView(AdminRequiredMixin, View):
+    def post(self, request, pk):
+        recommendation = get_object_or_404(CourseRecommendation, pk=pk)
+        recommendation.status = 'rejected'
+        recommendation.rejection_reason = request.POST.get('reason', '')
+        recommendation.reviewed_at = timezone.now()
+        recommendation.save()
+        messages.warning(request, f'Cours "{recommendation.title}" rejeté.')
+        return redirect('admin_recommendations')
+
+
+class AdminApproveBlogView(AdminRequiredMixin, View):
+    def post(self, request, pk):
+        from apps.agents.tasks import publish_approved_article
+        recommendation = get_object_or_404(BlogRecommendation, pk=pk)
+        recommendation.status = 'approved'
+        recommendation.reviewed_at = timezone.now()
+        recommendation.save()
+        publish_approved_article.delay(recommendation.id)
+        messages.success(
+            request,
+            f'Article "{recommendation.suggested_title}" approuvé ! L\'IA va rédiger et publier l\'article.',
+        )
+        return redirect('admin_recommendations')
+
+
+class AdminRejectBlogView(AdminRequiredMixin, View):
+    def post(self, request, pk):
+        recommendation = get_object_or_404(BlogRecommendation, pk=pk)
+        recommendation.status = 'rejected'
+        recommendation.rejection_reason = request.POST.get('reason', '')
+        recommendation.reviewed_at = timezone.now()
+        recommendation.save()
+        messages.warning(request, f'Article "{recommendation.suggested_title}" rejeté.')
+        return redirect('admin_recommendations')
+
+
+class AdminCourseRecommendationDetailView(AdminRequiredMixin, View):
+    def get(self, request, pk):
+        recommendation = get_object_or_404(CourseRecommendation, pk=pk)
+        return render(request, 'admin_panel/recommendation_course_detail.html', {'rec': recommendation})
+
+
+class AdminBlogRecommendationDetailView(AdminRequiredMixin, View):
+    def get(self, request, pk):
+        recommendation = get_object_or_404(BlogRecommendation, pk=pk)
+        return render(request, 'admin_panel/recommendation_blog_detail.html', {'rec': recommendation})

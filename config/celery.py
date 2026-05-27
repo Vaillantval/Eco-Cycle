@@ -39,4 +39,14 @@ app.conf.beat_schedule = {
         'task': 'agents.run_fraud_detector',
         'schedule': crontab(hour=0, minute=0),
     },
+    # Academy Curator — chaque lundi à 9h (heure Haïti)
+    'run-academy-curator': {
+        'task': 'agents.run_academy_curator',
+        'schedule': crontab(hour=9, minute=0, day_of_week=1),
+    },
+    # Blog Writer — chaque mercredi à 8h30 (heure Haïti)
+    'run-blog-writer': {
+        'task': 'agents.run_blog_writer',
+        'schedule': crontab(hour=8, minute=30, day_of_week=3),
+    },
 }

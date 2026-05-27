@@ -1,0 +1,135 @@
+{% extends 'admin_panel/base_admin.html' %}
+{% block admin_content %}
+
+<div class="admin-page-header" style="margin-bottom:1.5rem;">
+  <a href="{% url 'admin_recommendations' %}" class="btn-admin-sm btn-view" style="margin-right:12px;">← Retour</a>
+  <h1 style="margin:0;font-size:1.4rem;font-weight:700;">🎓 {{ rec.title }}</h1>
+</div>
+
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:1.5rem;">
+
+  <!-- Colonne principale -->
+  <div>
+    <div class="admin-card" style="margin-bottom:1.5rem;">
+      <div class="admin-card-header">
+        <span class="admin-card-title">Informations du cours</span>
+      </div>
+      <div style="padding:1rem;">
+        <table class="admin-table">
+          <tr><th>Niveau</th><td>{{ rec.get_level_display }}</td></tr>
+          <tr><th>Durée estimée</th><td>{{ rec.estimated_duration_minutes }} minutes</td></tr>
+          <tr><th>Nombre de leçons</th><td>{{ rec.suggested_lessons|length }}</td></tr>
+          <tr><th>Catégorie</th><td>{{ rec.category_slug }}</td></tr>
+          <tr><th>Tags</th><td>{{ rec.tags|join:", " }}</td></tr>
+          <tr><th>Créé le</th><td>{{ rec.created_at|date:"d/m/Y à H:i" }}</td></tr>
+          <tr><th>Statut</th><td>{{ rec.get_status_display }}</td></tr>
+        </table>
+        <div style="margin-top:1rem;">
+          <h4>Description</h4>
+          <p style="color:#4a5568;">{{ rec.description }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Leçons -->
+    <div class="admin-card" style="margin-bottom:1.5rem;">
+      <div class="admin-card-header">
+        <span class="admin-card-title">Plan des leçons ({{ rec.suggested_lessons|length }})</span>
+      </div>
+      {% for lesson in rec.suggested_lessons %}
+      <div style="padding:12px 16px;border-bottom:1px solid #f0f0f0;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+          <span style="background:#0d7a45;color:white;border-radius:50%;width:24px;height:24px;
+                       display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;
+                       flex-shrink:0;">{{ lesson.order }}</span>
+          <strong>{{ lesson.title }}</strong>
+          <span style="color:#a0aec0;font-size:0.8rem;">{{ lesson.duration_minutes }} min</span>
+        </div>
+        <p style="color:#4a5568;font-size:0.88rem;margin:0 0 6px 34px;">{{ lesson.description }}</p>
+        {% if lesson.video_url %}
+        <a href="{{ lesson.video_url }}" target="_blank"
+           style="margin-left:34px;font-size:0.8rem;color:#0d7a45;">▶ Voir la vidéo YouTube</a>
+        {% endif %}
+        {% if lesson.key_points %}
+        <ul style="margin:6px 0 0 34px;padding-left:16px;">
+          {% for point in lesson.key_points %}
+          <li style="font-size:0.82rem;color:#4a5568;">{{ point }}</li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+      </div>
+      {% empty %}
+      <p style="padding:1rem;color:#718096;">Aucune leçon définie.</p>
+      {% endfor %}
+    </div>
+
+    <!-- Quiz -->
+    {% if rec.quiz_questions %}
+    <div class="admin-card" style="margin-bottom:1.5rem;">
+      <div class="admin-card-header">
+        <span class="admin-card-title">Quiz ({{ rec.quiz_questions|length }} questions)</span>
+      </div>
+      {% for q in rec.quiz_questions %}
+      <div style="padding:12px 16px;border-bottom:1px solid #f0f0f0;">
+        <p style="font-weight:600;margin:0 0 6px;">{{ forloop.counter }}. {{ q.question }}</p>
+        <ul style="margin:0 0 6px;padding-left:16px;">
+          {% for opt in q.options %}
+          <li style="font-size:0.85rem;color:{% if forloop.counter0 == q.correct_answer %}#0d7a45{% else %}#4a5568{% endif %};">
+            {% if forloop.counter0 == q.correct_answer %}✓ {% endif %}{{ opt }}
+          </li>
+          {% endfor %}
+        </ul>
+        <p style="font-size:0.8rem;color:#718096;margin:0;font-style:italic;">{{ q.explanation }}</p>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Colonne latérale -->
+  <div>
+    <!-- Actions -->
+    {% if rec.status == 'pending' %}
+    <div class="admin-card" style="margin-bottom:1.5rem;">
+      <div class="admin-card-header"><span class="admin-card-title">Actions</span></div>
+      <div style="padding:1rem;display:flex;flex-direction:column;gap:10px;">
+        <form method="POST" action="{% url 'admin_approve_course' rec.id %}">
+          {% csrf_token %}
+          <button type="submit" class="btn-admin-sm btn-approve" style="width:100%;justify-content:center;">
+            ✓ Approuver et publier
+          </button>
+        </form>
+        <form method="POST" action="{% url 'admin_reject_course' rec.id %}">
+          {% csrf_token %}
+          <textarea name="reason" placeholder="Raison du rejet..." rows="2"
+                    style="width:100%;padding:8px;border:1px solid #e2e8f0;border-radius:6px;
+                           font-size:0.85rem;box-sizing:border-box;margin-bottom:6px;"></textarea>
+          <button type="submit" class="btn-admin-sm btn-reject" style="width:100%;justify-content:center;">
+            ✗ Rejeter
+          </button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Vidéos YouTube -->
+    <div class="admin-card">
+      <div class="admin-card-header">
+        <span class="admin-card-title">Vidéos YouTube ({{ rec.youtube_videos|length }})</span>
+      </div>
+      {% for video in rec.youtube_videos %}
+      <div style="padding:10px 12px;border-bottom:1px solid #f0f0f0;">
+        <img src="{{ video.thumbnail }}" alt="{{ video.title }}"
+             style="width:100%;border-radius:4px;margin-bottom:6px;max-height:120px;object-fit:cover;">
+        <p style="margin:0 0 2px;font-size:0.8rem;font-weight:600;color:#2d3748;">{{ video.title|truncatechars:60 }}</p>
+        <p style="margin:0 0 4px;font-size:0.75rem;color:#718096;">{{ video.channel }}</p>
+        <a href="{{ video.url }}" target="_blank" class="btn-admin-sm btn-view" style="font-size:0.75rem;">
+          ▶ YouTube
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+{% endblock %}

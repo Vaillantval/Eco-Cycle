@@ -25,6 +25,10 @@ from .views.admin_views import (
     AdminNewslettersView, AdminContactsView, AdminSiteConfigView,
     AdminSlidersView, AdminCertificatePDFView, CertificatePDFView,
     AdminVideoDurationView,
+    AdminRecommendationsView,
+    AdminApproveCourseView, AdminRejectCourseView,
+    AdminApproveBlogView, AdminRejectBlogView,
+    AdminCourseRecommendationDetailView, AdminBlogRecommendationDetailView,
 )
 from .views.collector_views import (
     CollectorDashboardView, CollectorPickupsView,
@@ -216,6 +220,22 @@ urlpatterns = [
          AdminCertificatePDFView.as_view(), name='admin_certificate_pdf'),
     path('panel/api/video-duration/',
          AdminVideoDurationView.as_view(), name='admin_video_duration'),
+
+    # Recommandations IA
+    path('panel/recommendations/',
+         AdminRecommendationsView.as_view(), name='admin_recommendations'),
+    path('panel/recommendations/course/<int:pk>/',
+         AdminCourseRecommendationDetailView.as_view(), name='admin_course_recommendation_detail'),
+    path('panel/recommendations/course/<int:pk>/approve/',
+         AdminApproveCourseView.as_view(), name='admin_approve_course'),
+    path('panel/recommendations/course/<int:pk>/reject/',
+         AdminRejectCourseView.as_view(), name='admin_reject_course'),
+    path('panel/recommendations/blog/<int:pk>/',
+         AdminBlogRecommendationDetailView.as_view(), name='admin_blog_recommendation_detail'),
+    path('panel/recommendations/blog/<int:pk>/approve/',
+         AdminApproveBlogView.as_view(), name='admin_approve_blog'),
+    path('panel/recommendations/blog/<int:pk>/reject/',
+         AdminRejectBlogView.as_view(), name='admin_reject_blog'),
 
     # Maintenance
     path('maintenance/',

@@ -228,3 +228,45 @@ class Certificate(models.Model):
 
     def __str__(self):
         return f'{self.user.email} — {self.course.title}'
+
+
+class CourseRecommendation(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'En attente'),
+        ('approved', 'Approuvé'),
+        ('rejected', 'Rejeté'),
+        ('published', 'Publié'),
+    ]
+    LEVEL_CHOICES = [
+        ('beginner', 'Débutant'),
+        ('intermediate', 'Intermédiaire'),
+        ('advanced', 'Avancé'),
+    ]
+
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    level = models.CharField(max_length=20, choices=LEVEL_CHOICES, default='beginner')
+    youtube_videos = models.JSONField(default=list)
+    suggested_lessons = models.JSONField(default=list)
+    pdf_content = models.TextField(blank=True)
+    quiz_questions = models.JSONField(default=list)
+    estimated_duration_minutes = models.PositiveIntegerField(default=0)
+    tags = models.JSONField(default=list)
+    category_slug = models.CharField(max_length=50, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    admin_notes = models.TextField(blank=True)
+    rejection_reason = models.TextField(blank=True)
+    created_course = models.OneToOneField(
+        'Course', null=True, blank=True,
+        on_delete=models.SET_NULL, related_name='recommendation',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    published_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'course_recommendations'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.title} ({self.get_status_display()})'

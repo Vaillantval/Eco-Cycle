@@ -52,3 +52,39 @@ class Post(models.Model):
         if not self.slug:
             self.slug = slugify(self.title)
         super().save(*args, **kwargs)
+
+
+class BlogRecommendation(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'En attente'),
+        ('approved', 'Approuvé'),
+        ('rejected', 'Rejeté'),
+        ('published', 'Publié'),
+    ]
+
+    suggested_title = models.CharField(max_length=300)
+    seo_title = models.CharField(max_length=60, blank=True)
+    angle = models.TextField()
+    sources = models.JSONField(default=list)
+    generated_content = models.TextField(blank=True)
+    excerpt = models.TextField(blank=True, max_length=500)
+    tags = models.JSONField(default=list)
+    estimated_read_time = models.PositiveIntegerField(default=5)
+    word_count = models.PositiveIntegerField(default=0)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    admin_notes = models.TextField(blank=True)
+    rejection_reason = models.TextField(blank=True)
+    created_post = models.OneToOneField(
+        'Post', null=True, blank=True,
+        on_delete=models.SET_NULL, related_name='recommendation',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    published_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'blog_recommendations'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.suggested_title} ({self.get_status_display()})'
