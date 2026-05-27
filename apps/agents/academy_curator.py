@@ -192,7 +192,7 @@ Retourne UNIQUEMENT un JSON valide :
     def generate_full_course(self, videos: list, theme: str) -> dict:
         response = self.client.messages.create(
             model='claude-sonnet-4-6',
-            max_tokens=4096,
+            max_tokens=8192,
             system=ACADEMY_CURATOR_SYSTEM_PROMPT,
             messages=[{
                 'role': 'user',
