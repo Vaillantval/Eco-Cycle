@@ -56,6 +56,7 @@ class AIAnalysisView(APIView):
     POST /api/waste/analyze/
     Analyse une image via Claude Vision — preview avant soumission.
     """
+    permission_classes = [permissions.AllowAny]
     throttle_scope = 'ai_analysis'
 
     def post(self, request):
