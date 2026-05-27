@@ -111,8 +111,11 @@
 {% block content %}
 <div class="dashboard-layout">
 
+  <!-- OVERLAY SIDEBAR MOBILE -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
   <!-- SIDEBAR -->
-  <aside class="sidebar">
+  <aside class="sidebar" id="dashSidebar">
 
     <!-- Logo + lien accueil -->
     <div class="sidebar-logo-wrap">
@@ -201,6 +204,14 @@
     <!-- Topbar : accueil + toggle thème -->
     <div class="dash-topbar">
       <div class="dash-topbar-left">
+        <!-- Bouton hamburger sidebar (mobile uniquement) -->
+        <button class="sidebar-toggle-btn" id="dashSidebarToggle" aria-label="Ouvrir le menu de navigation">
+          <svg width="18" height="14" viewBox="0 0 18 14" fill="none" aria-hidden="true">
+            <rect y="0"  width="18" height="2" rx="1" fill="currentColor"/>
+            <rect y="6"  width="14" height="2" rx="1" fill="currentColor"/>
+            <rect y="12" width="18" height="2" rx="1" fill="currentColor"/>
+          </svg>
+        </button>
         <a href="{% url 'home' %}" class="dash-home-btn">🌐 Retour à l'accueil</a>
       </div>
       <button class="theme-toggle" aria-label="Basculer le thème">
@@ -213,4 +224,38 @@
   </div>
 
 </div>
+
+<script>
+/* ── Sidebar mobile off-canvas ── */
+(function () {
+  var toggle  = document.getElementById('dashSidebarToggle');
+  var sidebar = document.getElementById('dashSidebar');
+  var overlay = document.getElementById('sidebarOverlay');
+  if (!toggle || !sidebar || !overlay) return;
+
+  function openSidebar() {
+    sidebar.classList.add('open');
+    overlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeSidebar() {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  toggle.addEventListener('click', openSidebar);
+  overlay.addEventListener('click', closeSidebar);
+
+  /* Ferme aussi en cliquant un lien de navigation */
+  sidebar.querySelectorAll('.sidebar-link').forEach(function (link) {
+    link.addEventListener('click', closeSidebar);
+  });
+
+  /* Ferme si on passe en desktop (resize) */
+  window.addEventListener('resize', function () {
+    if (window.innerWidth > 768) closeSidebar();
+  });
+})();
+</script>
 {% endblock %}
