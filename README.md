@@ -11,7 +11,7 @@ API REST Django + Interface Web pour la plateforme de recyclage intelligent EcoC
 - **JWT** via `djangorestframework-simplejwt` — pour l'app mobile Flutter
 - **Sessions Django** — authentification pour l'interface web
 - **Stockage médias** — volume local Railway (fichiers vidéo, thumbnails, avatars)
-- **4 agents IA Anthropic** — analyse photo, chatbot, optimisation des prix, détection de fraude
+- **6 agents IA Anthropic** — analyse photo, chatbot, optimisation des prix, détection de fraude, génération de cours Academy, rédaction d'articles Blog
 - **Resend** — emails transactionnels (certificats, contact, newsletter, paiements)
 - **Firebase FCM** — notifications push
 - **Stripe** (`stripe==15.1.0`) — paiement par carte bancaire
@@ -72,9 +72,11 @@ ecocycle/
 └── railway-beat.toml           # Service Celery Beat (tâches planifiées)
 ```
 
-## Intelligence Artificielle — 4 agents autonomes
+## Intelligence Artificielle — 6 agents autonomes
 
-EcoCycle intègre quatre agents IA distincts, chacun avec un rôle précis, un modèle adapté à sa charge et un mode de déclenchement différent.
+EcoCycle intègre six agents IA distincts, chacun avec un rôle précis, un modèle adapté à sa charge et un mode de déclenchement différent.
+
+Les fréquences d'exécution des 4 agents planifiés (Price Optimizer, Fraud Detector, Academy Curator, Blog Writer) sont **configurables en temps réel** depuis `/panel/agent-schedules/` sans redémarrage de Celery.
 
 ---
 
@@ -196,7 +198,75 @@ Analyse : Le volume de transactions métal a doublé ce mois...
 
 ---
 
-### Vue d'ensemble des 4 agents
+---
+
+### Agent 5 — Academy Curator (Génération de cours)
+
+| Attribut | Valeur |
+|---|---|
+| **Type** | Claude API directe (`messages.create`) |
+| **Modèles** | `claude-haiku-4-5-20251001` (évaluation) + `claude-sonnet-4-6` (génération) |
+| **Déclenchement** | Chaque **lundi à 9h** (configurable depuis le panel) |
+| **Fichier** | `apps/agents/academy_curator.py` → `AcademyCuratorAgent` |
+| **Tâche Celery** | `agents.run_academy_curator` |
+
+**Rôle :** Recherche automatiquement des tutoriels YouTube sur le recyclage, les groupe par thème, génère des cours complets structurés, et les soumet à l'approbation admin avant toute publication.
+
+**Flux d'exécution :**
+```
+1. Recherche 4 requêtes aléatoires parmi 10 thèmes (YouTube Data API)
+2. Filtre les vidéos > 500 vues
+3. Claude Haiku évalue et regroupe en 2-3 cours cohérents (score >= 6/10)
+4. Claude Sonnet génère chaque cours complet :
+   - Titre, description, niveau (débutant/intermédiaire/avancé)
+   - 3 à 5 leçons (titre, description, URL YouTube, points clés, durée)
+   - Document de support complet en Markdown (PDF)
+   - 5 questions de quiz avec explications
+5. Sauvegarde en CourseRecommendation (status: pending)
+6. Notifie les admins (in-app + email) → approbation requise
+```
+
+**Si un admin approuve :** la tâche `publish_approved_course` crée automatiquement le `Course` + les `Lesson` + les `LessonVideo` en base, et publie le cours sur l'Academy.
+
+---
+
+### Agent 6 — Blog Writer (Rédaction d'articles)
+
+| Attribut | Valeur |
+|---|---|
+| **Type** | Claude API directe (`messages.create`) |
+| **Modèles** | `claude-haiku-4-5-20251001` (suggestion) + `claude-sonnet-4-6` (rédaction) |
+| **Déclenchement** | Chaque **mercredi à 8h30** (configurable depuis le panel) |
+| **Fichier** | `apps/agents/blog_writer.py` → `BlogWriterAgent` |
+| **Tâche Celery** | `agents.run_blog_writer` |
+
+**Rôle :** Recherche des actualités environnementales récentes, propose des angles éditoriaux originaux pour le blog EcoCycle, et rédige l'article complet uniquement après approbation admin.
+
+**Flux d'exécution :**
+```
+1. Choisit 3 sujets aléatoires parmi 10 thèmes prédéfinis
+2. Recherche des sources récentes (Google Custom Search API — fallback mock si absent)
+3. Claude Haiku propose un angle éditorial + score de pertinence (>= 6/10)
+4. Sauvegarde en BlogRecommendation (status: pending) — sans rédiger l'article
+5. Notifie les admins (in-app + email) → approbation requise
+```
+
+**Si un admin approuve :** Claude Sonnet rédige l'article complet (800-1200 mots, Markdown, adapté au contexte haïtien, CTA EcoCycle en conclusion) et le publie automatiquement sur le Blog.
+
+---
+
+### Décisions admin vs actions autonomes
+
+| Agent | Action automatique | Décision admin requise |
+|---|---|---|
+| Waste Inspector | Analyse photo → valeur + catégorie | Approuver/rejeter le listing |
+| Éco Conseiller | Réponse conversationnelle | Aucune |
+| Price Optimizer | Ajuste les prix (confiance ≥ 75%) | Débloquer si erreur |
+| Fraud Detector | Bloque les comptes HIGH risk | Débloquer si faux positif |
+| Academy Curator | Génère et soumet un cours | ✅ Approuver pour publier |
+| Blog Writer | Suggère un angle éditorial | ✅ Approuver pour déclencher la rédaction |
+
+### Vue d'ensemble des 6 agents
 
 ```
 Flux utilisateur
@@ -207,12 +277,20 @@ Flux utilisateur
   → Message chat
       └── [Agent 2] Éco Conseiller → réponse conversationnelle multi-tour
 
-Flux automatique (Celery Beat)
+Flux automatique (Celery Beat — fréquences configurables depuis /panel/agent-schedules/)
   → Chaque lundi à minuit
       └── [Agent 3] Price Optimizer → ajustement des prix de base
 
   → Chaque jour à minuit
       └── [Agent 4] Fraud Detector → analyse des 24h → blocage si HIGH
+
+  → Chaque lundi à 9h
+      └── [Agent 5] Academy Curator → recherche YouTube → CourseRecommendation (pending)
+            └── Admin approuve → Course + Lessons + LessonVideos publiés
+
+  → Chaque mercredi à 8h30
+      └── [Agent 6] Blog Writer → recherche actualités → BlogRecommendation (pending)
+            └── Admin approuve → Claude rédige + Post publié
 ```
 
 ## Interface web
@@ -305,6 +383,14 @@ Flux automatique (Celery Beat)
 | `/panel/contacts/` | Messages de contact |
 | `/panel/config/` | Configuration du site (SiteConfiguration) |
 | `/panel/sliders/` | Slides de la page d'accueil |
+| `/panel/recommendations/` | Recommandations IA en attente (cours + articles) |
+| `/panel/recommendations/course/<id>/` | Détail d'un cours suggéré (leçons, quiz, vidéos) |
+| `/panel/recommendations/course/<id>/approve/` | Approuver → publie le cours sur l'Academy |
+| `/panel/recommendations/course/<id>/reject/` | Rejeter avec motif |
+| `/panel/recommendations/blog/<id>/` | Détail d'un article suggéré (angle, sources) |
+| `/panel/recommendations/blog/<id>/approve/` | Approuver → Claude rédige + publie l'article |
+| `/panel/recommendations/blog/<id>/reject/` | Rejeter avec motif |
+| `/panel/agent-schedules/` | Planification des 4 agents IA (jour, heure, minute, actif/désactivé) |
 
 ## Service de paiement (`apps/payments`)
 
@@ -527,11 +613,17 @@ L'API (`/api/`) est destinée à l'application mobile Flutter et utilise JWT.
 
 ### Tâches planifiées
 
-| Tâche | Fréquence |
-|---|---|
-| Clôture des enchères expirées + reserve price check + notification vendeur | Toutes les 5 minutes |
-| Annulation des ramassages non assignés après 72h | Toutes les heures |
-| Rapport hebdomadaire admin | Lundi 8h (heure Haïti) |
+| Tâche | Fréquence par défaut | Configurable |
+|---|---|---|
+| Clôture des enchères expirées + reserve price check + notification vendeur | Toutes les 5 minutes | Non |
+| Annulation des ramassages non assignés après 72h | Toutes les heures | Non |
+| Rapport hebdomadaire admin | Lundi 8h (heure Haïti) | Non |
+| Price Optimizer — ajustement des prix par catégorie | Lundi minuit | ✅ `/panel/agent-schedules/` |
+| Fraud Detector — scan anti-fraude 24h | Tous les jours minuit | ✅ `/panel/agent-schedules/` |
+| Academy Curator — génération de cours depuis YouTube | Lundi 9h | ✅ `/panel/agent-schedules/` |
+| Blog Writer — suggestions d'articles | Mercredi 8h30 | ✅ `/panel/agent-schedules/` |
+
+Les 4 agents IA sont gérés via `django-celery-beat` (DatabaseScheduler). Les modifications dans le panel sont actives au prochain tick Celery (< 1 min), sans redémarrage.
 
 ### Tâches déclenchées par événement
 
@@ -626,6 +718,9 @@ Interface web : `http://localhost:8000` — API : `http://localhost:8000/api/`
 | `ADMIN_EMAIL` | Non | Email admin (défaut : `admin@ecocycle.ht`) |
 | `ADMIN_PASSWORD` | Non | Mot de passe admin initial |
 | `RESEND_FROM_EMAIL` | Non | Expéditeur email (défaut : `noreply@ecocycle.ht`) |
+| `YOUTUBE_API_KEY` | Non | YouTube Data API v3 — utilisé par Academy Curator (mock si absent) |
+| `GOOGLE_SEARCH_API_KEY` | Non | Google Custom Search API — utilisé par Blog Writer (mock si absent) |
+| `GOOGLE_SEARCH_ENGINE_ID` | Non | ID du moteur de recherche Google Custom Search |
 
 ```bash
 # Encoder les credentials Firebase
