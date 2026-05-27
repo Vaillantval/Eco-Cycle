@@ -42,7 +42,7 @@
           <div>
             <div style="color:#64748b;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.5px;">Valeur IA</div>
             <div style="font-weight:600;margin-top:2px;color:var(--green);">
-              {% if listing.ai_estimated_value %}{{ listing.ai_estimated_value }} HTG{% else %}—{% endif %}
+              {% if listing.ai_estimated_value is not None %}{{ listing.ai_estimated_value|floatformat:0 }} HTG{% else %}—{% endif %}
             </div>
           </div>
         </div>
@@ -130,10 +130,10 @@
             <div>
               <label style="font-size:0.75rem;color:#64748b;font-weight:600;display:block;margin-bottom:4px;">
                 Prix de départ (HTG)
-                {% if listing.ai_estimated_value %}<span style="color:#16a34a;font-weight:400;"> — IA : {{ listing.ai_estimated_value }} HTG</span>{% endif %}
+                {% if listing.ai_estimated_value is not None %}<span style="color:#16a34a;font-weight:400;"> — IA : {{ listing.ai_estimated_value|floatformat:0 }} HTG</span>{% endif %}
               </label>
               <input type="number" name="starting_price" min="1" step="1"
-                     value="{{ listing.ai_estimated_value|default:'' }}"
+                     value="{{ listing.ai_estimated_value|default_if_none:'' }}"
                      placeholder="Ex : 1500"
                      style="width:100%;padding:8px 10px;border:1px solid #e2e8f0;border-radius:6px;font-size:0.83rem;box-sizing:border-box;">
             </div>

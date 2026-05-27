@@ -6,19 +6,29 @@ from django.utils import timezone
 def analyze_waste_photo_async(self, listing_id: str):
     from .models import WasteListing, WasteCategory
     from .ai_service import ai_service
+    from django.conf import settings
     try:
         listing = WasteListing.objects.get(id=listing_id)
-        if listing.photo:
+        if not listing.photo:
+            return
+
+        # Try reading the file directly; fall back to HTTP URL when the
+        # Celery worker runs on a different pod (Railway, Docker, etc.)
+        try:
             result = ai_service.analyze_image_from_file(listing.photo.path)
-            if 'error' not in result:
-                listing.ai_analysis = result
-                listing.ai_estimated_value = result.get('estimated_value_htg')
-                listing.ai_analyzed_at = timezone.now()
-                if not listing.category and result.get('category_slug'):
-                    category = WasteCategory.objects.filter(slug=result['category_slug']).first()
-                    if category:
-                        listing.category = category
-                listing.save()
+        except (FileNotFoundError, OSError):
+            full_url = settings.FRONTEND_URL.rstrip('/') + listing.photo.url
+            result = ai_service.analyze_image_from_url(full_url)
+
+        if 'error' not in result:
+            listing.ai_analysis = result
+            listing.ai_estimated_value = result.get('estimated_value_htg')
+            listing.ai_analyzed_at = timezone.now()
+            if not listing.category and result.get('category_slug'):
+                category = WasteCategory.objects.filter(slug=result['category_slug']).first()
+                if category:
+                    listing.category = category
+            listing.save()
     except WasteListing.DoesNotExist:
         pass
     except Exception as exc:
