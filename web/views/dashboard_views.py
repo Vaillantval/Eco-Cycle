@@ -72,8 +72,22 @@ class SubmitWasteView(LoginRequiredMixin, View):
             city=request.POST.get('city', ''),
             status='pending_review',
         )
+        import base64
+        from pathlib import Path
         from apps.waste.tasks import analyze_waste_photo_async, notify_admin_new_listing
-        analyze_waste_photo_async.delay(str(listing.id))
+
+        image_b64 = None
+        media_type = 'image/jpeg'
+        if listing.photo:
+            ext = Path(listing.photo.name).suffix.lower()
+            media_type = {'.png': 'image/png', '.webp': 'image/webp'}.get(ext, 'image/jpeg')
+            try:
+                with open(listing.photo.path, 'rb') as f:
+                    image_b64 = base64.standard_b64encode(f.read()).decode()
+            except (FileNotFoundError, OSError):
+                pass
+
+        analyze_waste_photo_async.delay(str(listing.id), image_b64, media_type)
         notify_admin_new_listing.delay(str(listing.id))
         messages.success(request, "Déchet soumis ! L'analyse IA est en cours.")
         return redirect('my_listings')

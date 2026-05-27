@@ -6,26 +6,32 @@ logger = logging.getLogger(__name__)
 
 
 @shared_task(name='waste.analyze_photo', bind=True, max_retries=3)
-def analyze_waste_photo_async(self, listing_id: str):
+def analyze_waste_photo_async(self, listing_id: str, image_b64: str = None, media_type: str = 'image/jpeg'):
     from .models import WasteListing, WasteCategory
     from .ai_service import ai_service
     from django.conf import settings
 
-    logger.warning('analyze_photo START listing=%s', listing_id)
+    logger.warning('analyze_photo START listing=%s b64=%s', listing_id, bool(image_b64))
     try:
         listing = WasteListing.objects.get(id=listing_id)
-        if not listing.photo:
-            logger.warning('analyze_photo SKIP listing=%s (no photo)', listing_id)
-            return
 
-        try:
-            result = ai_service.analyze_image_from_file(listing.photo.path)
-            logger.warning('analyze_photo used FILE path=%s', listing.photo.path)
-        except (FileNotFoundError, OSError):
-            base_url = settings.FRONTEND_URL.split(',')[0].strip().rstrip('/')
-            full_url = base_url + listing.photo.url
-            logger.warning('analyze_photo fallback URL=%s', full_url)
-            result = ai_service.analyze_image_from_url(full_url)
+        if image_b64:
+            # Base64 passed directly from the web pod — best path
+            result = ai_service.analyze_image_from_base64(image_b64, media_type)
+            logger.warning('analyze_photo used BASE64 listing=%s', listing_id)
+        elif listing.photo:
+            # Fallback: try local file, then public URL
+            try:
+                result = ai_service.analyze_image_from_file(listing.photo.path)
+                logger.warning('analyze_photo used FILE listing=%s', listing_id)
+            except (FileNotFoundError, OSError):
+                base_url = settings.FRONTEND_URL.split(',')[0].strip().rstrip('/')
+                full_url = base_url + listing.photo.url
+                logger.warning('analyze_photo fallback URL=%s', full_url)
+                result = ai_service.analyze_image_from_url(full_url)
+        else:
+            logger.warning('analyze_photo SKIP listing=%s (no photo, no b64)', listing_id)
+            return
 
         if 'error' not in result:
             listing.ai_analysis = result
@@ -42,7 +48,7 @@ def analyze_waste_photo_async(self, listing_id: str):
             logger.error('analyze_photo ERROR listing=%s result=%s', listing_id, result)
 
     except WasteListing.DoesNotExist:
-        logger.error('analyze_photo listing NOT FOUND listing=%s', listing_id)
+        logger.error('analyze_photo NOT FOUND listing=%s', listing_id)
     except Exception as exc:
         logger.error('analyze_photo EXCEPTION listing=%s exc=%s', listing_id, repr(exc), exc_info=True)
         raise self.retry(exc=exc, countdown=60)
