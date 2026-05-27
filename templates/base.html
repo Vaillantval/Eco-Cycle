@@ -346,6 +346,42 @@
   {% block extra_js %}{% endblock %}
   <script>
   (function(){
+    var chatSessionId = null;
+    function getCsrf(){var m=document.cookie.match(/csrftoken=([^;]+)/);return m?m[1]:'';}
+    function bubble(role,text){
+      var box=document.getElementById('chat-messages');if(!box)return null;
+      var id='cb-'+Date.now(),d=document.createElement('div');
+      d.className='chat-bubble '+role;d.id=id;d.textContent=text;
+      box.appendChild(d);box.scrollTop=box.scrollHeight;return id;
+    }
+    function rmBubble(id){if(id){var el=document.getElementById(id);if(el)el.remove();}}
+    window.toggleChat=function(){
+      var box=document.getElementById('chat-box');if(!box)return;
+      var opening=box.style.display==='none';
+      box.style.display=opening?'flex':'none';
+      if(opening){var inp=document.getElementById('chat-input');if(inp)inp.focus();}
+    };
+    window.sendChatMessage=async function(){
+      var inp=document.getElementById('chat-input');
+      var msg=inp&&inp.value.trim();if(!msg)return;
+      bubble('user',msg);inp.value='';
+      var lid=bubble('assistant','...');
+      try{
+        var res=await fetch('/api/waste/advisor/',{
+          method:'POST',
+          headers:{'Content-Type':'application/json','X-CSRFToken':getCsrf()},
+          body:JSON.stringify({message:msg,session_id:chatSessionId})
+        });
+        var data=await res.json();rmBubble(lid);
+        if(data.reply){bubble('assistant',data.reply);chatSessionId=data.session_id||null;}
+        else{bubble('assistant',data.error||'Une erreur est survenue.');}
+      }catch(e){rmBubble(lid);bubble('assistant','Désolé, une erreur est survenue.');}
+    };
+    document.getElementById('chat-input')&&document.getElementById('chat-input').addEventListener('keypress',function(e){if(e.key==='Enter')sendChatMessage();});
+  })();
+  </script>
+  <script>
+  (function(){
     document.querySelectorAll('.theme-toggle').forEach(function(btn){
       btn.addEventListener('click', function(){
         var next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
