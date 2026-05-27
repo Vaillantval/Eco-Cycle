@@ -11,7 +11,7 @@ API REST Django + Interface Web pour la plateforme de recyclage intelligent EcoC
 - **JWT** via `djangorestframework-simplejwt` — pour l'app mobile Flutter
 - **Sessions Django** — authentification pour l'interface web
 - **Stockage médias** — volume local Railway (fichiers vidéo, thumbnails, avatars)
-- **Anthropic Managed Agents** (Sessions API) — analyse IA photo déchets + chatbot Éco
+- **4 agents IA Anthropic** — analyse photo, chatbot, optimisation des prix, détection de fraude
 - **Resend** — emails transactionnels (certificats, contact, newsletter, paiements)
 - **Firebase FCM** — notifications push
 - **Stripe** (`stripe==15.1.0`) — paiement par carte bancaire
@@ -70,6 +70,149 @@ ecocycle/
 ├── railway.toml                # Service web (Gunicorn)
 ├── railway-celery.toml         # Service Celery worker
 └── railway-beat.toml           # Service Celery Beat (tâches planifiées)
+```
+
+## Intelligence Artificielle — 4 agents autonomes
+
+EcoCycle intègre quatre agents IA distincts, chacun avec un rôle précis, un modèle adapté à sa charge et un mode de déclenchement différent.
+
+---
+
+### Agent 1 — Waste Inspector (Analyse photo)
+
+| Attribut | Valeur |
+|---|---|
+| **Type** | Anthropic Managed Agent (Sessions API) |
+| **Modèle** | `claude-sonnet-4-6` |
+| **Variable** | `ANTHROPIC_AGENT_ID` |
+| **Déclenchement** | À chaque soumission de déchet (Celery task + preview temps réel) |
+| **Fichier** | `apps/waste/ai_service.py` → `ManagedAgentService` |
+
+**Rôle :** Analyse une photo de déchet et retourne une évaluation structurée en JSON strict. Utilisé deux fois dans le flux :
+
+1. **Preview temps réel** — quand l'utilisateur clique "Analyser avec l'IA" sur la page de soumission (`POST /api/waste/analyze/`). Le résultat pré-remplit le formulaire (catégorie, poids, valeur estimée, description).
+2. **Analyse asynchrone** — après la soumission du formulaire, une tâche Celery (`analyze_waste_photo_async`) re-analyse la photo et sauvegarde les résultats en base (`ai_estimated_value`, `category`, `ai_analysis`). Le base64 de la photo est passé directement au worker pour éviter les problèmes de volume partagé sur Railway.
+
+**Sortie JSON garantie :**
+```json
+{
+  "category": "Métal / Ferraille",
+  "category_slug": "metal",
+  "estimated_weight_kg": 12.5,
+  "estimated_value_htg": 1800,
+  "estimated_value_usd": 13.6,
+  "recyclability_score": 9,
+  "condition": "Bon",
+  "description": "Ferraille de construction en acier, légèrement rouillée.",
+  "is_recyclable": true,
+  "confidence": 0.91,
+  "hazardous": false,
+  "recommendations": "Trier par type de métal avant dépôt."
+}
+```
+
+---
+
+### Agent 2 — Éco, Conseiller Recyclage (Chatbot)
+
+| Attribut | Valeur |
+|---|---|
+| **Type** | Anthropic Managed Agent (Sessions API) |
+| **Modèle** | `claude-sonnet-4-6` |
+| **Variable** | `ANTHROPIC_ADVISOR_AGENT_ID` |
+| **Déclenchement** | À chaque message utilisateur dans le widget chat |
+| **Fichier** | `apps/waste/ai_service.py` → `RecyclingAdvisor` |
+| **Endpoint** | `POST /api/waste/advisor/` |
+
+**Rôle :** Agent conversationnel multi-tour accessible depuis le widget flottant présent sur toutes les pages du site. Répond en français (ou créole si l'utilisateur écrit en créole) sur les thèmes du recyclage : prix du marché haïtien, conseils de tri, fonctionnement de la plateforme, impact environnemental.
+
+Le `session_id` Anthropic est retourné au client à la première réponse et renvoyé à chaque message suivant — la mémoire conversationnelle est maintenue côté Anthropic sans stockage en base.
+
+**Prix du marché connus par l'agent (2026) :**
+`PET 40-60 HTG/kg · Métal ferreux 100-140 · Aluminium/Cuivre 400-600 · Carton 20-40 · Verre 15-25 · Électronique 400-600 · Pneus 60-100`
+
+---
+
+### Agent 3 — Price Optimizer (Optimiseur de prix)
+
+| Attribut | Valeur |
+|---|---|
+| **Type** | Claude API directe (`messages.create`) |
+| **Modèle** | `claude-haiku-4-5-20251001` |
+| **Déclenchement** | Chaque **lundi à minuit** (Celery Beat) |
+| **Fichier** | `apps/agents/price_optimizer.py` → `PriceOptimizerAgent` |
+| **Tâche Celery** | `agents.run_price_optimizer` |
+
+**Rôle :** Analyse les transactions réelles des 30 derniers jours et ajuste automatiquement les prix de base des catégories de déchets en fonction du marché réel.
+
+**Flux d'exécution :**
+```
+1. Collecte les stats par catégorie (avg, min, max, volume) → 30 derniers jours
+2. Si < 5 commandes au total → skip (données insuffisantes)
+3. Envoie les données à Claude Haiku avec contexte marché haïtien
+4. Claude retourne des recommandations avec justification et score de confiance
+5. Applique automatiquement les ajustements avec confidence >= 0.75
+6. Notifie les admins : notification in-app + email avec rapport détaillé
+```
+
+**Exemple de notification admin :**
+```
+↑ Plastique : 15 → 22 HTG/kg
+↓ Verre : 5 → 3 HTG/kg
+Analyse : Le volume de transactions métal a doublé ce mois...
+```
+
+---
+
+### Agent 4 — Fraud Detector (Détecteur de fraude)
+
+| Attribut | Valeur |
+|---|---|
+| **Type** | Claude API directe (`messages.create`) |
+| **Modèle** | `claude-haiku-4-5-20251001` |
+| **Déclenchement** | Chaque **jour à minuit** (Celery Beat) |
+| **Fichier** | `apps/agents/fraud_detector.py` → `FraudDetectorAgent` |
+| **Tâche Celery** | `agents.run_fraud_detector` |
+
+**Rôle :** Détecte les comportements frauduleux sur la marketplace en analysant l'activité des dernières 24h. Si rien de suspect → retourne `status: clean` sans appeler l'API.
+
+**5 patterns détectés :**
+
+| Pattern | Seuil de détection |
+|---|---|
+| `LISTINGS_EN_MASSE` | 10+ listings soumis par le même user en 24h |
+| `AUTO_ENCHERE` | User qui enchérit sur son propre listing |
+| `PRIX_ABERRANT` | Valeur IA > 5× le plafond attendu de la catégorie |
+| `COMPTE_FANTOME` | Compte < 24h avec 5+ listings ou 10+ enchères |
+| `ENCHERE_FICTIVE` | 20+ enchères placées par le même user en 24h |
+
+**Niveaux de risque et actions :**
+
+| Niveau | Action automatique |
+|---|---|
+| `LOW` | Enregistré, aucune action |
+| `MEDIUM` | Notification admin (in-app + email) |
+| `HIGH` | Blocage automatique du compte (`is_active=False`) + notification admin |
+
+---
+
+### Vue d'ensemble des 4 agents
+
+```
+Flux utilisateur
+  → Photo soumise
+      └── [Agent 1] Waste Inspector → JSON (valeur, catégorie, poids)
+            └── Celery task → sauvegarde en DB
+
+  → Message chat
+      └── [Agent 2] Éco Conseiller → réponse conversationnelle multi-tour
+
+Flux automatique (Celery Beat)
+  → Chaque lundi à minuit
+      └── [Agent 3] Price Optimizer → ajustement des prix de base
+
+  → Chaque jour à minuit
+      └── [Agent 4] Fraud Detector → analyse des 24h → blocage si HIGH
 ```
 
 ## Interface web
