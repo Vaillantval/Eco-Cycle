@@ -11,7 +11,7 @@ API REST Django + Interface Web pour la plateforme de recyclage intelligent EcoC
 - **JWT** via `djangorestframework-simplejwt` — pour l'app mobile Flutter
 - **Sessions Django** — authentification pour l'interface web
 - **Stockage médias** — volume local Railway (fichiers vidéo, thumbnails, avatars)
-- **Claude Vision API** (Anthropic) — analyse IA des déchets par photo
+- **Anthropic Managed Agents** (Sessions API) — analyse IA photo déchets + chatbot Éco
 - **Resend** — emails transactionnels (certificats, contact, newsletter, paiements)
 - **Firebase FCM** — notifications push
 - **Stripe** (`stripe==15.1.0`) — paiement par carte bancaire
@@ -341,7 +341,8 @@ L'API (`/api/`) est destinée à l'application mobile Flutter et utilise JWT.
 | GET | `/categories/` | Liste des catégories (public) |
 | GET/POST | `/listings/` | Annonces de déchets |
 | GET/PATCH | `/listings/<id>/` | Détail / modification |
-| POST | `/analyze/` | Analyse IA par photo |
+| POST | `/analyze/` | Analyse IA par photo (preview, AllowAny) |
+| POST | `/advisor/` | Chat Éco — conseiller recyclage (AllowAny) |
 | GET | `/admin/listings/` | Toutes les annonces (admin) |
 | POST | `/admin/listings/<id>/review/` | Approuver / rejeter (admin) |
 
@@ -393,6 +394,7 @@ L'API (`/api/`) est destinée à l'application mobile Flutter et utilise JWT.
 
 | Tâche | Déclencheur |
 |---|---|
+| `analyze_waste_photo_async` | Listing soumis → analyse IA (base64 passé depuis le pod web) → sauvegarde `ai_estimated_value` + `category` |
 | `notify_listing_approved` | Admin approuve une annonce → email + push vendeur |
 | `notify_listing_rejected` | Admin rejette une annonce → email + push vendeur |
 | `notify_new_bid` | Nouvelle enchère placée → push vendeur |
@@ -430,9 +432,10 @@ Trois services définis :
 # 4. Déployer le service web (railway.toml)
 # 5. Créer un second service pointant sur railway-celery.toml
 # 6. Créer un troisième service pointant sur railway-beat.toml
-# 7. Seeder les catégories de déchets
-railway run python manage.py seed_waste_categories
+# Les catégories de déchets sont seedées automatiquement via la migration 0002
 ```
+
+> **Note Railway :** les pods web et Celery ont des volumes séparés — les fichiers media uploadés sur le pod web ne sont pas accessibles depuis Celery. Le base64 de la photo est donc passé directement comme argument de la tâche Celery lors de la soumission.
 
 Le superutilisateur est créé automatiquement au démarrage via `init_site.py` (variables `ADMIN_EMAIL` / `ADMIN_PASSWORD`).
 
@@ -449,8 +452,7 @@ pip install -r requirements.txt
 cp .env.example .env
 # Éditer .env
 
-python manage.py migrate
-python manage.py seed_waste_categories
+python manage.py migrate   # inclut le seed des catégories de déchets (migration 0002)
 python init_site.py
 
 python manage.py runserver
@@ -466,7 +468,10 @@ Interface web : `http://localhost:8000` — API : `http://localhost:8000/api/`
 | `DATABASE_URL` | Oui | URL PostgreSQL (Railway la génère automatiquement) |
 | `REDIS_URL` | Oui | URL Redis (Railway la génère automatiquement) |
 | `RESEND_API_KEY` | Oui | Clé API Resend (emails transactionnels) |
-| `ANTHROPIC_API_KEY` | Oui | Clé API Anthropic (analyse IA photo déchets) |
+| `ANTHROPIC_API_KEY` | Oui | Clé API Anthropic (agents IA) |
+| `ANTHROPIC_AGENT_ID` | Oui | ID agent Waste Inspector (analyse photo) |
+| `ANTHROPIC_ADVISOR_AGENT_ID` | Oui | ID agent Éco — Conseiller Recyclage (chatbot) |
+| `ANTHROPIC_ENV_ID` | Oui | ID environnement Anthropic partagé par les deux agents |
 | `FIREBASE_CREDENTIALS_B64` | Oui | JSON Firebase encodé en base64 (push) |
 | `STRIPE_PUBLIC_KEY` | Oui | Clé publique Stripe |
 | `STRIPE_SECRET_KEY` | Oui | Clé secrète Stripe |
@@ -474,7 +479,7 @@ Interface web : `http://localhost:8000` — API : `http://localhost:8000/api/`
 | `PLOPPLOP_CLIENT_ID` | Oui | Client ID passerelle PlopPlop |
 | `PLOPPLOP_RETURN_URL` | Non | URL de retour PlopPlop (défaut : `http://localhost:8000/payment/plopplop/retour/`) |
 | `ALLOWED_HOSTS` | Prod | Domaines autorisés, séparés par virgule |
-| `FRONTEND_URL` | Non | URL du frontend (défaut : `http://localhost:8000`) |
+| `FRONTEND_URL` | Non | URL du frontend — **une seule URL** (défaut : `http://localhost:8000`). Railway peut injecter plusieurs valeurs séparées par virgule ; le code prend la première. |
 | `ADMIN_EMAIL` | Non | Email admin (défaut : `admin@ecocycle.ht`) |
 | `ADMIN_PASSWORD` | Non | Mot de passe admin initial |
 | `RESEND_FROM_EMAIL` | Non | Expéditeur email (défaut : `noreply@ecocycle.ht`) |
@@ -521,13 +526,19 @@ Photo mobile / web
 
 | Catégorie | Slug | Prix de base (HTG/kg) |
 |---|---|---|
-| Plastique | `plastic` | 50 |
-| Métal | `metal` | 120 |
-| Papier/Carton | `paper` | 30 |
-| Électronique | `electronics` | 500 |
-| Verre | `glass` | 20 |
-| Pneus | `tires` | 80 |
-| Autre | `other` | 10 |
+| Plastique | `plastic` | 15 |
+| Métal / Ferraille | `metal` | 45 |
+| Papier / Carton | `paper` | 8 |
+| Électronique | `electronics` | 120 |
+| Verre | `glass` | 5 |
+| Pneus | `tires` | 10 |
+| Autres déchets | `other` | 5 |
+
+Seedées automatiquement via `waste/migrations/0002_seed_waste_categories.py`. L'agent IA retourne un `category_slug` parmi ces 7 valeurs — le Celery task l'utilise pour assigner `WasteListing.category`.
+
+## Chat widget Éco (Conseiller Recyclage)
+
+Widget flottant en bas à droite de toutes les pages (inline dans `templates/base.html`). Communique avec `POST /api/waste/advisor/` qui utilise l'agent RecyclingAdvisor via la Sessions API Anthropic. Le `session_id` est maintenu côté client pour le contexte multi-tour. Animation d'invitation après 4 secondes (pulsation rouge + bulle de texte).
 
 ## Sécurité
 
