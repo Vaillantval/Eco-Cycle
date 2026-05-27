@@ -203,8 +203,10 @@
             document.getElementById('ai-description').textContent = a.description || '—';
             var titleInput  = document.getElementById('title-input');
             var weightInput = document.getElementById('weight-input');
+            var descInput   = document.querySelector('textarea[name="description"]');
             if(titleInput  && !titleInput.value)  titleInput.value  = a.category || '';
             if(weightInput && !weightInput.value) weightInput.value = a.estimated_weight_kg != null ? a.estimated_weight_kg : '';
+            if(descInput   && !descInput.value)   descInput.value   = a.description || '';
           } else {
             alert("Analyse impossible. Vérifiez que la photo est claire et réessayez.");
           }
