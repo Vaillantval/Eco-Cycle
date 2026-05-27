@@ -392,7 +392,10 @@ class RecyclingAdvisor:
     def __init__(self):
         self.client   = anthropic.Anthropic(
             api_key=settings.ANTHROPIC_API_KEY,
-            http_client=httpx.Client(timeout=httpx.Timeout(60.0, connect=15.0)),
+            http_client=httpx.Client(
+                timeout=httpx.Timeout(60.0, connect=15.0),
+                verify=False,
+            ),
         )
         self.agent_id = settings.ANTHROPIC_ADVISOR_AGENT_ID
         self.env_id   = settings.ANTHROPIC_ENV_ID
@@ -414,7 +417,7 @@ class RecyclingAdvisor:
                 )
                 session_id = session.id
             except Exception as e:
-                logger.error('RecyclingAdvisor session create failed: %s', repr(e))
+                logger.error('RecyclingAdvisor session create failed: %s', repr(e), exc_info=True)
                 return f'Erreur création session : {e}', None
 
         collected_text = []
