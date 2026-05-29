@@ -26,6 +26,10 @@ class Course(models.Model):
         default=0,
         help_text='Secondes avant de passer automatiquement à la leçon suivante (0 = désactivé)',
     )
+    pdf_content  = models.TextField(
+        blank=True,
+        help_text='Contenu Markdown complet du cours (généré par l\'IA ou saisi manuellement)',
+    )
     created_at   = models.DateTimeField(auto_now_add=True)
 
     @property
@@ -270,3 +274,25 @@ class CourseRecommendation(models.Model):
 
     def __str__(self):
         return f'{self.title} ({self.get_status_display()})'
+
+
+class QuizQuestion(models.Model):
+    """Question de quiz liée à un cours (générée par l'IA ou créée manuellement)."""
+
+    id             = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    course         = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='quiz_questions')
+    question       = models.CharField(max_length=500)
+    options        = models.JSONField(default=list, help_text='Liste de 4 choix de réponse')
+    correct_answer = models.PositiveSmallIntegerField(
+        default=0,
+        help_text='Index (0-3) de la bonne réponse dans options',
+    )
+    explanation    = models.TextField(blank=True, help_text='Explication de la bonne réponse')
+    order          = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        db_table = 'quiz_questions'
+        ordering = ['order']
+
+    def __str__(self):
+        return f'{self.course.title} — Q{self.order}'

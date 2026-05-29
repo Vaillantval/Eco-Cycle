@@ -4,11 +4,12 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.shortcuts import get_object_or_404
-from .models import Course, Lesson, LessonVideo, Enrollment, Certificate
+from .models import Course, Lesson, LessonVideo, Enrollment, Certificate, QuizQuestion
 from .serializers import (
     CourseListSerializer, CourseDetailSerializer,
     EnrollmentSerializer, CertificateSerializer,
     AdminCourseSerializer, AdminLessonSerializer, AdminLessonVideoSerializer,
+    QuizQuestionSerializer,
 )
 from apps.accounts.permissions import IsAdmin
 
@@ -81,6 +82,19 @@ class CompleteLessonView(APIView):
                     pass
 
         return Response(EnrollmentSerializer(enrollment).data)
+
+
+class CourseQuizView(generics.ListAPIView):
+    """GET /api/academy/courses/<slug>/quiz/
+    Retourne les questions de quiz du cours. Accessible à tous (authentifié ou non).
+    correct_answer est inclus — le client Flutter le masque jusqu'à la soumission.
+    """
+    serializer_class    = QuizQuestionSerializer
+    permission_classes  = [permissions.AllowAny]
+
+    def get_queryset(self):
+        course = get_object_or_404(Course, slug=self.kwargs['slug'], is_published=True)
+        return QuizQuestion.objects.filter(course=course)
 
 
 class MyEnrollmentsView(generics.ListAPIView):

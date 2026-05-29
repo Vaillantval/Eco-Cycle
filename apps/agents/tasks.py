@@ -59,7 +59,7 @@ def run_blog_writer():
 @shared_task(name='agents.publish_approved_course')
 def publish_approved_course(recommendation_id: int):
     """Crée le cours complet quand un admin approuve une recommandation."""
-    from apps.academy.models import CourseRecommendation, Course, Lesson, LessonVideo
+    from apps.academy.models import CourseRecommendation, Course, Lesson, LessonVideo, QuizQuestion
     from apps.accounts.models import User
     from apps.notifications.models import Notification
     from django.utils import timezone
@@ -84,13 +84,20 @@ def publish_approved_course(recommendation_id: int):
             duration_minutes=recommendation.estimated_duration_minutes,
             is_published=True,
             price=0,
+            pdf_content=recommendation.pdf_content,
         )
 
         for lesson_data in recommendation.suggested_lessons:
+            # Contenu enrichi : description + points clés si disponibles
+            content = lesson_data.get('description', '')
+            key_points = lesson_data.get('key_points', [])
+            if key_points:
+                content += '\n\n**Points clés :**\n' + '\n'.join(f'- {p}' for p in key_points)
+
             lesson = Lesson.objects.create(
                 course=course,
                 title=lesson_data.get('title', ''),
-                content=lesson_data.get('description', ''),
+                content=content,
                 order=lesson_data.get('order', 1),
                 duration_minutes=lesson_data.get('duration_minutes', 15),
             )
@@ -102,6 +109,17 @@ def publish_approved_course(recommendation_id: int):
                     order=1,
                     duration_minutes=lesson_data.get('duration_minutes', 15),
                 )
+
+        # Créer les questions de quiz
+        for i, q_data in enumerate(recommendation.quiz_questions):
+            QuizQuestion.objects.create(
+                course=course,
+                question=q_data.get('question', ''),
+                options=q_data.get('options', []),
+                correct_answer=q_data.get('correct_answer', 0),
+                explanation=q_data.get('explanation', ''),
+                order=i + 1,
+            )
 
         recommendation.status = 'published'
         recommendation.created_course = course
@@ -115,8 +133,9 @@ def publish_approved_course(recommendation_id: int):
                 notification_type='system',
                 title=f'✅ Cours publié : {course.title}',
                 message=(
-                    f'Le cours "{course.title}" avec {course.lessons.count()} '
-                    f'leçons est maintenant en ligne sur l\'Academy.'
+                    f'Le cours "{course.title}" avec {course.lessons.count()} leçons '
+                    f'et {course.quiz_questions.count()} question(s) de quiz '
+                    f'est maintenant en ligne sur l\'Academy.'
                 ),
                 data={'course_id': str(course.id)},
             )
@@ -125,6 +144,7 @@ def publish_approved_course(recommendation_id: int):
             'status': 'published',
             'course_id': str(course.id),
             'lessons_count': course.lessons.count(),
+            'quiz_count': course.quiz_questions.count(),
         }
         logger.warning('publish_approved_course: %s', result)
         return result

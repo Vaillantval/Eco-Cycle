@@ -6,6 +6,7 @@ urlpatterns = [
     path('courses/',                        views.CourseListView.as_view(),        name='course_list'),
     path('courses/<slug:slug>/',            views.CourseDetailView.as_view()),
     path('courses/<slug:slug>/enroll/',     views.EnrollView.as_view(),            name='course_enroll'),
+    path('courses/<slug:slug>/quiz/',       views.CourseQuizView.as_view(),        name='course_quiz'),
     path('lessons/<uuid:pk>/complete/',     views.CompleteLessonView.as_view(),    name='lesson_complete'),
     path('my-enrollments/',                 views.MyEnrollmentsView.as_view(),     name='my_enrollments'),
     path('my-certificates/',               views.MyCertificatesView.as_view(),    name='api_my_certificates'),

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Course, Lesson, LessonVideo, Enrollment, Certificate
+from .models import Course, Lesson, LessonVideo, Enrollment, Certificate, QuizQuestion
 
 
 # ─────────────────────────────────────────────────────────
@@ -48,6 +48,18 @@ class LessonSerializer(serializers.ModelSerializer):
 
 
 # ─────────────────────────────────────────────────────────
+#  Quiz
+# ─────────────────────────────────────────────────────────
+
+class QuizQuestionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model  = QuizQuestion
+        fields = [
+            'id', 'question', 'options', 'correct_answer', 'explanation', 'order',
+        ]
+
+
+# ─────────────────────────────────────────────────────────
 #  Cours (lecture publique)
 # ─────────────────────────────────────────────────────────
 
@@ -55,13 +67,14 @@ class CourseListSerializer(serializers.ModelSerializer):
     lesson_count     = serializers.SerializerMethodField()
     enrollment_count = serializers.SerializerMethodField()
     level_display    = serializers.ReadOnlyField(source='get_level_display')
+    has_quiz         = serializers.SerializerMethodField()
 
     class Meta:
         model  = Course
         fields = [
             'id', 'title', 'slug', 'description', 'thumbnail',
             'level', 'level_display', 'duration_minutes', 'price',
-            'is_free', 'lesson_count', 'enrollment_count', 'created_at',
+            'is_free', 'lesson_count', 'enrollment_count', 'has_quiz', 'created_at',
         ]
 
     def get_lesson_count(self, obj):
@@ -70,12 +83,17 @@ class CourseListSerializer(serializers.ModelSerializer):
     def get_enrollment_count(self, obj):
         return obj.enrollments.count()
 
+    def get_has_quiz(self, obj):
+        return obj.quiz_questions.exists()
+
 
 class CourseDetailSerializer(CourseListSerializer):
     lessons = LessonSerializer(many=True, read_only=True)
 
     class Meta(CourseListSerializer.Meta):
-        fields = CourseListSerializer.Meta.fields + ['lessons', 'auto_advance_delay']
+        fields = CourseListSerializer.Meta.fields + [
+            'lessons', 'pdf_content', 'auto_advance_delay',
+        ]
 
 
 # ─────────────────────────────────────────────────────────
