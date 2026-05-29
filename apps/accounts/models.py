@@ -39,6 +39,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     address = models.TextField(blank=True)
     city = models.CharField(max_length=100, blank=True)
 
+    latitude  = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_email_verified = models.BooleanField(default=False)

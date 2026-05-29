@@ -70,3 +70,23 @@ class PickupRequest(models.Model):
         if new_status == 'completed':
             self.completed_at = timezone.now()
         self.save()
+
+
+class CollectorLocation(models.Model):
+    """Position GPS en temps réel d'un collecteur pour un ramassage en cours."""
+
+    collector = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='gps_locations'
+    )
+    pickup = models.OneToOneField(
+        PickupRequest, on_delete=models.CASCADE, related_name='collector_location'
+    )
+    latitude  = models.DecimalField(max_digits=9, decimal_places=6)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'collector_locations'
+
+    def __str__(self):
+        return f'{self.collector.full_name} → pickup {self.pickup_id}'

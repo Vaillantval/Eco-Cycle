@@ -9,6 +9,7 @@ from django.db import transaction
 from web.mixins import LoginRequiredMixin
 from apps.marketplace.models import Auction, Bid, Order
 from apps.waste.models import WasteCategory
+from apps.accounts.geocoding_service import haversine_distance
 
 
 class MarketplaceListView(View):
@@ -20,19 +21,50 @@ class MarketplaceListView(View):
         category_slug = request.GET.get('category', '')
         city          = request.GET.get('city', '')
         sort          = request.GET.get('sort', '-created_at')
+        max_km_str    = request.GET.get('distance', '')
 
         if category_slug:
             auctions = auctions.filter(listing__category__slug=category_slug)
         if city:
             auctions = auctions.filter(listing__city__icontains=city)
 
-        sort_map = {
-            'price_asc':  'current_price',
-            'price_desc': '-current_price',
-            'ending_soon': 'ends_at',
-            '-created_at': '-created_at',
-        }
-        auctions = auctions.order_by(sort_map.get(sort, '-created_at'))
+        # Filtre par distance — nécessite la position de l'utilisateur
+        user_lat = user_lon = None
+        distance_active = False
+        if max_km_str and request.session.get('user_id'):
+            try:
+                max_km = float(max_km_str)
+                from apps.accounts.models import User as _User
+                u = _User.objects.filter(id=request.session['user_id']).values('latitude', 'longitude').first()
+                if u and u['latitude'] and u['longitude']:
+                    user_lat = float(u['latitude'])
+                    user_lon = float(u['longitude'])
+                    # Pré-filtre bounding box (±max_km/111 degrés)
+                    deg = max_km / 111.0
+                    auctions = auctions.filter(
+                        listing__latitude__range=(user_lat - deg, user_lat + deg),
+                        listing__longitude__range=(user_lon - deg, user_lon + deg),
+                    )
+                    # Filtre exact haversine en Python
+                    auctions = [
+                        a for a in auctions
+                        if a.listing.latitude and a.listing.longitude and
+                        haversine_distance(user_lat, user_lon,
+                                           float(a.listing.latitude),
+                                           float(a.listing.longitude)) <= max_km
+                    ]
+                    distance_active = True
+            except (ValueError, TypeError):
+                pass
+
+        if not distance_active:
+            sort_map = {
+                'price_asc':   'current_price',
+                'price_desc':  '-current_price',
+                'ending_soon': 'ends_at',
+                '-created_at': '-created_at',
+            }
+            auctions = auctions.order_by(sort_map.get(sort, '-created_at'))
 
         paginator = Paginator(auctions, 12)
         page = paginator.get_page(request.GET.get('page', 1))
@@ -43,6 +75,8 @@ class MarketplaceListView(View):
             'active_category': category_slug,
             'active_sort': sort,
             'city_filter': city,
+            'distance_filter': max_km_str,
+            'distance_active': distance_active,
         })
 
 

@@ -244,12 +244,28 @@ def notify_collector_assigned(pickup_id: str):
     from .email_service import EmailService
     pickup = PickupRequest.objects.select_related('collector', 'user').get(id=pickup_id)
     if pickup.collector:
+        _create_notification(
+            pickup.collector, 'pickup_assigned',
+            'Nouveau ramassage assigné',
+            f'Ramassage chez {pickup.user.full_name} — {pickup.city}, {pickup.preferred_date}',
+            {'pickup_id': str(pickup_id)},
+        )
         FCMService.send_to_user(
             pickup.collector,
             'Nouveau ramassage assigne',
             f'Ramassage chez {pickup.user.full_name} — {pickup.city}, {pickup.preferred_date}',
             {'type': 'pickup_assigned', 'pickup_id': str(pickup_id)},
         )
+        try:
+            EmailService.send_collector_assigned(pickup)
+        except Exception:
+            pass
+    _create_notification(
+        pickup.user, 'pickup_confirmed',
+        'Ramassage confirmé',
+        f'Un collecteur a été assigné à votre demande du {pickup.preferred_date}.',
+        {'pickup_id': str(pickup_id)},
+    )
     FCMService.send_to_user(
         pickup.user,
         'Ramassage confirme',
@@ -455,6 +471,55 @@ def send_lesson_reminders():
             f'Reprenez « {enrollment.course.title} » là où vous en étiez.',
             {'type': 'lesson_reminder', 'course_slug': enrollment.course.slug},
         )
+
+
+@shared_task(name='notifications.notify_academy_enrollment_paid')
+def notify_academy_enrollment_paid(enrollment_id: str):
+    """U8 — Notifie l'étudiant (in-app + FCM) quand son inscription payante est confirmée."""
+    from apps.academy.models import Enrollment
+    from .fcm_service import FCMService
+    try:
+        enrollment = Enrollment.objects.select_related('user', 'course').get(id=enrollment_id)
+    except Enrollment.DoesNotExist:
+        return
+    _create_notification(
+        enrollment.user, 'enrollment_paid',
+        'Inscription confirmée !',
+        f'Votre inscription au cours « {enrollment.course.title} » est confirmée. Bonne formation !',
+        {'course_id': str(enrollment.course.id), 'course_slug': enrollment.course.slug},
+    )
+    FCMService.send_to_user(
+        enrollment.user,
+        '✅ Inscription confirmée !',
+        f'« {enrollment.course.title} » — vous pouvez commencer maintenant.',
+        {'type': 'enrollment_paid', 'course_slug': enrollment.course.slug},
+    )
+
+
+@shared_task(name='notifications.notify_admin_free_enrollment')
+def notify_admin_free_enrollment(enrollment_id: str):
+    """A8 — Notifie les admins (in-app + FCM) quand un utilisateur s'inscrit à un cours gratuit."""
+    from apps.academy.models import Enrollment
+    from apps.accounts.models import User
+    from .fcm_service import FCMService
+    try:
+        enrollment = Enrollment.objects.select_related('user', 'course').get(id=enrollment_id)
+    except Enrollment.DoesNotExist:
+        return
+    admins = list(User.objects.filter(role='admin', is_active=True))
+    for admin in admins:
+        _create_notification(
+            admin, 'system',
+            'Inscription cours gratuit',
+            f'{enrollment.user.full_name} s\'est inscrit à « {enrollment.course.title} ».',
+            {'course_id': str(enrollment.course.id), 'enrollment_id': str(enrollment.id)},
+        )
+    FCMService.send_to_multiple(
+        admins,
+        'Inscription cours gratuit',
+        f'{enrollment.user.full_name} — « {enrollment.course.title} »',
+        {'type': 'admin_free_enrollment', 'course_id': str(enrollment.course.id)},
+    )
 
 
 @shared_task(name='notifications.notify_new_lesson')

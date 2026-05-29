@@ -2,7 +2,8 @@ from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
-from .models import PickupRequest
+from django.utils import timezone
+from .models import PickupRequest, CollectorLocation
 from .serializers import (
     PickupRequestSerializer, CreatePickupRequestSerializer,
     AssignCollectorSerializer, UpdateStatusSerializer,
@@ -98,3 +99,88 @@ class UpdatePickupStatusView(APIView):
         notify_pickup_status_update.delay(str(pickup.id))
 
         return Response(PickupRequestSerializer(pickup).data)
+
+
+class UpdateCollectorLocationView(APIView):
+    """
+    POST /api/collections/<id>/location/
+    Le collecteur envoie sa position GPS toutes les ~30s quand il est en transit.
+    Body : { "latitude": 18.54, "longitude": -72.34 }
+    """
+    permission_classes = [IsCollector]
+
+    def post(self, request, pk):
+        pickup = get_object_or_404(PickupRequest, pk=pk, collector=request.user)
+        if pickup.status not in ('assigned', 'in_transit', 'arrived'):
+            return Response(
+                {'error': 'Mise à jour GPS non autorisée pour ce statut.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            lat = float(request.data.get('latitude'))
+            lon = float(request.data.get('longitude'))
+        except (TypeError, ValueError):
+            return Response({'error': 'latitude/longitude invalides.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        CollectorLocation.objects.update_or_create(
+            pickup=pickup,
+            defaults={'collector': request.user, 'latitude': lat, 'longitude': lon},
+        )
+        return Response({'status': 'ok'})
+
+
+class GetCollectorLocationView(APIView):
+    """
+    GET /api/collections/<id>/location/
+    Retourne la dernière position GPS du collecteur.
+    Accessible par le propriétaire du pickup et les admins.
+    """
+    permission_classes = [IsOwnerOrAdmin]
+
+    def get(self, request, pk):
+        pickup = get_object_or_404(PickupRequest, pk=pk)
+        try:
+            loc = pickup.collector_location
+        except CollectorLocation.DoesNotExist:
+            return Response({'latitude': None, 'longitude': None, 'updated_at': None})
+
+        staleness = (timezone.now() - loc.updated_at).total_seconds()
+        return Response({
+            'latitude':   float(loc.latitude),
+            'longitude':  float(loc.longitude),
+            'updated_at': loc.updated_at.isoformat(),
+            'is_stale':   staleness > 300,
+        })
+
+
+class AdminPickupGeoView(APIView):
+    """
+    GET /api/collections/admin/geo/
+    Retourne les coordonnées GPS de tous les pickups pour la heatmap admin.
+    """
+    permission_classes = [IsAdmin]
+
+    def get(self, request):
+        status_filter = request.GET.get('status', '')
+        qs = PickupRequest.objects.exclude(latitude__isnull=True).select_related('user', 'collector')
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+
+        points = []
+        for p in qs:
+            entry = {
+                'id':        str(p.id),
+                'lat':       float(p.latitude),
+                'lon':       float(p.longitude),
+                'status':    p.status,
+                'city':      p.city,
+                'user':      p.user.full_name,
+                'date':      p.preferred_date.isoformat(),
+                'collector': p.collector.full_name if p.collector else None,
+            }
+            if hasattr(p, 'collector_location'):
+                entry['collector_lat'] = float(p.collector_location.latitude)
+                entry['collector_lon'] = float(p.collector_location.longitude)
+            points.append(entry)
+
+        return Response({'points': points, 'total': len(points)})

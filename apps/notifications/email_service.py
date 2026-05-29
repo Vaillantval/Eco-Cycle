@@ -106,6 +106,23 @@ class EmailService:
         cls._send(pickup.user.email, 'Votre ramassage est confirme — EcoCycle', html)
 
     @classmethod
+    def send_collector_assigned(cls, pickup):
+        """C2 — Email au collecteur quand un ramassage lui est assigné."""
+        collector = pickup.collector
+        html = (
+            f'<p>Bonjour {collector.first_name},</p>'
+            f'<p>Un nouveau ramassage vous a été assigné sur EcoCycle Haiti :</p>'
+            f'<ul>'
+            f'<li><strong>Client :</strong> {pickup.user.full_name}</li>'
+            f'<li><strong>Ville :</strong> {pickup.city}</li>'
+            f'<li><strong>Date prévue :</strong> {pickup.preferred_date}</li>'
+            f'</ul>'
+            f'<p><a href="{settings.FRONTEND_URL}/dashboard/">Voir mes assignations</a></p>'
+            f'<p>L\'équipe EcoCycle Haiti</p>'
+        )
+        cls._send(collector.email, 'Nouveau ramassage assigné — EcoCycle Haiti', html)
+
+    @classmethod
     def send_admin_new_listing(cls, admin, listing):
         html = cls._render_email('emails/listing_approved.html', {
             'admin': admin,

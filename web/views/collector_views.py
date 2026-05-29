@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.utils import timezone
 from web.mixins import CollectorRequiredMixin
 from apps.collections.models import PickupRequest
+from apps.accounts.geocoding_service import haversine_distance
 
 
 class CollectorDashboardView(CollectorRequiredMixin, View):
@@ -33,13 +34,30 @@ class CollectorPickupsView(CollectorRequiredMixin, View):
     def get(self, request):
         user = self.get_current_user(request)
         status_filter = request.GET.get('status', '')
+        sort          = request.GET.get('sort', 'date')
         qs = PickupRequest.objects.filter(collector=user).select_related('user', 'listing').order_by('-updated_at')
         if status_filter:
             qs = qs.filter(status=status_filter)
+
+        pickups = list(qs)
+        if sort == 'distance' and user.latitude and user.longitude:
+            clat, clon = float(user.latitude), float(user.longitude)
+            for p in pickups:
+                if p.latitude and p.longitude:
+                    p.distance_km = round(haversine_distance(clat, clon, float(p.latitude), float(p.longitude)), 1)
+                else:
+                    p.distance_km = None
+            pickups.sort(key=lambda p: (p.distance_km is None, p.distance_km or 0))
+        else:
+            for p in pickups:
+                p.distance_km = None
+
         return render(request, 'collector/pickups.html', {
             'user': user,
-            'pickups': qs,
+            'pickups': pickups,
             'status_filter': status_filter,
+            'sort': sort,
+            'has_location': bool(user.latitude and user.longitude),
             'status_choices': PickupRequest.STATUS_CHOICES,
         })
 
@@ -104,6 +122,8 @@ class CollectorProfileView(CollectorRequiredMixin, View):
         action = request.POST.get('action')
 
         if action == 'update_profile':
+            old_address = user.address
+            old_city    = user.city
             user.first_name = request.POST.get('first_name', user.first_name)
             user.last_name  = request.POST.get('last_name',  user.last_name)
             user.phone      = request.POST.get('phone',      user.phone)
@@ -114,6 +134,12 @@ class CollectorProfileView(CollectorRequiredMixin, View):
                 user.avatar = request.FILES['avatar']
             user.save()
             request.session['user_name'] = user.full_name
+            if user.address != old_address or user.city != old_city:
+                try:
+                    from apps.accounts.tasks import geocode_user_location
+                    geocode_user_location.delay(str(user.id))
+                except Exception:
+                    pass
             messages.success(request, 'Profil mis à jour.')
 
         elif action == 'change_password':

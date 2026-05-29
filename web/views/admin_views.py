@@ -6,12 +6,30 @@ from django.contrib import messages
 from django.utils import timezone
 from web.mixins import AdminRequiredMixin, LoginRequiredMixin
 from apps.accounts.models import User
+from apps.accounts.geocoding_service import haversine_distance
 from apps.waste.models import WasteListing
 from apps.collections.models import PickupRequest
 from apps.marketplace.models import Order, Auction
 from apps.blog.models import Post, BlogCategory, BlogRecommendation
 from apps.academy.models import Course, Lesson, LessonVideo, Enrollment, Certificate, CourseRecommendation
 from apps.core.models import ContactMessage, NewsletterSubscriber, SiteConfiguration, SliderItem
+
+
+def _collectors_with_distance(pickup):
+    """Retourne les collecteurs actifs triés par distance au pickup (None en dernier)."""
+    collectors = list(User.objects.filter(role='collector', is_active=True).order_by('first_name'))
+    if pickup.latitude and pickup.longitude:
+        plat, plon = float(pickup.latitude), float(pickup.longitude)
+        for c in collectors:
+            if c.latitude and c.longitude:
+                c.distance_km = round(haversine_distance(float(c.latitude), float(c.longitude), plat, plon), 1)
+            else:
+                c.distance_km = None
+        collectors.sort(key=lambda c: (c.distance_km is None, c.distance_km or 0))
+    else:
+        for c in collectors:
+            c.distance_km = None
+    return collectors
 
 
 def _get_reading_duration_minutes(text: str) -> int:
@@ -152,6 +170,31 @@ class AdminReviewListingView(AdminRequiredMixin, View):
         return redirect('admin_listings')
 
 
+class AdminPickupsMapView(AdminRequiredMixin, View):
+    """GET /panel/pickups/map/ — carte des ramassages géolocalisés."""
+    def get(self, request):
+        import json as _json
+        admin = self.get_current_user(request)
+        qs = PickupRequest.objects.exclude(latitude__isnull=True).select_related('user', 'collector')
+        points = []
+        for p in qs:
+            points.append({
+                'id':        str(p.id),
+                'lat':       float(p.latitude),
+                'lon':       float(p.longitude),
+                'status':    p.status,
+                'city':      p.city,
+                'user':      p.user.full_name,
+                'date':      str(p.preferred_date),
+                'collector': p.collector.full_name if p.collector else '',
+            })
+        return render(request, 'admin_panel/pickups_map.html', {
+            'user':       admin,
+            'points_json': _json.dumps(points),
+            'total':      len(points),
+        })
+
+
 class AdminPickupsView(AdminRequiredMixin, View):
     def get(self, request):
         user = self.get_current_user(request)
@@ -166,6 +209,7 @@ class AdminPickupsView(AdminRequiredMixin, View):
             'status_filter': status_filter,
             'status_choices': PickupRequest.STATUS_CHOICES,
             'collectors': collectors,
+            'has_geo': pickups.filter(latitude__isnull=False).exists(),
         })
 
     def post(self, request):
@@ -423,7 +467,7 @@ class AdminPickupDetailView(AdminRequiredMixin, View):
     def get(self, request, pk):
         admin = self.get_current_user(request)
         pickup = get_object_or_404(PickupRequest, pk=pk)
-        collectors = User.objects.filter(role='collector', is_active=True).order_by('first_name')
+        collectors = _collectors_with_distance(pickup)
         return render(request, 'admin_panel/pickup_detail.html', {
             'user': admin,
             'pickup': pickup,

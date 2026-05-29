@@ -137,6 +137,8 @@ class ProfileView(LoginRequiredMixin, View):
         action = request.POST.get('action')
 
         if action == 'update_profile':
+            old_address = user.address
+            old_city    = user.city
             user.first_name = request.POST.get('first_name', user.first_name)
             user.last_name  = request.POST.get('last_name',  user.last_name)
             user.phone      = request.POST.get('phone',      user.phone)
@@ -147,6 +149,12 @@ class ProfileView(LoginRequiredMixin, View):
                 user.avatar = request.FILES['avatar']
             user.save()
             request.session['user_name'] = user.full_name
+            if user.address != old_address or user.city != old_city:
+                try:
+                    from apps.accounts.tasks import geocode_user_location
+                    geocode_user_location.delay(str(user.id))
+                except Exception:
+                    pass
             messages.success(request, 'Profil mis à jour.')
 
         elif action == 'change_password':

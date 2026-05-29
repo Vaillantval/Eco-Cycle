@@ -52,6 +52,11 @@ class EnrollView(APIView):
                 EmailService.send_free_enrollment_confirmation(enrollment)
             except Exception:
                 pass
+            try:
+                from apps.notifications.tasks import notify_admin_free_enrollment
+                notify_admin_free_enrollment.delay(str(enrollment.id))
+            except Exception:
+                pass
         return Response(
             EnrollmentSerializer(enrollment).data,
             status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,

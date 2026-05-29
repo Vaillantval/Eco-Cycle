@@ -31,6 +31,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'email', 'first_name', 'last_name', 'phone',
             'role', 'avatar', 'bio', 'address', 'city',
+            'latitude', 'longitude',
             'is_email_verified', 'full_name',
             'total_listings', 'total_kg_recycled',
             'created_at',

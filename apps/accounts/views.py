@@ -90,6 +90,18 @@ class ProfileView(generics.RetrieveUpdateAPIView):
     def get_object(self):
         return self.request.user
 
+    def perform_update(self, serializer):
+        user = self.request.user
+        old_address = user.address
+        old_city    = user.city
+        serializer.save()
+        if user.address != old_address or user.city != old_city:
+            try:
+                from .tasks import geocode_user_location
+                geocode_user_location.delay(str(user.id))
+            except Exception:
+                pass
+
 
 class ChangePasswordView(APIView):
     """POST /api/auth/change-password/"""

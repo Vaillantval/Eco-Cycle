@@ -15,7 +15,7 @@ from .views.marketplace_views import (
 from .views.collection_views import MyPickupsView, RequestPickupView, PickupDetailView
 from .views.admin_views import (
     AdminDashboardView, AdminListingsView, AdminReviewListingView,
-    AdminPickupsView, AdminUsersView, AdminOrdersView,
+    AdminPickupsView, AdminPickupsMapView, AdminUsersView, AdminOrdersView,
     AdminUserDetailView, AdminPickupDetailView, AdminOrderDetailView,
     AdminAuctionsView, AdminAuctionDetailView, AdminCreateAuctionView,
     AdminBlogView, AdminBlogCreateView, AdminBlogEditView, AdminBlogCategoriesView,
@@ -169,6 +169,8 @@ urlpatterns = [
          AdminReviewListingView.as_view(), name='admin_review_listing'),
     path('panel/pickups/',
          AdminPickupsView.as_view(), name='admin_pickups'),
+    path('panel/pickups/map/',
+         AdminPickupsMapView.as_view(), name='admin_pickups_map'),
     path('panel/pickups/<uuid:pk>/',
          AdminPickupDetailView.as_view(), name='admin_pickup_detail'),
     path('panel/users/',

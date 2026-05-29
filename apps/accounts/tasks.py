@@ -1,6 +1,9 @@
+import logging
 from celery import shared_task
 from django.conf import settings
 from .models import User, EmailVerificationToken, PasswordResetToken
+
+logger = logging.getLogger(__name__)
 
 
 @shared_task(name='accounts.send_verification_email')
@@ -29,3 +32,22 @@ def send_password_reset_email(user_id: str):
         pass
     except Exception:
         pass
+
+
+@shared_task(name='accounts.geocode_user_location')
+def geocode_user_location(user_id: str):
+    """Géocode l'adresse de l'utilisateur et met à jour latitude/longitude."""
+    from .geocoding_service import geocode_address
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return
+    if not (user.address or user.city):
+        return
+    result = geocode_address(user.address, user.city)
+    if result:
+        lat, lon = result
+        User.objects.filter(pk=user.pk).update(latitude=lat, longitude=lon)
+        logger.info('Geocoded user %s → (%s, %s)', user.email, lat, lon)
+    else:
+        logger.warning('Geocoding failed for user %s (%s, %s)', user.email, user.address, user.city)
